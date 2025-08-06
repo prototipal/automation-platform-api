@@ -17,7 +17,8 @@ import {
 } from '../interfaces';
 
 // Service instance'ı (normalde dependency injection ile gelir)
-const pricingService = new PricingCalculationService();
+// const pricingService = new PricingCalculationService(); // Example only - would need ConfigService in real usage
+const pricingService = null as any; // Placeholder for examples
 
 /**
  * Örnek 1: KLING-V2.1 - Mode'a göre per-second pricing

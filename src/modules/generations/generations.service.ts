@@ -16,7 +16,7 @@ import { PricingCalculationService } from '@/modules/services/services/pricing-c
 import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
 import { ServiceFields } from '@/modules/services/entities';
 import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
-import { CreateGenerationDto, GenerationResponseDto } from './dto';
+import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto } from './dto';
 import {
   ReplicateRequest,
   ReplicateResponse,
@@ -177,12 +177,78 @@ export class GenerationsService {
     }
   }
 
+  async estimatePrice(estimateDto: EstimateGenerationPriceDto): Promise<PriceEstimationResponseDto> {
+    this.logger.log(`Estimating price for model: ${estimateDto.model}, version: ${estimateDto.model_version}`);
+
+    // Step 1: Get service configuration for pricing calculation
+    const serviceConfig = await this.getServiceConfiguration(
+      estimateDto.model,
+      estimateDto.model_version,
+    );
+
+    // Step 2: Validate input against service fields configuration
+    await this.validateInputFields(estimateDto.input, serviceConfig.fields);
+
+    // Step 3: Calculate price estimation using the new credit system
+    const priceEstimation = await this.calculatePriceEstimation(
+      serviceConfig,
+      estimateDto.input,
+      estimateDto.model,
+      estimateDto.model_version,
+    );
+
+    this.logger.log(`Price estimated successfully: ${priceEstimation.estimated_credits} credits for ${estimateDto.model} ${estimateDto.model_version}`);
+
+    return plainToInstance(PriceEstimationResponseDto, priceEstimation, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  private async calculatePriceEstimation(
+    serviceConfig: any,
+    input: Record<string, any>,
+    model: ServiceModel,
+    modelVersion: ModelVersion,
+  ): Promise<PriceEstimationResponseDto> {
+    try {
+      console.log(serviceConfig);
+      if (!serviceConfig.pricing || !serviceConfig.pricing.rule) {
+        this.logger.warn(`No pricing rule found for service config ID: ${serviceConfig.id}`);
+        throw new BadRequestException('No pricing configuration found for this service');
+      }
+
+      // Prepare calculation parameters from user input
+      const calculationParams = this.pricingCalculationService.prepareCalculationParams(input);
+
+      // Use the new price estimation method with detailed breakdown
+      const priceEstimation = this.pricingCalculationService.createPriceEstimation(
+        serviceConfig.pricing.rule,
+        calculationParams,
+        model,
+        modelVersion,
+      );
+
+      if (priceEstimation.breakdown.estimated_credits_rounded === 0 && 
+          priceEstimation.breakdown.replicate_cost_usd > 0) {
+        this.logger.warn(`Price estimation resulted in 0 credits, using fallback calculation`);
+        const fallbackCredits = this.pricingCalculationService.getDefaultCredits(serviceConfig.pricing.rule);
+        priceEstimation.estimated_credits = fallbackCredits;
+        priceEstimation.breakdown.estimated_credits_rounded = fallbackCredits;
+      }
+
+      return priceEstimation;
+    } catch (error) {
+      this.logger.error('Error calculating price estimation:', error);
+      throw new InternalServerErrorException(`Failed to calculate price estimation: ${error.message}`);
+    }
+  }
+
   private async calculateRequiredCredits(
     serviceConfig: any,
     input: Record<string, any>,
   ): Promise<number> {
     try {
-      if (!serviceConfig.pricing_rule) {
+      if (!serviceConfig.pricing || !serviceConfig.pricing.rule) {
         this.logger.warn(`No pricing rule found for service config ID: ${serviceConfig.id}`);
         return 0;
       }
@@ -190,19 +256,24 @@ export class GenerationsService {
       // Prepare calculation parameters from user input
       const calculationParams = this.pricingCalculationService.prepareCalculationParams(input);
 
-      // Calculate price using the pricing rule
-      const pricingResult = this.pricingCalculationService.calculatePrice(
-        serviceConfig.pricing_rule,
+      // Use the new credit calculation method with profit margin
+      const creditResult = this.pricingCalculationService.calculateRequiredCredits(
+        serviceConfig.pricing.rule,
         calculationParams,
       );
 
-      if (pricingResult.error) {
-        this.logger.warn(`Pricing calculation error: ${pricingResult.error}`);
-        // Fall back to default price if calculation fails
-        return this.pricingCalculationService.getDefaultPrice(serviceConfig.pricing_rule);
+      if (creditResult.error) {
+        this.logger.warn(`Credit calculation error: ${creditResult.error}`);
+        // Fall back to default credits if calculation fails
+        return this.pricingCalculationService.getDefaultCredits(serviceConfig.pricing.rule);
       }
 
-      return pricingResult.totalPrice;
+      this.logger.log(
+        `Credit calculation completed: ${creditResult.estimated_credits} credits ` +
+        `(USD: $${creditResult.breakdown.replicate_cost_usd} -> $${creditResult.breakdown.total_cost_usd} with ${creditResult.breakdown.profit_margin}x margin)`,
+      );
+
+      return creditResult.estimated_credits;
     } catch (error) {
       this.logger.error('Error calculating required credits:', error);
       return 0;

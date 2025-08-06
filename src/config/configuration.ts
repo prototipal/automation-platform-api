@@ -28,6 +28,10 @@ export const configModuleOptions: ConfigModuleOptions = {
 
     // Authentication configuration validation
     STATIC_AUTH_TOKEN: Joi.string().required(),
+
+    // Pricing configuration validation
+    PROFIT_MARGIN: Joi.number().min(1.0).max(5.0).default(1.5),
+    CREDIT_VALUE_USD: Joi.number().min(0.001).max(1.0).default(0.05),
   }),
   validationOptions: {
     allowUnknown: true,

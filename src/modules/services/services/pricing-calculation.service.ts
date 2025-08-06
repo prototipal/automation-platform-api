@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   PricingRule,
   PricingType,
@@ -7,10 +8,22 @@ import {
   FixedPricing,
   PerSecondPricing,
   ConditionalPricing,
+  CreditCalculationResult,
+  PriceEstimationBreakdown,
 } from '../interfaces';
 
 @Injectable()
 export class PricingCalculationService {
+  private readonly logger = new Logger(PricingCalculationService.name);
+  private readonly profitMargin: number;
+  private readonly creditValueUsd: number;
+
+  constructor(private readonly configService: ConfigService) {
+    this.profitMargin = this.configService.get<number>('PROFIT_MARGIN', 1.5);
+    this.creditValueUsd = this.configService.get<number>('CREDIT_VALUE_USD', 0.05);
+    
+    this.logger.log(`Pricing configuration - Profit Margin: ${this.profitMargin}, Credit Value: $${this.creditValueUsd}`);
+  }
   /**
    * Verilen pricing rule'ına ve parametrelere göre toplam fiyatı hesaplar
    */
@@ -180,5 +193,103 @@ export class PricingCalculationService {
       default:
         return 0;
     }
+  }
+
+  /**
+   * Calculates required credits using the new pricing formula:
+   * user_credits_required = (replicate_usd_cost * profit_margin) / credit_value
+   */
+  calculateRequiredCredits(
+    rule: PricingRule,
+    params: PricingCalculationParams,
+  ): CreditCalculationResult {
+    try {
+      // First calculate the base USD cost using existing pricing logic
+      const pricingResult = this.calculatePrice(rule, params);
+      
+      if (pricingResult.error) {
+        return {
+          estimated_credits: 0,
+          breakdown: {
+            replicate_cost_usd: 0,
+            profit_margin: this.profitMargin,
+            total_cost_usd: 0,
+            credit_value_usd: this.creditValueUsd,
+            estimated_credits_raw: 0,
+            estimated_credits_rounded: 0,
+          },
+          error: pricingResult.error,
+        };
+      }
+
+      const replicateCostUsd = pricingResult.totalPrice;
+      const totalCostUsd = replicateCostUsd * this.profitMargin;
+      const estimatedCreditsRaw = totalCostUsd / this.creditValueUsd;
+      const estimatedCreditsRounded = Math.ceil(estimatedCreditsRaw); // Always round up
+
+      this.logger.log(
+        `Credit calculation - Replicate: $${replicateCostUsd}, ` +
+        `Total (${this.profitMargin}x): $${totalCostUsd}, ` +
+        `Credits: ${estimatedCreditsRaw} -> ${estimatedCreditsRounded}`,
+      );
+
+      return {
+        estimated_credits: estimatedCreditsRounded,
+        breakdown: {
+          replicate_cost_usd: replicateCostUsd,
+          profit_margin: this.profitMargin,
+          total_cost_usd: totalCostUsd,
+          credit_value_usd: this.creditValueUsd,
+          estimated_credits_raw: estimatedCreditsRaw,
+          estimated_credits_rounded: estimatedCreditsRounded,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error calculating required credits:', error);
+      return {
+        estimated_credits: 0,
+        breakdown: {
+          replicate_cost_usd: 0,
+          profit_margin: this.profitMargin,
+          total_cost_usd: 0,
+          credit_value_usd: this.creditValueUsd,
+          estimated_credits_raw: 0,
+          estimated_credits_rounded: 0,
+        },
+        error: `Credit calculation error: ${error.message}`,
+      };
+    }
+  }
+
+  /**
+   * Creates a complete price estimation breakdown for API responses
+   */
+  createPriceEstimation(
+    rule: PricingRule,
+    params: PricingCalculationParams,
+    model: string,
+    modelVersion: string,
+  ): PriceEstimationBreakdown {
+    const creditResult = this.calculateRequiredCredits(rule, params);
+    
+    return {
+      estimated_credits: creditResult.estimated_credits,
+      breakdown: creditResult.breakdown,
+      service_details: {
+        model,
+        model_version: modelVersion,
+        pricing_type: rule.type,
+      },
+    };
+  }
+
+  /**
+   * Gets default credits using new formula for error scenarios
+   */
+  getDefaultCredits(rule: PricingRule): number {
+    const defaultPriceUsd = this.getDefaultPrice(rule);
+    const totalCostUsd = defaultPriceUsd * this.profitMargin;
+    const creditsRaw = totalCostUsd / this.creditValueUsd;
+    return Math.ceil(creditsRaw); // Always round up
   }
 }

@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { ServiceType, ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '../enums';
 import type { ServiceFields } from '../entities';
+import type { ServicePricing } from '../entities/service.entity';
 
 export class ServiceResponseDto {
   @ApiProperty({
@@ -56,6 +57,20 @@ export class ServiceResponseDto {
   })
   @Expose()
   fields: ServiceFields;
+
+  @ApiProperty({
+    description: 'Pricing configuration for the service',
+    type: 'object',
+    additionalProperties: true,
+    example: {
+      rule: {
+        type: 'fixed',
+        price: 0.08,
+      },
+    },
+  })
+  @Expose()
+  pricing: ServicePricing;
 
   @ApiProperty({
     description: 'Whether the service is active and available for use',
