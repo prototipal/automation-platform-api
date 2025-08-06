@@ -12,8 +12,10 @@ import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 
 import { ServicesService } from '@/modules/services/services.service';
+import { PricingCalculationService } from '@/modules/services/services/pricing-calculation.service';
 import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
 import { ServiceFields } from '@/modules/services/entities';
+import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
 import { CreateGenerationDto, GenerationResponseDto } from './dto';
 import {
   ReplicateRequest,
@@ -49,6 +51,9 @@ export class GenerationsService {
     [ServiceModel.IDEOGRAM_AI]: {
       [TextToImageModelVersion.IDEOGRAM_V3_TURBO]: 'ideogram-ai/ideogram-v3-turbo',
     },
+    [ServiceModel.BLACK_FOREST_LABS]: {
+      [TextToImageModelVersion.FLUX_KONTEXT_MAX]: 'black-forest-labs/flux-kontext-max',
+    },
     [ServiceModel.WAN_VIDEO]: {},
     [ServiceModel.WAVESPEEDAI]: {},
   };
@@ -57,6 +62,8 @@ export class GenerationsService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly servicesService: ServicesService,
+    private readonly authService: AuthService,
+    private readonly pricingCalculationService: PricingCalculationService,
   ) {
     this.replicateApiToken = this.configService.get<string>('REPLICATE_API_TOKEN') || '';
     
@@ -88,12 +95,118 @@ export class GenerationsService {
     const replicateResponse = await this.callReplicateAPI(
       replicateEndpoint,
       createGenerationDto.input,
+      serviceConfig,
     );
 
     // Step 5: Transform and return response
     return plainToInstance(GenerationResponseDto, replicateResponse, {
       excludeExtraneousValues: true,
     });
+  }
+
+  async createWithAuth(
+    createGenerationDto: CreateGenerationDto, 
+    authUser: AuthUserDto
+  ): Promise<GenerationResponseDto> {
+    this.logger.log(`Creating authenticated generation for user: ${authUser.user_id}, model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`);
+
+    // Step 1: Get service configuration for validation and pricing
+    const serviceConfig = await this.getServiceConfiguration(
+      createGenerationDto.model,
+      createGenerationDto.model_version,
+    );
+
+    // Step 2: Calculate required credits
+    const requiredCredits = await this.calculateRequiredCredits(
+      serviceConfig,
+      createGenerationDto.input,
+    );
+
+    this.logger.log(`Required credits for generation: ${requiredCredits} for user: ${authUser.user_id}`);
+
+    // Step 3: Check sufficient credits
+    const hasSufficientCredits = await this.authService.checkSufficientCredits(
+      authUser.user_id,
+      requiredCredits,
+    );
+
+    if (!hasSufficientCredits) {
+      this.logger.warn(`Insufficient credits for user ${authUser.user_id}. Required: ${requiredCredits}, Available: ${authUser.balance}`);
+      throw new BadRequestException(
+        `Insufficient credits. Required: ${requiredCredits}, Available: ${authUser.balance}`,
+      );
+    }
+
+    // Step 4: Deduct credits before making the API call
+    const deductionDto: CreditDeductionDto = {
+      user_id: authUser.user_id,
+      amount: requiredCredits,
+      description: `Generation request - ${createGenerationDto.model} ${createGenerationDto.model_version}`,
+    };
+
+    const deductionResult = await this.authService.deductCredits(deductionDto);
+    this.logger.log(`Credits deducted successfully for user ${authUser.user_id}. New balance: ${deductionResult.remaining_balance}`);
+
+    try {
+      // Step 5: Validate input against service fields configuration
+      await this.validateInputFields(createGenerationDto.input, serviceConfig.fields);
+
+      // Step 6: Map to Replicate API endpoint
+      const replicateEndpoint = this.buildReplicateEndpoint(
+        createGenerationDto.model,
+        createGenerationDto.model_version,
+      );
+
+      // Step 7: Make request to Replicate API
+      const replicateResponse = await this.callReplicateAPI(
+        replicateEndpoint,
+        createGenerationDto.input,
+        serviceConfig,
+      );
+
+      // Step 8: Transform and return response
+      this.logger.log(`Generation completed successfully for user: ${authUser.user_id}, ID: ${replicateResponse.id}`);
+      
+      return plainToInstance(GenerationResponseDto, replicateResponse, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      // If API call fails, we could implement credit refund logic here
+      this.logger.error(`Generation API call failed for user ${authUser.user_id}, credits were already deducted: ${requiredCredits}`, error);
+      throw error;
+    }
+  }
+
+  private async calculateRequiredCredits(
+    serviceConfig: any,
+    input: Record<string, any>,
+  ): Promise<number> {
+    try {
+      if (!serviceConfig.pricing_rule) {
+        this.logger.warn(`No pricing rule found for service config ID: ${serviceConfig.id}`);
+        return 0;
+      }
+
+      // Prepare calculation parameters from user input
+      const calculationParams = this.pricingCalculationService.prepareCalculationParams(input);
+
+      // Calculate price using the pricing rule
+      const pricingResult = this.pricingCalculationService.calculatePrice(
+        serviceConfig.pricing_rule,
+        calculationParams,
+      );
+
+      if (pricingResult.error) {
+        this.logger.warn(`Pricing calculation error: ${pricingResult.error}`);
+        // Fall back to default price if calculation fails
+        return this.pricingCalculationService.getDefaultPrice(serviceConfig.pricing_rule);
+      }
+
+      return pricingResult.totalPrice;
+    } catch (error) {
+      this.logger.error('Error calculating required credits:', error);
+      return 0;
+    }
   }
 
   private async getServiceConfiguration(
@@ -238,19 +351,31 @@ export class GenerationsService {
   private async callReplicateAPI(
     endpoint: string,
     input: Record<string, any>,
+    serviceConfig?: any,
   ): Promise<ReplicateResponse> {
     try {
       const requestData: ReplicateRequest = { input };
       
       this.logger.log(`Making request to Replicate API: ${endpoint}`);
       
+      // Check if this is a text-to-image model to add wait header
+      const isTextToImage = this.isTextToImageModel(serviceConfig?.model, serviceConfig?.model_version);
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${this.replicateApiToken}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Add Prefer: wait header for text-to-image models
+      if (isTextToImage) {
+        headers['Prefer'] = 'wait';
+        this.logger.log('Added Prefer: wait header for text-to-image request');
+      }
+      
       const response = await firstValueFrom(
         this.httpService.post<ReplicateResponse>(endpoint, requestData, {
-          headers: {
-            'Authorization': `Bearer ${this.replicateApiToken}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000, // 10 seconds timeout for async request
+          headers,
+          timeout: isTextToImage ? 60000 : 10000, // 60 seconds for text-to-image, 10 seconds for video
         }),
       );
 
@@ -283,5 +408,10 @@ export class GenerationsService {
       
       throw new InternalServerErrorException('Failed to communicate with Replicate API');
     }
+  }
+
+  private isTextToImageModel(_model: ServiceModel, modelVersion: ModelVersion): boolean {
+    const textToImageVersions = Object.values(TextToImageModelVersion) as string[];
+    return textToImageVersions.includes(modelVersion);
   }
 }

@@ -54,6 +54,14 @@ async function bootstrap() {
         .setVersion('1.0.0')
         .addTag('Services', 'AI service configuration and management endpoints')
         .addTag('Health', 'Application health monitoring endpoints')
+        .addBearerAuth({
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'API Key',
+          name: 'API Key',
+          description: 'Enter your API key',
+          in: 'header',
+        }, 'ApiKey')
         .setContact(
           'API Support',
           'https://github.com/your-repo/automation-platform-api',

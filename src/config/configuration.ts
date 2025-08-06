@@ -25,6 +25,9 @@ export const configModuleOptions: ConfigModuleOptions = {
 
     // Replicate API configuration validation
     REPLICATE_API_TOKEN: Joi.string().required(),
+
+    // Authentication configuration validation
+    STATIC_AUTH_TOKEN: Joi.string().required(),
   }),
   validationOptions: {
     allowUnknown: true,

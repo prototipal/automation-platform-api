@@ -3,6 +3,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 
 import { ServicesModule } from '@/modules/services';
+import { AuthModule } from '@/modules/auth';
 import { GenerationsController } from './generations.controller';
 import { GenerationsService } from './generations.service';
 
@@ -14,6 +15,7 @@ import { GenerationsService } from './generations.service';
     }),
     ConfigModule,
     ServicesModule,
+    AuthModule,
   ],
   controllers: [GenerationsController],
   providers: [GenerationsService],

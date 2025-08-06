@@ -29,6 +29,7 @@ import {
   ServiceResponseDto,
   QueryServiceDto,
 } from './dto';
+import { StaticTokenAuth } from '@/modules/auth';
 
 @ApiTags('Services')
 @Controller('services')
@@ -37,6 +38,7 @@ export class ServicesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @StaticTokenAuth()
   @ApiOperation({
     summary: 'Create a new service',
     description:
@@ -199,6 +201,7 @@ export class ServicesController {
   }
 
   @Patch(':id')
+  @StaticTokenAuth()
   @ApiOperation({
     summary: 'Update service',
     description: 'Updates an existing AI service configuration',
@@ -233,6 +236,7 @@ export class ServicesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @StaticTokenAuth()
   @ApiOperation({
     summary: 'Delete service',
     description: 'Removes an AI service configuration from the system',

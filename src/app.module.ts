@@ -7,6 +7,7 @@ import { HealthModule } from './health';
 import { ServicesModule } from '@/modules/services';
 import { GenerationsModule } from '@/modules/generations';
 import { TemplatesModule } from '@/modules/templates';
+import { AuthModule } from '@/modules/auth';
 import { configModuleOptions } from './config';
 
 @Module({
@@ -14,6 +15,7 @@ import { configModuleOptions } from './config';
     ConfigModule.forRoot(configModuleOptions),
     DatabaseModule,
     HealthModule,
+    AuthModule,
     ServicesModule,
     GenerationsModule,
     TemplatesModule,

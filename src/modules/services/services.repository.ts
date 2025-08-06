@@ -19,7 +19,9 @@ export class ServicesRepository {
   async findAll(queryDto: QueryServiceDto): Promise<[Service[], number]> {
     const { page = 1, limit = 10, ...filters } = queryDto;
 
-    const where: FindOptionsWhere<Service> = {};
+    const where: FindOptionsWhere<Service> = {
+      is_active: true, // Only return active services
+    };
 
     if (filters.type) where.type = filters.type;
     if (filters.model) where.model = filters.model;
@@ -48,7 +50,10 @@ export class ServicesRepository {
     model: string,
     version?: string,
   ): Promise<Service | null> {
-    const where: FindOptionsWhere<Service> = { model: model as any };
+    const where: FindOptionsWhere<Service> = { 
+      model: model as any,
+      is_active: true, // Only consider active services
+    };
     if (version) {
       where.model_version = version as any;
     }
@@ -78,7 +83,10 @@ export class ServicesRepository {
 
   async findByModel(model: string): Promise<Service[]> {
     return await this.serviceRepository.find({
-      where: { model: model as any },
+      where: { 
+        model: model as any,
+        is_active: true, // Only return active services
+      },
       order: {
         model_version: 'ASC',
       },

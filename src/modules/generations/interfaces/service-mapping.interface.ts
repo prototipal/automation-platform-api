@@ -26,6 +26,9 @@ export interface ModelVersionMapping {
   [ServiceModel.IDEOGRAM_AI]: {
     [TextToImageModelVersion.IDEOGRAM_V3_TURBO]: string;
   };
+  [ServiceModel.BLACK_FOREST_LABS]: {
+    [TextToImageModelVersion.FLUX_KONTEXT_MAX]: string;
+  };
   [ServiceModel.WAN_VIDEO]: Record<string, never>;
   [ServiceModel.WAVESPEEDAI]: Record<string, never>;
 }

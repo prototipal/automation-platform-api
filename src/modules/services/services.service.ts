@@ -188,6 +188,7 @@ export class ServicesService {
       [ServiceModel.WAN_VIDEO]: [],
       [ServiceModel.WAVESPEEDAI]: [],
       [ServiceModel.IDEOGRAM_AI]: [TextToImageModelVersion.IDEOGRAM_V3_TURBO],
+      [ServiceModel.BLACK_FOREST_LABS]: [TextToImageModelVersion.FLUX_KONTEXT_MAX],
     };
 
     const allowedVersions = modelVersionMap[model];

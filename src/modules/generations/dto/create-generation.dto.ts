@@ -19,7 +19,9 @@ export class CreateGenerationDto {
     example: TextToVideoModelVersion.KLING_V2_1,
     required: false,
   })
-  @IsEnum([...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)])
+  @IsEnum([...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)], {
+    message: `model_version must be one of the following values: ${[...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)].join(', ')}`
+  })
   model_version: ModelVersion;
 
   @ApiProperty({

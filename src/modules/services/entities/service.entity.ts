@@ -70,6 +70,13 @@ export class Service {
   })
   pricing: ServicePricing;
 
+  @Column({
+    type: 'boolean',
+    default: true,
+    nullable: false,
+  })
+  is_active: boolean;
+
   @CreateDateColumn({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',

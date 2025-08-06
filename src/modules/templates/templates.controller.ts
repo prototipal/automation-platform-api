@@ -24,6 +24,7 @@ import {
 
 import { TemplatesService } from './templates.service';
 import { CreateTemplateDto, UpdateTemplateDto, QueryTemplateDto, TemplateResponseDto } from './dto';
+import { StaticTokenAuth } from '@/modules/auth';
 
 @ApiTags('Templates')
 @Controller('templates')
@@ -34,6 +35,7 @@ export class TemplatesController {
   constructor(private readonly templatesService: TemplatesService) {}
 
   @Post()
+  @StaticTokenAuth()
   @ApiOperation({ summary: 'Create a new template' })
   @ApiBody({ type: CreateTemplateDto })
   @ApiResponse({
@@ -101,6 +103,7 @@ export class TemplatesController {
   }
 
   @Post('import-csv')
+  @StaticTokenAuth()
   @ApiOperation({ summary: 'Import templates from CSV file' })
   @ApiBody({
     schema: {
@@ -130,6 +133,7 @@ export class TemplatesController {
   }
 
   @Delete('clear')
+  @StaticTokenAuth()
   @ApiOperation({ summary: 'Clear all templates' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -159,6 +163,7 @@ export class TemplatesController {
   }
 
   @Patch(':id')
+  @StaticTokenAuth()
   @ApiOperation({ summary: 'Update template by ID' })
   @ApiParam({ name: 'id', description: 'Template UUID', type: 'string' })
   @ApiBody({ type: UpdateTemplateDto })
@@ -180,6 +185,7 @@ export class TemplatesController {
   }
 
   @Delete(':id')
+  @StaticTokenAuth()
   @ApiOperation({ summary: 'Delete template by ID' })
   @ApiParam({ name: 'id', description: 'Template UUID', type: 'string' })
   @ApiResponse({

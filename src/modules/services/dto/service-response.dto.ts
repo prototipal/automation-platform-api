@@ -58,6 +58,13 @@ export class ServiceResponseDto {
   fields: ServiceFields;
 
   @ApiProperty({
+    description: 'Whether the service is active and available for use',
+    example: true,
+  })
+  @Expose()
+  is_active: boolean;
+
+  @ApiProperty({
     description: 'Date when the service was created',
     example: '2024-01-01T00:00:00.000Z',
   })

@@ -11,11 +11,11 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBadRequestResponse,
-  ApiInternalServerErrorResponse,
 } from '@nestjs/swagger';
 
 import { GenerationsService } from './generations.service';
 import { CreateGenerationDto, GenerationResponseDto } from './dto';
+import { ApiKeyAuth, AuthUser, AuthUserDto } from '@/modules/auth';
 
 @ApiTags('Generations')
 @Controller('generations')
@@ -24,81 +24,74 @@ export class GenerationsController {
 
   constructor(private readonly generationsService: GenerationsService) {}
 
-  @Post('create')
+
+  @Post('generate')
   @HttpCode(HttpStatus.OK)
+  @ApiKeyAuth()
   @ApiOperation({
-    summary: 'Create a generation request',
+    summary: 'Generate content with API key authentication',
     description: `
-      Creates a new generation request using the Replicate API for both video and image generation.
+      Creates a new generation request using API key authentication with automatic credit deduction.
       
-      The request will be validated against the service configuration for the specified model and version.
-      Input fields are dynamically validated based on the service's field configuration stored in the database.
+      **Authentication Required:**
+      - Valid API key (Bearer token, X-API-Key header, or api_key query parameter)
+      - Active user account with sufficient credits
+      
+      **Credit System:**
+      - Credits are automatically calculated based on model, parameters, and duration
+      - Credits are deducted before making the generation request
+      - If generation fails, credits are not refunded (as per industry standard)
       
       **Flow:**
-      1. Validate model and model_version against available services
-      2. Retrieve service configuration from database
-      3. Validate input fields against service field rules (required, type, enum values)
-      4. Map to appropriate Replicate API endpoint
-      5. Send request to Replicate API with proper authentication
-      6. Return the generation response with status and tracking information
+      1. Validate API key and get user information
+      2. Calculate required credits based on model and input parameters
+      3. Check if user has sufficient credits
+      4. Deduct credits from user account
+      5. Validate input fields against service configuration
+      6. Send request to Replicate API
+      7. Return generation response
       
-      **Supported Models:**
-      **Text-to-Image:**
-      - ideogram-ai/ideogram-v3-turbo
-      - google/imagen-4-fast
-      
-      **Text-to-Video:**
-      - kwaigi/kling-v2.1
-      - minimax/hailuo-02
-      - google-deepmind/veo-3
-      - And others based on service configuration
+      **Authentication Methods:**
+      - Bearer Token: \`Authorization: Bearer your-api-key\`
+      - Header: \`X-API-Key: your-api-key\`
+      - Query: \`?api_key=your-api-key\`
     `,
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Generation request created successfully',
+    description: 'Generation request created successfully with credit deduction',
     type: GenerationResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid request data or validation errors',
+    description: 'Invalid request data, validation errors, or insufficient credits',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
         message: { 
           type: 'string', 
-          example: 'Validation failed: prompt: Field \'prompt\' is required; start_image: Field \'start_image\' must be a string' 
+          example: 'Insufficient credits. Required: 1.50, Available: 0.80' 
         },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: 'Internal server error or Replicate API issues',
-    schema: {
-      type: 'object',
-      properties: {
-        statusCode: { type: 'number', example: 500 },
-        message: { type: 'string', example: 'Failed to communicate with Replicate API' },
-        error: { type: 'string', example: 'Internal Server Error' },
-      },
-    },
-  })
-  async create(
+  async generate(
     @Body() createGenerationDto: CreateGenerationDto,
+    @AuthUser() user: AuthUserDto,
   ): Promise<GenerationResponseDto> {
     this.logger.log(
-      `Creating generation request for model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`,
+      `Creating authenticated generation for user: ${user.user_id}, model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`,
     );
 
     try {
-      const result = await this.generationsService.create(createGenerationDto);
+      const result = await this.generationsService.createWithAuth(createGenerationDto, user);
       
-      this.logger.log(`Generation created successfully with ID: ${result.id}`);
+      this.logger.log(`Authenticated generation created successfully with ID: ${result.id} for user: ${user.user_id}`);
       return result;
     } catch (error) {
       this.logger.error(
-        `Failed to create generation: ${error.message}`,
+        `Failed to create authenticated generation for user ${user.user_id}: ${error.message}`,
         error.stack,
       );
       throw error;

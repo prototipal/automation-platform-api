@@ -267,6 +267,37 @@ export class ServicesSeed {
           },
         },
       },
+      {
+        from: 'replicate',
+        type: ServiceType.TEXT_TO_IMAGE,
+        model: ServiceModel.BLACK_FOREST_LABS,
+        model_version: TextToImageModelVersion.FLUX_KONTEXT_MAX,
+        fields: {
+          prompt: {
+            required: true,
+            type: 'string',
+            desc: 'Text description for image generation',
+          },
+          input_image: {
+            required: false,
+            type: 'string',
+            desc: 'Optional input image for context',
+          },
+          aspect_ratio: {
+            required: false,
+            type: 'enum',
+            values: ['1:1', '16:9', '9:16'],
+            default: 'match_input_image',
+            desc: 'Image aspect ratio',
+          },
+        },
+        pricing: {
+          rule: {
+            type: PricingType.FIXED,
+            price: 0.08,
+          },
+        },
+      },
     ];
 
     console.log('🌱 Seeding services...');

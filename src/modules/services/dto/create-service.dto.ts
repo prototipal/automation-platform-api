@@ -4,6 +4,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ServiceType, ServiceModel, TextToImageModelVersion, TextToVideoModelVersion } from '../enums';
@@ -68,4 +69,13 @@ export class CreateServiceDto {
   @IsObject()
   @IsNotEmpty()
   fields: ServiceFields;
+
+  @ApiPropertyOptional({
+    description: 'Whether the service is active and available for use',
+    default: true,
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  is_active?: boolean = true;
 }
