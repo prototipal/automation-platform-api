@@ -7,7 +7,7 @@ import {
 
 import { GenerationsController } from '../generations.controller';
 import { GenerationsService } from '../generations.service';
-import { ServiceModel, ModelVersion } from '@/modules/services/enums';
+import { ServiceModel, TextToVideoModelVersion, TextToImageModelVersion } from '@/modules/services/enums';
 import { CreateGenerationDto, GenerationResponseDto } from '../dto';
 
 describe('GenerationsController', () => {
@@ -51,7 +51,7 @@ describe('GenerationsController', () => {
   describe('create', () => {
     const validRequest: CreateGenerationDto = {
       model: ServiceModel.KWAIGI,
-      model_version: ModelVersion.KLING_V2_1,
+      model_version: TextToVideoModelVersion.KLING_V2_1,
       input: {
         prompt: 'a woman takes her hands out her pockets',
         start_image: 'https://example.com/image.jpg',
@@ -117,7 +117,7 @@ describe('GenerationsController', () => {
     it('should handle different model types', async () => {
       const miniMaxRequest: CreateGenerationDto = {
         model: ServiceModel.MINIMAX,
-        model_version: ModelVersion.HAILUO_02,
+        model_version: TextToVideoModelVersion.HAILUO_02,
         input: {
           prompt: 'test prompt for minimax',
         },
@@ -141,7 +141,7 @@ describe('GenerationsController', () => {
     it('should handle requests with complex input objects', async () => {
       const complexRequest: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           prompt: 'complex video generation prompt',
           start_image: 'https://example.com/start.jpg',
@@ -177,7 +177,7 @@ describe('GenerationsController', () => {
     it('should handle requests with minimal input', async () => {
       const minimalRequest: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           prompt: 'minimal prompt',
         },

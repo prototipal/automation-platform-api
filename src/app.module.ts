@@ -6,6 +6,7 @@ import { DatabaseModule } from './database';
 import { HealthModule } from './health';
 import { ServicesModule } from '@/modules/services';
 import { GenerationsModule } from '@/modules/generations';
+import { TemplatesModule } from '@/modules/templates';
 import { configModuleOptions } from './config';
 
 @Module({
@@ -15,6 +16,7 @@ import { configModuleOptions } from './config';
     HealthModule,
     ServicesModule,
     GenerationsModule,
+    TemplatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

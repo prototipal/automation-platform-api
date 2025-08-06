@@ -11,7 +11,7 @@ import { of, throwError } from 'rxjs';
 
 import { GenerationsService } from '../generations.service';
 import { ServicesService } from '@/modules/services/services.service';
-import { ServiceModel, ModelVersion } from '@/modules/services/enums';
+import { ServiceModel, TextToVideoModelVersion } from '@/modules/services/enums';
 import { CreateGenerationDto } from '../dto';
 import { ReplicateResponse } from '../interfaces';
 
@@ -36,7 +36,7 @@ describe('GenerationsService', () => {
   const mockServiceConfig = {
     id: 'test-service-id',
     model: ServiceModel.KWAIGI,
-    model_version: ModelVersion.KLING_V2_1,
+    model_version: TextToVideoModelVersion.KLING_V2_1,
     fields: {
       prompt: {
         required: true,
@@ -116,7 +116,7 @@ describe('GenerationsService', () => {
   describe('create', () => {
     const validRequest: CreateGenerationDto = {
       model: ServiceModel.KWAIGI,
-      model_version: ModelVersion.KLING_V2_1,
+      model_version: TextToVideoModelVersion.KLING_V2_1,
       input: {
         prompt: 'a woman takes her hands out her pockets',
         start_image: 'https://example.com/image.jpg',
@@ -166,7 +166,7 @@ describe('GenerationsService', () => {
     it('should throw BadRequestException for missing required field', async () => {
       const invalidRequest: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           start_image: 'https://example.com/image.jpg',
           // Missing required 'prompt' field
@@ -182,7 +182,7 @@ describe('GenerationsService', () => {
     it('should throw BadRequestException for invalid field type', async () => {
       const invalidRequest: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           prompt: 123, // Should be string
           start_image: 'https://example.com/image.jpg',
@@ -213,7 +213,7 @@ describe('GenerationsService', () => {
 
       const invalidRequest: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           prompt: 'test prompt',
           duration: '15', // Invalid enum value
@@ -229,7 +229,7 @@ describe('GenerationsService', () => {
     it('should throw BadRequestException for unknown fields', async () => {
       const invalidRequest: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           prompt: 'test prompt',
           unknown_field: 'value', // Unknown field
@@ -245,7 +245,7 @@ describe('GenerationsService', () => {
     it('should throw BadRequestException for unsupported model', async () => {
       const invalidRequest: CreateGenerationDto = {
         model: ServiceModel.WAN_VIDEO, // Model without Replicate mapping
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           prompt: 'test prompt',
         },
@@ -335,7 +335,7 @@ describe('GenerationsService', () => {
     it('should validate optional fields correctly', async () => {
       const requestWithOptionalField: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         input: {
           prompt: 'test prompt',
           start_image: 'https://example.com/image.jpg',

@@ -5,3 +5,5 @@ export { ServicesRepository } from './services.repository';
 export * from './dto';
 export * from './entities';
 export * from './enums';
+export * from './interfaces';
+export * from './services';

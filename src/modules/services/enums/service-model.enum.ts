@@ -5,4 +5,5 @@ export enum ServiceModel {
   BYTEDANCE = 'bytedance',
   WAN_VIDEO = 'wan-video',
   WAVESPEEDAI = 'wavespeedai',
+  IDEOGRAM_AI = 'ideogram-ai',
 }

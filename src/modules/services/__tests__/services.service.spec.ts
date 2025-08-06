@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ServicesService } from '../services.service';
 import { ServicesRepository } from '../services.repository';
-import { ServiceType, ServiceModel, ModelVersion } from '../enums';
+import { ServiceType, ServiceModel, TextToVideoModelVersion } from '../enums';
 import { CreateServiceDto, UpdateServiceDto } from '../dto';
 
 describe('ServicesService', () => {
@@ -28,7 +28,7 @@ describe('ServicesService', () => {
     from: 'replicate',
     type: ServiceType.IMAGE_TO_VIDEO,
     model: ServiceModel.GOOGLE,
-    model_version: ModelVersion.VEO_3,
+    model_version: TextToVideoModelVersion.VEO_3,
     fields: {
       prompt: {
         required: true,
@@ -63,7 +63,7 @@ describe('ServicesService', () => {
       const createDto: CreateServiceDto = {
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.GOOGLE,
-        model_version: ModelVersion.VEO_3,
+        model_version: TextToVideoModelVersion.VEO_3,
         fields: {
           prompt: {
             required: true,
@@ -80,7 +80,7 @@ describe('ServicesService', () => {
 
       expect(mockRepository.findByModelAndVersion).toHaveBeenCalledWith(
         ServiceModel.GOOGLE,
-        ModelVersion.VEO_3,
+        TextToVideoModelVersion.VEO_3,
       );
       expect(mockRepository.create).toHaveBeenCalledWith(createDto);
       expect(result).toMatchObject({
@@ -94,7 +94,7 @@ describe('ServicesService', () => {
       const createDto: CreateServiceDto = {
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.GOOGLE,
-        model_version: ModelVersion.VEO_3,
+        model_version: TextToVideoModelVersion.VEO_3,
         fields: {
           prompt: {
             required: true,
@@ -115,7 +115,7 @@ describe('ServicesService', () => {
       const createDto: CreateServiceDto = {
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.GOOGLE,
-        model_version: ModelVersion.HAILUO_02, // Invalid for Google
+        model_version: TextToVideoModelVersion.HAILUO_02, // Invalid for Google
         fields: {
           prompt: {
             required: true,
@@ -134,7 +134,7 @@ describe('ServicesService', () => {
       const createDto: CreateServiceDto = {
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.GOOGLE,
-        model_version: ModelVersion.VEO_3,
+        model_version: TextToVideoModelVersion.VEO_3,
         fields: {
           prompt: {
             required: 'invalid', // Should be boolean

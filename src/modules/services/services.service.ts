@@ -13,7 +13,7 @@ import {
   ServiceResponseDto,
   QueryServiceDto,
 } from './dto';
-import { ServiceModel, ModelVersion } from './enums';
+import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from './enums';
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -181,12 +181,13 @@ export class ServicesService {
     version: ModelVersion | null | undefined,
   ): void {
     const modelVersionMap: Record<ServiceModel, ModelVersion[]> = {
-      [ServiceModel.GOOGLE]: [ModelVersion.VEO_3, ModelVersion.VEO_3_FAST],
-      [ServiceModel.KWAIGI]: [ModelVersion.KLING_V2_1],
-      [ServiceModel.MINIMAX]: [ModelVersion.HAILUO_02, ModelVersion.VIDEO_01],
-      [ServiceModel.BYTEDANCE]: [ModelVersion.SEEDANCE_1_PRO],
+      [ServiceModel.GOOGLE]: [TextToVideoModelVersion.VEO_3, TextToVideoModelVersion.VEO_3_FAST, TextToImageModelVersion.IMAGEN_4_FAST],
+      [ServiceModel.KWAIGI]: [TextToVideoModelVersion.KLING_V2_1],
+      [ServiceModel.MINIMAX]: [TextToVideoModelVersion.HAILUO_02, TextToVideoModelVersion.VIDEO_01],
+      [ServiceModel.BYTEDANCE]: [TextToVideoModelVersion.SEEDANCE_1_PRO],
       [ServiceModel.WAN_VIDEO]: [],
       [ServiceModel.WAVESPEEDAI]: [],
+      [ServiceModel.IDEOGRAM_AI]: [TextToImageModelVersion.IDEOGRAM_V3_TURBO],
     };
 
     const allowedVersions = modelVersionMap[model];

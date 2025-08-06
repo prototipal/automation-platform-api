@@ -3,8 +3,10 @@ import { Service } from '@/modules/services/entities';
 import {
   ServiceType,
   ServiceModel,
-  ModelVersion,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
 } from '@/modules/services/enums';
+import { PricingType } from '@/modules/services/interfaces';
 
 export class ServicesSeed {
   public static async run(dataSource: DataSource): Promise<void> {
@@ -18,7 +20,7 @@ export class ServicesSeed {
         from: 'replicate',
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.MINIMAX,
-        model_version: ModelVersion.HAILUO_02,
+        model_version: TextToVideoModelVersion.HAILUO_02,
         fields: {
           prompt: {
             required: true,
@@ -43,12 +45,25 @@ export class ServicesSeed {
             desc: 'Output video resolution',
           },
         },
+        pricing: {
+          rule: {
+            type: PricingType.CONDITIONAL,
+            rules: [
+              { conditions: { resolution: '512p', duration: 6 }, price: 0.10 },
+              { conditions: { resolution: '512p', duration: 10 }, price: 0.15 },
+              { conditions: { resolution: '768p', duration: 6 }, price: 0.27 },
+              { conditions: { resolution: '768p', duration: 10 }, price: 0.45 },
+              { conditions: { resolution: '1080p', duration: 6 }, price: 0.48 },
+              // 1080p + 10s desteklenmiyor, bu yüzden yok
+            ],
+          },
+        },
       },
       {
         from: 'replicate',
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.GOOGLE,
-        model_version: ModelVersion.VEO_3_FAST,
+        model_version: TextToVideoModelVersion.VEO_3_FAST,
         fields: {
           prompt: {
             required: true,
@@ -67,12 +82,18 @@ export class ServicesSeed {
             desc: 'Output video resolution',
           },
         },
+        pricing: {
+          rule: {
+            type: PricingType.FIXED,
+            price: 3.20,
+          },
+        },
       },
       {
         from: 'replicate',
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.BYTEDANCE,
-        model_version: ModelVersion.SEEDANCE_1_PRO,
+        model_version: TextToVideoModelVersion.SEEDANCE_1_PRO,
         fields: {
           prompt: {
             required: true,
@@ -114,12 +135,22 @@ export class ServicesSeed {
             desc: 'Whether camera position is fixed',
           },
         },
+        pricing: {
+          rule: {
+            type: PricingType.PER_SECOND,
+            parameter: 'resolution',
+            rates: {
+              '480p': 0.03,
+              '1080p': 0.15,
+            },
+          },
+        },
       },
       {
         from: 'replicate',
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.MINIMAX,
-        model_version: ModelVersion.VIDEO_01,
+        model_version: TextToVideoModelVersion.VIDEO_01,
         fields: {
           prompt: {
             required: true,
@@ -137,12 +168,18 @@ export class ServicesSeed {
             desc: 'Optional subject reference for consistency',
           },
         },
+        pricing: {
+          rule: {
+            type: PricingType.FIXED,
+            price: 0.50,
+          },
+        },
       },
       {
         from: 'replicate',
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.KWAIGI,
-        model_version: ModelVersion.KLING_V2_1,
+        model_version: TextToVideoModelVersion.KLING_V2_1,
         fields: {
           prompt: {
             required: true,
@@ -166,6 +203,67 @@ export class ServicesSeed {
             type: 'enum',
             values: ['5', '10'],
             desc: 'Video duration in seconds',
+          },
+        },
+        pricing: {
+          rule: {
+            type: PricingType.PER_SECOND,
+            parameter: 'mode',
+            rates: {
+              'standard': 0.05,
+              'pro': 0.09,
+            },
+          },
+        },
+      },
+      // Yeni text-to-image servisler
+      {
+        from: 'replicate',
+        type: ServiceType.TEXT_TO_IMAGE,
+        model: ServiceModel.IDEOGRAM_AI,
+        model_version: TextToImageModelVersion.IDEOGRAM_V3_TURBO,
+        fields: {
+          prompt: {
+            required: true,
+            type: 'string',
+            desc: 'Text description for image generation',
+          },
+          aspect_ratio: {
+            required: false,
+            type: 'enum',
+            values: ['3:2', '3:4', '4:3', '4:5', '1:1', '16:9', '9:16', '1:3'],
+            desc: 'Image aspect ratio',
+          },
+        },
+        pricing: {
+          rule: {
+            type: PricingType.FIXED,
+            price: 0.03,
+          },
+        },
+      },
+      {
+        from: 'replicate',
+        type: ServiceType.TEXT_TO_IMAGE,
+        model: ServiceModel.GOOGLE,
+        model_version: TextToImageModelVersion.IMAGEN_4_FAST,
+        fields: {
+          prompt: {
+            required: true,
+            type: 'string',
+            desc: 'Text description for image generation',
+          },
+          aspect_ratio: {
+            required: false,
+            type: 'enum',
+            values: ['4:3', '3:4', '16:9', '9:16', '1:1'],
+            desc: 'Image aspect ratio',
+          },
+        },
+        pricing: {
+          rule: {
+            type: PricingType.FIXED,
+            price: 0.02,
           },
         },
       },

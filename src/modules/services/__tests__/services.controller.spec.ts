@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServicesController } from '../services.controller';
 import { ServicesService } from '../services.service';
-import { ServiceType, ServiceModel, ModelVersion } from '../enums';
+import { ServiceType, ServiceModel, TextToVideoModelVersion } from '../enums';
 import { CreateServiceDto, UpdateServiceDto, QueryServiceDto } from '../dto';
 
 describe('ServicesController', () => {
@@ -22,7 +22,7 @@ describe('ServicesController', () => {
     from: 'replicate',
     type: ServiceType.IMAGE_TO_VIDEO,
     model: ServiceModel.GOOGLE,
-    model_version: ModelVersion.VEO_3,
+    model_version: TextToVideoModelVersion.VEO_3,
     fields: {
       prompt: {
         required: true,
@@ -58,7 +58,7 @@ describe('ServicesController', () => {
       const createDto: CreateServiceDto = {
         type: ServiceType.IMAGE_TO_VIDEO,
         model: ServiceModel.GOOGLE,
-        model_version: ModelVersion.VEO_3,
+        model_version: TextToVideoModelVersion.VEO_3,
         fields: {
           prompt: {
             required: true,

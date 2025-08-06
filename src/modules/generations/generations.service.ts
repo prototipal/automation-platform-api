@@ -12,7 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 
 import { ServicesService } from '@/modules/services/services.service';
-import { ServiceModel, ModelVersion } from '@/modules/services/enums';
+import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
 import { ServiceFields } from '@/modules/services/entities';
 import { CreateGenerationDto, GenerationResponseDto } from './dto';
 import {
@@ -32,18 +32,22 @@ export class GenerationsService {
   // Mapping of service models to Replicate API endpoints
   private readonly modelVersionMapping: ModelVersionMapping = {
     [ServiceModel.GOOGLE]: {
-      [ModelVersion.VEO_3]: 'google-deepmind/veo-3',
-      [ModelVersion.VEO_3_FAST]: 'google-deepmind/veo-3-fast',
+      [TextToVideoModelVersion.VEO_3]: 'google-deepmind/veo-3',
+      [TextToVideoModelVersion.VEO_3_FAST]: 'google-deepmind/veo-3-fast',
+      [TextToImageModelVersion.IMAGEN_4_FAST]: 'google/imagen-4-fast',
     },
     [ServiceModel.KWAIGI]: {
-      [ModelVersion.KLING_V2_1]: 'kwaivgi/kling-v2.1',
+      [TextToVideoModelVersion.KLING_V2_1]: 'kwaivgi/kling-v2.1',
     },
     [ServiceModel.MINIMAX]: {
-      [ModelVersion.HAILUO_02]: 'minimax/hailuo-02',
-      [ModelVersion.VIDEO_01]: 'minimax/video-01',
+      [TextToVideoModelVersion.HAILUO_02]: 'minimax/hailuo-02',
+      [TextToVideoModelVersion.VIDEO_01]: 'minimax/video-01',
     },
     [ServiceModel.BYTEDANCE]: {
-      [ModelVersion.SEEDANCE_1_PRO]: 'bytedance/seedance-1-pro',
+      [TextToVideoModelVersion.SEEDANCE_1_PRO]: 'bytedance/seedance-1-pro',
+    },
+    [ServiceModel.IDEOGRAM_AI]: {
+      [TextToImageModelVersion.IDEOGRAM_V3_TURBO]: 'ideogram-ai/ideogram-v3-turbo',
     },
     [ServiceModel.WAN_VIDEO]: {},
     [ServiceModel.WAVESPEEDAI]: {},

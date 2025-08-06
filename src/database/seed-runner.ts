@@ -2,7 +2,9 @@ import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
 import { Service } from '@/modules/services/entities';
+import { Template } from '@/modules/templates/entities';
 import { ServicesSeed } from './seeds';
+import { TemplatesCsvImportSeed } from './seeds/templates-csv-import.seed';
 
 config();
 
@@ -15,7 +17,7 @@ const createDataSource = (): DataSource => {
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'password',
     database: process.env.DB_NAME || 'automation_platform',
-    entities: [Service],
+    entities: [Service, Template],
     synchronize: false,
     logging: process.env.NODE_ENV === 'development',
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
@@ -33,6 +35,10 @@ async function runSeeds() {
 
     // Run seeds
     await ServicesSeed.run(dataSource);
+    
+    // Import templates from CSV
+    const templatesSeed = new TemplatesCsvImportSeed();
+    await templatesSeed.run(dataSource);
 
     console.log('✨ All seeds completed successfully!');
   } catch (error) {

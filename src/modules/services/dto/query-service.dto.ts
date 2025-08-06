@@ -1,7 +1,8 @@
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { ServiceType, ServiceModel, ModelVersion } from '../enums';
+import { ServiceType, ServiceModel, TextToImageModelVersion, TextToVideoModelVersion } from '../enums';
+import type { ModelVersion } from '../enums';
 
 export class QueryServiceDto {
   @ApiPropertyOptional({
@@ -24,11 +25,11 @@ export class QueryServiceDto {
 
   @ApiPropertyOptional({
     description: 'Filter by specific model version',
-    enum: ModelVersion,
-    example: ModelVersion.VEO_3,
+    enum: [...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)],
+    example: TextToVideoModelVersion.VEO_3,
   })
   @IsOptional()
-  @IsEnum(ModelVersion)
+  @IsEnum([...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)])
   model_version?: ModelVersion;
 
   @ApiPropertyOptional({

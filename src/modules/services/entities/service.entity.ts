@@ -6,7 +6,8 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { ServiceType, ServiceModel, ModelVersion } from '../enums';
+import { ServiceType, ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '../enums';
+import { PricingRule } from '../interfaces/pricing.interface';
 
 export interface ServiceFields {
   [key: string]: {
@@ -16,6 +17,10 @@ export interface ServiceFields {
     default?: string | boolean;
     desc: string;
   };
+}
+
+export interface ServicePricing {
+  rule: PricingRule;
 }
 
 @Entity('services')
@@ -48,7 +53,7 @@ export class Service {
 
   @Column({
     type: 'enum',
-    enum: ModelVersion,
+    enum: [...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)],
     nullable: true,
   })
   model_version: ModelVersion | null;
@@ -58,6 +63,12 @@ export class Service {
     nullable: false,
   })
   fields: ServiceFields;
+
+  @Column({
+    type: 'jsonb',
+    nullable: false,
+  })
+  pricing: ServicePricing;
 
   @CreateDateColumn({
     type: 'timestamp with time zone',

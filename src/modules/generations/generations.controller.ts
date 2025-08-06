@@ -27,9 +27,9 @@ export class GenerationsController {
   @Post('create')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Create a video generation request',
+    summary: 'Create a generation request',
     description: `
-      Creates a new video generation request using the Replicate API.
+      Creates a new generation request using the Replicate API for both video and image generation.
       
       The request will be validated against the service configuration for the specified model and version.
       Input fields are dynamically validated based on the service's field configuration stored in the database.
@@ -43,6 +43,11 @@ export class GenerationsController {
       6. Return the generation response with status and tracking information
       
       **Supported Models:**
+      **Text-to-Image:**
+      - ideogram-ai/ideogram-v3-turbo
+      - google/imagen-4-fast
+      
+      **Text-to-Video:**
       - kwaigi/kling-v2.1
       - minimax/hailuo-02
       - google-deepmind/veo-3
@@ -51,7 +56,7 @@ export class GenerationsController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Video generation request created successfully',
+    description: 'Generation request created successfully',
     type: GenerationResponseDto,
   })
   @ApiBadRequestResponse({

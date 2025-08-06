@@ -1,4 +1,4 @@
-import { ServiceModel, ModelVersion } from '@/modules/services/enums';
+import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
 
 export interface ServiceMapping {
   model: ServiceModel;
@@ -9,18 +9,22 @@ export interface ServiceMapping {
 
 export interface ModelVersionMapping {
   [ServiceModel.GOOGLE]: {
-    [ModelVersion.VEO_3]: string;
-    [ModelVersion.VEO_3_FAST]: string;
+    [TextToVideoModelVersion.VEO_3]: string;
+    [TextToVideoModelVersion.VEO_3_FAST]: string;
+    [TextToImageModelVersion.IMAGEN_4_FAST]: string;
   };
   [ServiceModel.KWAIGI]: {
-    [ModelVersion.KLING_V2_1]: string;
+    [TextToVideoModelVersion.KLING_V2_1]: string;
   };
   [ServiceModel.MINIMAX]: {
-    [ModelVersion.HAILUO_02]: string;
-    [ModelVersion.VIDEO_01]: string;
+    [TextToVideoModelVersion.HAILUO_02]: string;
+    [TextToVideoModelVersion.VIDEO_01]: string;
   };
   [ServiceModel.BYTEDANCE]: {
-    [ModelVersion.SEEDANCE_1_PRO]: string;
+    [TextToVideoModelVersion.SEEDANCE_1_PRO]: string;
+  };
+  [ServiceModel.IDEOGRAM_AI]: {
+    [TextToImageModelVersion.IDEOGRAM_V3_TURBO]: string;
   };
   [ServiceModel.WAN_VIDEO]: Record<string, never>;
   [ServiceModel.WAVESPEEDAI]: Record<string, never>;
