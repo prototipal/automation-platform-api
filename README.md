@@ -23,7 +23,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Automation Platform API - A NestJS-based API for automation services with integrated proxy management.
 
 ## Project setup
 
@@ -31,7 +31,16 @@
 $ npm install
 ```
 
-## Compile and run the project
+## Environment Configuration
+
+1. Copy the environment example file:
+```bash
+$ cp .env.example .env
+```
+
+2. Update the `.env` file with your configuration values.
+
+## Local Development
 
 ```bash
 # development
@@ -42,6 +51,16 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+## Database Setup
+
+```bash
+# Run database migrations
+$ npm run migration:run
+
+# Seed the database
+$ npm run seed
 ```
 
 ## Run tests
@@ -57,18 +76,89 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Deployment
+## Docker Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+This project includes a complete Docker setup with Nginx Proxy Manager for easy deployment.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Quick Start with Docker
 
+1. **Clone the repository and navigate to the project directory**
+
+2. **Copy environment configuration:**
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+3. **Update environment variables** in `.env` file as needed.
+
+4. **Start all services:**
+```bash
+docker-compose up -d
+```
+
+This will start:
+- **Nginx Proxy Manager** (Port 81 for admin, 80/443 for proxied services)
+- **Application API** (Port 3000)
+- **PostgreSQL Database** (Port 5432)
+- **MariaDB** (for Nginx Proxy Manager)
+
+### Service Access
+
+- **Nginx Proxy Manager Admin:** http://localhost:81
+  - Default login: `admin@example.com` / `changeme`
+- **API Application:** http://localhost:3000
+- **API Documentation (Swagger):** http://localhost:3000/api
+
+### Nginx Proxy Manager Setup
+
+1. Access the admin panel at http://localhost:81
+2. Login with default credentials (change on first login)
+3. Add a new proxy host:
+   - **Domain Names:** your-domain.com
+   - **Scheme:** http
+   - **Forward Hostname/IP:** app
+   - **Forward Port:** 3000
+   - **SSL:** Enable if needed
+
+### Data Persistence
+
+Data is stored in the following directories:
+- `./data/nginx-proxy-manager/` - NPM configuration and data
+- `./data/postgres/` - PostgreSQL database files
+- `./data/mysql/` - MariaDB database files
+- `./letsencrypt/` - SSL certificates
+
+### Useful Docker Commands
+
+```bash
+# View logs
+docker-compose logs -f
+
+# Restart services
+docker-compose restart
+
+# Stop all services
+docker-compose down
+
+# Rebuild and start services
+docker-compose up -d --build
+
+# View running containers
+docker-compose ps
+```
+
+### Production Deployment
+
+For production deployment:
+
+1. Update environment variables for production
+2. Ensure proper SSL certificates are configured
+3. Use a reverse proxy (handled by Nginx Proxy Manager)
+4. Monitor logs and performance
+
+### Manual Deployment
+
+If you prefer manual deployment without Docker:
 
 ## Resources
 

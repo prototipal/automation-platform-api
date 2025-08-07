@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Nginx Proxy Manager
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./data/nginx-proxy-manager:/data
+      - ./letsencrypt:/etc/letsencrypt
+    depends_on:
+      - npm-db
+
+  # Nginx Proxy Manager Database
+  npm-db:
+    image: 'mariadb:latest'
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${NPM_DB_ROOT_PASSWORD:-npm123}
+      MYSQL_DATABASE: ${NPM_DB_NAME:-npm}
+      MYSQL_USER: ${NPM_DB_USER:-npm}
+      MYSQL_PASSWORD: ${NPM_DB_PASSWORD:-npm123}
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+
+  # Main Application
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=${DB_HOST:-app-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-automation_platform}
+      - DB_SSL=${DB_SSL:-false}
+      - DB_CONNECTION_LIMIT=${DB_CONNECTION_LIMIT:-10}
+    depends_on:
+      - app-db
+    volumes:
+      - ./logs:/app/logs
+
+  # Application Database (PostgreSQL)
+  app-db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-automation_platform}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+volumes:
+  postgres_data:
+  mysql_data:
+  npm_data:
+  letsencrypt_data:
