@@ -34,6 +34,10 @@ services:
     ports:
       - '3000:3000'
     environment:
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
+      - STATIC_AUTH_TOKEN=${STATIC_AUTH_TOKEN}
+      - PROFIT_MARGIN=${PROFIT_MARGIN}
+      - CREDIT_VALUE_USD=${CREDIT_VALUE_USD}
       - NODE_ENV=production
       - DB_HOST=${DB_HOST:-app-db}
       - DB_PORT=${DB_PORT:-5432}
