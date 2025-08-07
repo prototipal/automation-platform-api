@@ -32,7 +32,7 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - '3000:3000'
+      - '3007:3007'
     environment:
       - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
       - STATIC_AUTH_TOKEN=${STATIC_AUTH_TOKEN}

@@ -18,7 +18,7 @@ async function bootstrap() {
 
     // Global configuration
     const globalPrefix = configService.get<string>('app.globalPrefix', 'api');
-    const port = configService.get<number>('app.port', 3000);
+    const port = configService.get<number>('app.port', 3007);
     const environment = configService.get<string>('app.environment', 'development');
 
     // Global exception filters
@@ -69,6 +69,7 @@ async function bootstrap() {
         )
         .setLicense('MIT', 'https://opensource.org/licenses/MIT')
         .addServer(`http://localhost:${port}`, 'Development Server')
+        .addServer('http://195.201.93.232:3000', 'Production Server')
         .build();
 
       const document = SwaggerModule.createDocument(app, config, {
