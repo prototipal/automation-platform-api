@@ -48,7 +48,7 @@ export class TemplatesController {
     description: 'Invalid input data',
   })
   async create(@Body() createTemplateDto: CreateTemplateDto): Promise<TemplateResponseDto> {
-    this.logger.log(`Creating new template for category: ${createTemplateDto.category_name}`);
+    this.logger.log(`Creating new template for category ID: ${createTemplateDto.category_id}`);
     return await this.templatesService.create(createTemplateDto);
   }
 

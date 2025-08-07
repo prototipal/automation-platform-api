@@ -7,6 +7,7 @@ import { HealthModule } from './health';
 import { ServicesModule } from '@/modules/services';
 import { GenerationsModule } from '@/modules/generations';
 import { TemplatesModule } from '@/modules/templates';
+import { CategoriesModule } from '@/modules/categories';
 import { AuthModule } from '@/modules/auth';
 import { configModuleOptions } from './config';
 
@@ -18,6 +19,7 @@ import { configModuleOptions } from './config';
     AuthModule,
     ServicesModule,
     GenerationsModule,
+    CategoriesModule,
     TemplatesModule,
   ],
   controllers: [AppController],

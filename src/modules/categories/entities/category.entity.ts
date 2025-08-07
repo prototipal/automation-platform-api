@@ -4,41 +4,29 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
-// Category import removed to prevent circular dependency - using string reference instead
+// Template import removed to prevent circular dependency - using string reference instead
 
-@Entity('templates')
-export class Template {
+@Entity('categories')
+export class Category {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({
-    type: 'uuid',
+    type: 'varchar',
+    length: 255,
     nullable: false,
+    unique: true,
   })
-  category_id: string;
-
-  @ManyToOne('Category', 'templates', {
-    eager: true, // Automatically load category when loading template
-    nullable: false,
-  })
-  @JoinColumn({ name: 'category_id' })
-  category: any;
+  name: string;
 
   @Column({
     type: 'text',
-    nullable: false,
+    nullable: true,
   })
-  image_url: string;
-
-  @Column({
-    type: 'text',
-    nullable: false,
-  })
-  prompt: string;
+  link: string;
 
   @Column({
     type: 'enum',
@@ -60,4 +48,7 @@ export class Template {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;
+
+  @OneToMany('Template', 'category')
+  templates: any[];
 }

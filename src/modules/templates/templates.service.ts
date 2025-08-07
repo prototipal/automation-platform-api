@@ -7,6 +7,7 @@ import { parse } from 'csv-parse/sync';
 import { Template } from './entities';
 import { CreateTemplateDto, UpdateTemplateDto, QueryTemplateDto, TemplateResponseDto } from './dto';
 import { TemplatesRepository, PaginatedResult } from './templates.repository';
+import { CategoriesService } from '@/modules/categories';
 
 export interface ImportResult {
   imported: number;
@@ -18,7 +19,10 @@ export interface ImportResult {
 export class TemplatesService {
   private readonly logger = new Logger(TemplatesService.name);
 
-  constructor(private readonly templatesRepository: TemplatesRepository) {}
+  constructor(
+    private readonly templatesRepository: TemplatesRepository,
+    private readonly categoriesService: CategoriesService,
+  ) {}
 
   async create(createTemplateDto: CreateTemplateDto): Promise<TemplateResponseDto> {
     try {
@@ -93,7 +97,8 @@ export class TemplatesService {
     }, {} as Record<string, number>);
     
     const byCategory = allTemplates.data.reduce((acc, template) => {
-      acc[template.category_name] = (acc[template.category_name] || 0) + 1;
+      const categoryName = template.category?.name || 'Unknown';
+      acc[categoryName] = (acc[categoryName] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     
@@ -131,29 +136,25 @@ export class TemplatesService {
         try {
           const csvRecord = record as Record<string, string>;
           
-          // Map CSV columns to our DTO
-          const templateDto: CreateTemplateDto = {
-            category_name: csvRecord['Category Name']?.trim() || '',
-            category_link: csvRecord['Category Link']?.trim() || undefined,
-            image_url: csvRecord['Image URL']?.trim() || '',
-            prompt: csvRecord['Prompt']?.trim() || '',
-            type: forceType,
-          };
+          const categoryName = csvRecord['Category Name']?.trim() || '';
+          const categoryLink = csvRecord['Category Link']?.trim() || undefined;
+          const imageUrl = csvRecord['Image URL']?.trim() || '';
+          const prompt = csvRecord['Prompt']?.trim() || '';
 
           // Validate required fields
-          if (!templateDto.category_name) {
+          if (!categoryName) {
             result.errors.push(`Row ${index + 1}: Missing category name`);
             result.skipped++;
             continue;
           }
 
-          if (!templateDto.image_url) {
+          if (!imageUrl) {
             result.errors.push(`Row ${index + 1}: Missing image URL`);
             result.skipped++;
             continue;
           }
 
-          if (!templateDto.prompt) {
+          if (!prompt) {
             result.errors.push(`Row ${index + 1}: Missing prompt`);
             result.skipped++;
             continue;
@@ -161,12 +162,27 @@ export class TemplatesService {
 
           // Validate URL format (basic check)
           try {
-            new URL(templateDto.image_url);
+            new URL(imageUrl);
           } catch {
             result.errors.push(`Row ${index + 1}: Invalid image URL format`);
             result.skipped++;
             continue;
           }
+
+          // Find or create category
+          const category = await this.categoriesService.findOrCreate(
+            categoryName, 
+            categoryLink, 
+            forceType
+          );
+
+          // Create template DTO with category_id
+          const templateDto: CreateTemplateDto = {
+            category_id: category.id,
+            image_url: imageUrl,
+            prompt: prompt,
+            type: forceType,
+          };
 
           templatesToCreate.push(templateDto);
         } catch (error) {

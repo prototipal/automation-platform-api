@@ -41,24 +41,21 @@ export class TemplatesRepository {
   }
 
   async findAll(queryDto: QueryTemplateDto): Promise<PaginatedResult<Template>> {
-    const { page = 1, limit = 10, category_name, type, search, sortBy = 'created_at', sortOrder = 'DESC' } = queryDto;
+    const { page = 1, limit = 10, category_id, category_name, type, search, sortBy = 'created_at', sortOrder = 'DESC' } = queryDto;
     
     const skip = (page - 1) * limit;
-    
-    const whereConditions: FindOptionsWhere<Template> = {};
-    
-    if (category_name) {
-      whereConditions.category_name = ILike(`%${category_name}%`);
-    }
-    
-    if (type) {
-      whereConditions.type = type;
+
+    let query = this.templateRepository.createQueryBuilder('template')
+      .leftJoinAndSelect('template.category', 'category');
+
+    if (category_id) {
+      query = query.andWhere('template.category_id = :categoryId', { 
+        categoryId: category_id 
+      });
     }
 
-    let query = this.templateRepository.createQueryBuilder('template');
-
     if (category_name) {
-      query = query.andWhere('template.category_name ILIKE :categoryName', { 
+      query = query.andWhere('category.name ILIKE :categoryName', { 
         categoryName: `%${category_name}%` 
       });
     }
@@ -73,8 +70,10 @@ export class TemplatesRepository {
       });
     }
 
+    // Handle sorting - if sorting by category_name, sort by the related category name
+    const orderField = sortBy === 'category_name' ? 'category.name' : `template.${sortBy}`;
     query = query
-      .orderBy(`template.${sortBy}`, sortOrder)
+      .orderBy(orderField, sortOrder)
       .skip(skip)
       .take(limit);
 
@@ -92,12 +91,14 @@ export class TemplatesRepository {
   async findOne(id: string): Promise<Template | null> {
     return await this.templateRepository.findOne({
       where: { id },
+      relations: ['category'],
     });
   }
 
   async findById(id: string): Promise<Template | null> {
     return await this.templateRepository.findOne({
       where: { id },
+      relations: ['category'],
     });
   }
 
@@ -123,15 +124,28 @@ export class TemplatesRepository {
   async findByType(type: 'photo' | 'video'): Promise<Template[]> {
     return await this.templateRepository.find({
       where: { type },
+      relations: ['category'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async findByCategoryId(categoryId: string): Promise<Template[]> {
+    return await this.templateRepository.find({
+      where: { category_id: categoryId },
+      relations: ['category'],
       order: { created_at: 'DESC' },
     });
   }
 
   async findByCategory(categoryName: string): Promise<Template[]> {
-    return await this.templateRepository.find({
-      where: { category_name: ILike(`%${categoryName}%`) },
-      order: { created_at: 'DESC' },
-    });
+    return await this.templateRepository
+      .createQueryBuilder('template')
+      .leftJoinAndSelect('template.category', 'category')
+      .where('category.name ILIKE :categoryName', { 
+        categoryName: `%${categoryName}%` 
+      })
+      .orderBy('template.created_at', 'DESC')
+      .getMany();
   }
 
   async deleteAll(): Promise<void> {

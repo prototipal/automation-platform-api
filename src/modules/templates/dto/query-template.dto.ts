@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsNumber, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsNumber, Min, Max, IsUUID } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -28,7 +28,16 @@ export class QueryTemplateDto {
   limit?: number = 10;
 
   @ApiPropertyOptional({
-    description: 'Filter by category name',
+    description: 'Filter by category ID',
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+  })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  category_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by category name (partial match)',
     example: 'General'
   })
   @IsOptional()

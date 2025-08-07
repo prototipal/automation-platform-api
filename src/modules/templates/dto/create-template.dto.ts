@@ -1,22 +1,15 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUrl, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTemplateDto {
   @ApiProperty({ 
-    description: 'Template category name',
-    example: 'General'
+    description: 'Category ID that this template belongs to',
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
   })
   @IsString()
   @IsNotEmpty()
-  category_name: string;
-
-  @ApiPropertyOptional({ 
-    description: 'Category link URL',
-    example: 'https://example.com/category'
-  })
-  @IsOptional()
-  @IsString()
-  category_link?: string;
+  @IsUUID()
+  category_id: string;
 
   @ApiProperty({ 
     description: 'Template image URL',

@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+
+import { CategoryResponseDto } from '@/modules/categories/dto';
 
 export class TemplateResponseDto {
   @ApiProperty({
@@ -10,18 +12,19 @@ export class TemplateResponseDto {
   id: string;
 
   @ApiProperty({ 
-    description: 'Template category name',
-    example: 'General'
+    description: 'Category ID that this template belongs to',
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
   })
   @Expose()
-  category_name: string;
+  category_id: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Category link URL',
-    example: 'https://example.com/category'
+  @ApiProperty({ 
+    description: 'Category details',
+    type: CategoryResponseDto
   })
   @Expose()
-  category_link: string;
+  @Type(() => CategoryResponseDto)
+  category: CategoryResponseDto;
 
   @ApiProperty({ 
     description: 'Template image URL',
