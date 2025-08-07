@@ -52,10 +52,10 @@ export class CategoriesController {
   @Get()
   @ApiOperation({ 
     summary: 'Get all categories',
-    description: 'Retrieves a paginated list of categories with optional filtering and sorting.' 
+    description: 'Retrieves categories with optional filtering, sorting and pagination. If page parameter is not provided, all results are returned without pagination.' 
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination. If not provided, all results are returned' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, only applies with page parameter)' })
   @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter by category name (partial match)' })
   @ApiQuery({ name: 'type', required: false, enum: ['photo', 'video'], description: 'Filter by category type' })
   @ApiQuery({ name: 'sort_by', required: false, type: String, description: 'Sort by field (default: created_at)' })
@@ -71,10 +71,10 @@ export class CategoriesController {
           type: 'array',
           items: { $ref: '#/components/schemas/CategoryResponseDto' },
         },
-        total: { type: 'number' },
-        page: { type: 'number' },
-        limit: { type: 'number' },
-        totalPages: { type: 'number' },
+        total: { type: 'number', description: 'Total number of categories' },
+        page: { type: 'number', description: 'Current page (only present when paginated)' },
+        limit: { type: 'number', description: 'Items per page (only present when paginated)' },
+        totalPages: { type: 'number', description: 'Total number of pages (only present when paginated)' },
       },
     },
   })

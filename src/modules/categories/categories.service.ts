@@ -106,8 +106,6 @@ export class CategoriesService {
     const total = await this.categoriesRepository.count();
     
     const allCategories = await this.categoriesRepository.findAll({ 
-      page: 1, 
-      limit: total || 1,
       include_template_count: true,
     });
     

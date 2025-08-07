@@ -8,9 +8,9 @@ import { CreateCategoryDto, QueryCategoryDto } from './dto';
 export interface PaginatedResult<T> {
   data: T[];
   total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 @Injectable()
@@ -42,8 +42,8 @@ export class CategoriesRepository {
 
   async findAll(queryDto: QueryCategoryDto): Promise<PaginatedResult<Category>> {
     const { 
-      page = 1, 
-      limit = 10, 
+      page, 
+      limit, 
       name, 
       type, 
       sort_by = 'created_at', 
@@ -51,7 +51,10 @@ export class CategoriesRepository {
       include_template_count = false
     } = queryDto;
     
-    const skip = (page - 1) * limit;
+    // Check if pagination is requested
+    const isPaginated = page !== undefined && page !== null;
+    const pageSize = limit || 10;
+    const skip = isPaginated ? (page - 1) * pageSize : 0;
 
     let query = this.categoryRepository.createQueryBuilder('category');
 
@@ -67,24 +70,31 @@ export class CategoriesRepository {
 
     if (include_template_count) {
       query = query
-        .leftJoinAndSelect('category.templates', 'template')
         .loadRelationCountAndMap('category.template_count', 'category.templates');
     }
 
-    query = query
-      .orderBy(`category.${sort_by}`, sort_order)
-      .skip(skip)
-      .take(limit);
+    query = query.orderBy(`category.${sort_by}`, sort_order);
+
+    // Apply pagination only if requested
+    if (isPaginated) {
+      query = query.skip(skip).take(pageSize);
+    }
 
     const [data, total] = await query.getManyAndCount();
     
-    return {
+    const result: PaginatedResult<Category> = {
       data,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
     };
+
+    // Add pagination info only if pagination was requested
+    if (isPaginated) {
+      result.page = page;
+      result.limit = pageSize;
+      result.totalPages = Math.ceil(total / pageSize);
+    }
+    
+    return result;
   }
 
   async findOne(id: string): Promise<Category | null> {

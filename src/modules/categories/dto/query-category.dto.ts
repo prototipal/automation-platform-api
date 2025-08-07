@@ -20,26 +20,27 @@ export class QueryCategoryDto {
   type?: 'photo' | 'video';
 
   @ApiPropertyOptional({
-    description: 'Page number for pagination',
-    default: 1,
-    minimum: 1
+    description: 'Page number for pagination. If not provided, all results are returned without pagination',
+    minimum: 1,
+    example: 1
   })
   @IsOptional()
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => value ? parseInt(value) : undefined)
   @IsInt()
   @Min(1)
-  page?: number = 1;
+  page?: number;
 
   @ApiPropertyOptional({
-    description: 'Number of items per page',
+    description: 'Number of items per page. If not provided with page, all results are returned',
     default: 10,
-    minimum: 1
+    minimum: 1,
+    example: 10
   })
   @IsOptional()
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => value ? parseInt(value) : undefined)
   @IsInt()
   @Min(1)
-  limit?: number = 10;
+  limit?: number;
 
   @ApiPropertyOptional({
     description: 'Sort by field',
