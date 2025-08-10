@@ -268,6 +268,7 @@ export class CategoriesRepository {
       limit, 
       type, 
       name,
+      main_category_id,
       sort_by = 'created_at', 
       sort_order = 'DESC',
       include_template_count = false
@@ -296,6 +297,10 @@ export class CategoriesRepository {
 
     if (type) {
       query = query.andWhere('category.type = :type', { type });
+    }
+
+    if (main_category_id) {
+      query = query.andWhere('category.main_category_id = :main_category_id', { main_category_id });
     }
 
     // Include template count if requested
