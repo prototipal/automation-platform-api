@@ -5,16 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
-  ManyToOne,
-  JoinColumn,
 } from 'typeorm';
 
-import { MainCategory } from './main-category.entity';
+import { Category } from './category.entity';
 
-// Template import removed to prevent circular dependency - using string reference instead
-
-@Entity('categories')
-export class Category {
+@Entity('main_categories')
+export class MainCategory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -27,25 +23,12 @@ export class Category {
   name: string;
 
   @Column({
-    type: 'text',
-    nullable: true,
-  })
-  link: string;
-
-  @Column({
     type: 'enum',
     enum: ['photo', 'video'],
     default: 'photo',
     nullable: false,
   })
   type: 'photo' | 'video';
-
-  @Column({
-    name: 'main_category_id',
-    type: 'uuid',
-    nullable: true,
-  })
-  mainCategoryId: string;
 
   @CreateDateColumn({
     type: 'timestamp with time zone',
@@ -60,13 +43,6 @@ export class Category {
   })
   updated_at: Date;
 
-  @OneToMany('Template', 'category')
-  templates: any[];
-
-  @ManyToOne(() => MainCategory, (mainCategory) => mainCategory.categories, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'main_category_id' })
-  mainCategory: MainCategory;
+  @OneToMany(() => Category, (category) => category.mainCategory)
+  categories: Category[];
 }

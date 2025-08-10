@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CategoriesService } from './categories.service';
-import { CreateCategoryDto, UpdateCategoryDto, QueryCategoryDto, CategoryResponseDto } from './dto';
+import { CreateCategoryDto, UpdateCategoryDto, QueryCategoryDto, CategoryResponseDto, MainCategoryResponseDto } from './dto';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -82,6 +82,39 @@ export class CategoriesController {
     return this.categoriesService.findAll(queryDto);
   }
 
+  @Get('nested')
+  @ApiOperation({ 
+    summary: 'Get all main categories with nested sub-categories (paginated by sub-categories)',
+    description: 'Retrieves main categories with their sub-categories nested underneath. Pagination is applied to sub-categories, not main categories. This means when you request page=1&limit=5, you get 5 sub-categories distributed across their respective main categories.' 
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for sub-category pagination. If not provided, all results are returned' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of sub-categories per page (default: 10, only applies with page parameter)' })
+  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter by sub-category name (partial match)' })
+  @ApiQuery({ name: 'type', required: false, enum: ['photo', 'video'], description: 'Filter by sub-category type' })
+  @ApiQuery({ name: 'sort_by', required: false, type: String, description: 'Sort sub-categories by field (default: created_at)' })
+  @ApiQuery({ name: 'sort_order', required: false, enum: ['ASC', 'DESC'], description: 'Sort order (default: DESC)' })
+  @ApiQuery({ name: 'include_template_count', required: false, type: Boolean, description: 'Include template count in sub-categories response' })
+  @ApiResponse({
+    status: 200,
+    description: 'Main categories with nested sub-categories retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/MainCategoryResponseDto' },
+        },
+        total: { type: 'number', description: 'Total number of sub-categories (not main categories)' },
+        page: { type: 'number', description: 'Current page (only present when paginated)' },
+        limit: { type: 'number', description: 'Sub-categories per page (only present when paginated)' },
+        totalPages: { type: 'number', description: 'Total number of pages based on sub-categories (only present when paginated)' },
+      },
+    },
+  })
+  async findAllNested(@Query() queryDto: QueryCategoryDto) {
+    return this.categoriesService.findAllNested(queryDto);
+  }
+
   @Get('stats')
   @ApiOperation({ 
     summary: 'Get category statistics',
@@ -105,6 +138,29 @@ export class CategoriesController {
   })
   async getStats() {
     return this.categoriesService.getStats();
+  }
+
+  @Get('main/:id')
+  @ApiOperation({ 
+    summary: 'Get main category by ID with nested sub-categories',
+    description: 'Retrieves a single main category by its ID with all sub-categories nested underneath.' 
+  })
+  @ApiParam({ name: 'id', description: 'Main Category UUID' })
+  @ApiQuery({ name: 'include_template_count', required: false, type: Boolean, description: 'Include template count in sub-categories response (default: true)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Main category with nested sub-categories retrieved successfully',
+    type: MainCategoryResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Main category not found',
+  })
+  async findOneMainCategory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('include_template_count') includeTemplateCount: boolean = true
+  ): Promise<MainCategoryResponseDto> {
+    return this.categoriesService.findOneMainCategory(id, includeTemplateCount);
   }
 
   @Get(':id')

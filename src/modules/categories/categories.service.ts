@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
-import { Category } from './entities';
-import { CreateCategoryDto, UpdateCategoryDto, QueryCategoryDto, CategoryResponseDto } from './dto';
+import { Category, MainCategory } from './entities';
+import { CreateCategoryDto, UpdateCategoryDto, QueryCategoryDto, CategoryResponseDto, MainCategoryResponseDto, SubCategoryResponseDto } from './dto';
 import { CategoriesRepository, PaginatedResult } from './categories.repository';
+import { TemplatePreviewDto } from '../templates/dto';
 
 @Injectable()
 export class CategoriesService {
@@ -130,5 +131,91 @@ export class CategoriesService {
     this.logger.log('Clearing all categories...');
     await this.categoriesRepository.deleteAll();
     this.logger.log('All categories cleared');
+  }
+
+  async findAllNested(queryDto: QueryCategoryDto): Promise<PaginatedResult<MainCategoryResponseDto>> {
+    const result = await this.categoriesRepository.findSubCategoriesPaginated(queryDto);
+    
+    // Group sub-categories by main category
+    const mainCategoriesGrouped = new Map<string, { mainCategory: MainCategory; subCategories: Category[] }>();
+    
+    result.data.forEach(category => {
+      if (!category.mainCategory) {
+        return; // Skip categories without main category
+      }
+      
+      const mainCategoryId = category.mainCategory.id;
+      if (!mainCategoriesGrouped.has(mainCategoryId)) {
+        mainCategoriesGrouped.set(mainCategoryId, {
+          mainCategory: category.mainCategory,
+          subCategories: []
+        });
+      }
+      
+      mainCategoriesGrouped.get(mainCategoryId)!.subCategories.push(category);
+    });
+    
+    // Transform to response DTOs
+    const transformedData = Array.from(mainCategoriesGrouped.values()).map(({ mainCategory, subCategories }) => {
+      const mainCategoryDto = plainToInstance(MainCategoryResponseDto, mainCategory);
+      
+      // Transform sub-categories
+      mainCategoryDto.subCategories = subCategories.map(category => {
+        const subCategoryDto = plainToInstance(SubCategoryResponseDto, category);
+        
+        // Add template count if it was requested and available
+        if (queryDto.include_template_count && 'template_count' in category) {
+          subCategoryDto.template_count = (category as any).template_count;
+        }
+        
+        // Add latest template if available
+        if ((category as any).latestTemplate) {
+          subCategoryDto.latestTemplate = plainToInstance(TemplatePreviewDto, (category as any).latestTemplate);
+        }
+        
+        return subCategoryDto;
+      });
+      
+      return mainCategoryDto;
+    });
+    
+    return {
+      data: transformedData,
+      total: result.total, // This is now the total count of sub-categories
+      ...(result.page && { page: result.page }),
+      ...(result.limit && { limit: result.limit }),
+      ...(result.totalPages && { totalPages: result.totalPages })
+    };
+  }
+
+  async findOneMainCategory(id: string, includeTemplateCount: boolean = true): Promise<MainCategoryResponseDto> {
+    const mainCategory = await this.categoriesRepository.findMainCategoryById(id, includeTemplateCount);
+    
+    if (!mainCategory) {
+      throw new NotFoundException(`Main category with ID ${id} not found`);
+    }
+    
+    const mainCategoryDto = plainToInstance(MainCategoryResponseDto, mainCategory);
+    
+    // Transform sub-categories
+    mainCategoryDto.subCategories = (mainCategory.categories || []).map(category => {
+      const subCategoryDto = plainToInstance(SubCategoryResponseDto, category);
+      
+      // Add template count if available
+      if (includeTemplateCount && 'template_count' in category) {
+        subCategoryDto.template_count = (category as any).template_count;
+      } else if (category.templates) {
+        subCategoryDto.template_count = category.templates.length;
+      }
+      
+      // Add latest template if available
+      if ((category as any).latestTemplate) {
+        subCategoryDto.latestTemplate = plainToInstance(TemplatePreviewDto, (category as any).latestTemplate);
+      }
+      
+      return subCategoryDto;
+    });
+    
+    return mainCategoryDto;
   }
 }
