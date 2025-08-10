@@ -1,30 +1,13 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 
-import { CategoryResponseDto } from '../../categories/dto';
-
-export class TemplateResponseDto {
+export class TemplatePreviewDto {
   @ApiProperty({
     description: 'Template unique identifier',
     example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
   })
   @Expose()
   id: string;
-
-  @ApiProperty({ 
-    description: 'Category ID that this template belongs to',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
-  })
-  @Expose()
-  category_id: string;
-
-  @ApiProperty({ 
-    description: 'Category details',
-    type: CategoryResponseDto
-  })
-  @Expose()
-  @Type(() => CategoryResponseDto)
-  category: CategoryResponseDto;
 
   @ApiProperty({ 
     description: 'Template image URL',
@@ -54,11 +37,4 @@ export class TemplateResponseDto {
   })
   @Expose()
   created_at: Date;
-
-  @ApiProperty({
-    description: 'Last update timestamp',
-    example: '2023-12-01T10:00:00Z'
-  })
-  @Expose()
-  updated_at: Date;
 }
