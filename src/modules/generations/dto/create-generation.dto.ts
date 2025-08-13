@@ -5,6 +5,15 @@ import type { ModelVersion } from '@/modules/services/enums';
 
 export class CreateGenerationDto {
   @ApiProperty({
+    type: 'number',
+    description: 'Session ID that this generation belongs to',
+    example: 123,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  session_id: number;
+
+  @ApiProperty({
     enum: ServiceModel,
     description: 'The model to use for generation (video or image)',
     example: ServiceModel.KWAIGI,

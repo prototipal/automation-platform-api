@@ -14,10 +14,10 @@ export class ApiKeyAuthRequestDto {
 export class CreditDeductionDto {
   @ApiProperty({
     description: 'User ID for credit deduction',
-    example: 1,
+    example: '33653324-7e1d-4e6b-a46c-5f9997ec12ec',
   })
-  @IsNumber()
-  user_id: number;
+  @IsString()
+  user_id: string;
 
   @ApiProperty({
     description: 'Amount of credits to deduct',

@@ -1,0 +1,1 @@
+export { Generation } from './generation.entity';

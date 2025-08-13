@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run migration:create:*)",
+      "Bash(npm run typeorm migration:create:*)",
+      "Bash(psql:*)",
+      "Bash(npm install:*)",
+      "Bash(test:*)",
+      "Bash(npm run migration:run:*)",
+      "Bash(npm run typeorm:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run migration:generate:*)",
+      "Bash(npm run:*)",
+      "Bash(npm start)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

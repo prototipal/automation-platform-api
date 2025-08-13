@@ -4,10 +4,10 @@ import { Expose } from 'class-transformer';
 export class AuthUserDto {
   @ApiProperty({
     description: 'User ID',
-    example: 1,
+    example: '33653324-7e1d-4e6b-a46c-5f9997ec12ec',
   })
   @Expose()
-  user_id: number;
+  user_id: string;
 
   @ApiProperty({
     description: 'Current credit balance',

@@ -1,16 +1,22 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
+  Param,
+  Query,
   HttpCode,
   HttpStatus,
   Logger,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBadRequestResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 
 import { GenerationsService } from './generations.service';
@@ -229,6 +235,161 @@ export class GenerationsController {
     } catch (error) {
       this.logger.error(
         `Failed to create authenticated generation for user ${user.user_id}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  @Get('by-session/:sessionId')
+  @ApiKeyAuth()
+  @ApiOperation({
+    summary: 'Get generations by session ID',
+    description: `
+      Retrieve all generations for a specific session with pagination.
+      
+      **Authentication Required:**
+      - Valid API key
+      - User must own the session
+      
+      **Features:**
+      - Paginated results
+      - Ordered by creation date (newest first)
+      - Includes generation details and Supabase URLs
+    `,
+  })
+  @ApiParam({
+    name: 'sessionId',
+    type: Number,
+    description: 'Session ID to retrieve generations for',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Generations retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        generations: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Generation' },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        total_pages: { type: 'number' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Session not found or access denied',
+  })
+  async getGenerationsBySession(
+    @Param('sessionId', ParseIntPipe) sessionId: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @AuthUser() user: AuthUserDto,
+  ) {
+    this.logger.log(`Fetching generations for session ${sessionId}, user ${user.user_id}`);
+
+    try {
+      const result = await this.generationsService.getGenerationsBySession(
+        sessionId,
+        user.user_id,
+        page,
+        limit,
+      );
+      
+      this.logger.log(
+        `Found ${result.generations.length} generations for session ${sessionId}, user ${user.user_id}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch generations for session ${sessionId}, user ${user.user_id}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  @Get('user')
+  @ApiKeyAuth()
+  @ApiOperation({
+    summary: 'Get user generations across all sessions',
+    description: `
+      Retrieve all generations for the authenticated user with pagination.
+      
+      **Authentication Required:**
+      - Valid API key
+      
+      **Features:**
+      - Paginated results across all user sessions
+      - Ordered by creation date (newest first)
+      - Includes generation details and Supabase URLs
+    `,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User generations retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        generations: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Generation' },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        total_pages: { type: 'number' },
+      },
+    },
+  })
+  async getUserGenerations(
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @AuthUser() user: AuthUserDto,
+  ) {
+    this.logger.log(`Fetching user generations for user ${user.user_id}`);
+
+    try {
+      const result = await this.generationsService.getUserGenerations(
+        user.user_id,
+        page,
+        limit,
+      );
+      
+      this.logger.log(
+        `Found ${result.generations.length} generations for user ${user.user_id}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch user generations for user ${user.user_id}: ${error.message}`,
         error.stack,
       );
       throw error;

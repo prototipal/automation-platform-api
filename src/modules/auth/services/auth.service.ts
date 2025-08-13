@@ -83,7 +83,7 @@ export class AuthService {
   /**
    * Checks if user has sufficient credits for the requested amount
    */
-  async checkSufficientCredits(userId: number, requiredAmount: number): Promise<boolean> {
+  async checkSufficientCredits(userId: string, requiredAmount: number): Promise<boolean> {
     const creditResult = await this.dataSource.query(
       `SELECT balance FROM user_credits WHERE user_id = $1`,
       [userId],
