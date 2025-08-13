@@ -83,6 +83,19 @@ export class ServicesService {
     };
   }
 
+  async findAllServices(): Promise<ServiceResponseDto[]> {
+    const [services] = await this.servicesRepository.findAll({ 
+      page: 1, 
+      limit: 1000 
+    });
+
+    return services.map((service) =>
+      plainToInstance(ServiceResponseDto, service, {
+        excludeExtraneousValues: true,
+      }),
+    );
+  }
+
   async findOne(id: string): Promise<ServiceResponseDto> {
     const service = await this.servicesRepository.findOne(id);
 

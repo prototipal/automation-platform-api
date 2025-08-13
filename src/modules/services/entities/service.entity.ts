@@ -59,6 +59,13 @@ export class Service {
   model_version: ModelVersion | null;
 
   @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  display_name: string | null;
+
+  @Column({
     type: 'jsonb',
     nullable: false,
   })

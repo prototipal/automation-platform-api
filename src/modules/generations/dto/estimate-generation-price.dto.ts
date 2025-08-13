@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsObject, ValidateNested } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -43,4 +43,18 @@ export class EstimateGenerationPriceDto {
   @IsObject()
   @IsNotEmpty()
   input: Record<string, any>;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'Number of images to generate (only for text-to-image models). Default is 2.',
+    example: 2,
+    required: false,
+    minimum: 2,
+    maximum: 4
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(2)
+  @Max(4)
+  image_count?: number = 2;
 }

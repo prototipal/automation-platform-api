@@ -1,9 +1,18 @@
-import { IsEnum, IsNotEmpty, IsObject } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsNumber, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion } from '@/modules/services/enums';
 import type { ModelVersion } from '@/modules/services/enums';
 
 export class CreateGenerationDto {
+  @ApiProperty({
+    type: 'number',
+    description: 'Session ID that this generation belongs to',
+    example: 123,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  session_id: number;
+
   @ApiProperty({
     enum: ServiceModel,
     description: 'The model to use for generation (video or image)',
@@ -48,4 +57,18 @@ export class CreateGenerationDto {
   @IsObject()
   @IsNotEmpty()
   input: Record<string, any>;
+
+  @ApiProperty({
+    type: 'number',
+    description: 'Number of images to generate (only for text-to-image models). Default is 2.',
+    example: 2,
+    required: false,
+    minimum: 2,
+    maximum: 4
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(2)
+  @Max(4)
+  image_count?: number = 2;
 }

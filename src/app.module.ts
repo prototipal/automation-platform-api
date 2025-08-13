@@ -9,6 +9,8 @@ import { GenerationsModule } from '@/modules/generations';
 import { TemplatesModule } from '@/modules/templates';
 import { CategoriesModule } from '@/modules/categories';
 import { AuthModule } from '@/modules/auth';
+import { SessionsModule } from '@/modules/sessions';
+import { StorageModule } from '@/modules/storage';
 import { configModuleOptions } from './config';
 
 @Module({
@@ -17,6 +19,8 @@ import { configModuleOptions } from './config';
     DatabaseModule,
     HealthModule,
     AuthModule,
+    StorageModule,
+    SessionsModule,
     ServicesModule,
     GenerationsModule,
     CategoriesModule,

@@ -43,6 +43,13 @@ export class ServiceResponseDto {
   @Expose()
   model_version: ModelVersion | null;
 
+  @ApiPropertyOptional({
+    description: 'Human-readable display name for the service',
+    example: 'Google Veo 3 Video Generator',
+  })
+  @Expose()
+  display_name: string | null;
+
   @ApiProperty({
     description: 'Field specifications for the model',
     type: 'object',
