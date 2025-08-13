@@ -48,6 +48,14 @@ export class CreateServiceDto {
   @IsEnum([...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)])
   model_version?: ModelVersion;
 
+  @ApiPropertyOptional({
+    description: 'Human-readable display name for the service',
+    example: 'Google Veo 3 Video Generator',
+  })
+  @IsOptional()
+  @IsString()
+  display_name?: string;
+
   @ApiProperty({
     description: 'Field specifications for the model',
     type: 'object',

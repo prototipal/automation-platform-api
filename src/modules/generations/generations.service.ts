@@ -16,7 +16,7 @@ import { PricingCalculationService } from '@/modules/services/services/pricing-c
 import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
 import { ServiceFields } from '@/modules/services/entities';
 import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
-import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto } from './dto';
+import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto, ServicePriceDto } from './dto';
 import {
   ReplicateRequest,
   ReplicateResponse,
@@ -116,32 +116,37 @@ export class GenerationsService {
       createGenerationDto.model_version,
     );
 
-    // Step 2: Calculate required credits
-    const requiredCredits = await this.calculateRequiredCredits(
+    // Check if this is a text-to-image model and handle multiple image generation
+    const isTextToImage = this.isTextToImageModel(createGenerationDto.model, createGenerationDto.model_version);
+    const imageCount = isTextToImage ? (createGenerationDto.image_count || 2) : 1;
+
+    // Step 2: Calculate required credits (multiply by image count for text-to-image models)
+    const baseCreditCost = await this.calculateRequiredCredits(
       serviceConfig,
       createGenerationDto.input,
     );
+    const totalRequiredCredits = isTextToImage ? baseCreditCost * imageCount : baseCreditCost;
 
-    this.logger.log(`Required credits for generation: ${requiredCredits} for user: ${authUser.user_id}`);
+    this.logger.log(`Required credits for generation: ${totalRequiredCredits} (${baseCreditCost} x ${imageCount}) for user: ${authUser.user_id}`);
 
     // Step 3: Check sufficient credits
     const hasSufficientCredits = await this.authService.checkSufficientCredits(
       authUser.user_id,
-      requiredCredits,
+      totalRequiredCredits,
     );
 
     if (!hasSufficientCredits) {
-      this.logger.warn(`Insufficient credits for user ${authUser.user_id}. Required: ${requiredCredits}, Available: ${authUser.balance}`);
+      this.logger.warn(`Insufficient credits for user ${authUser.user_id}. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`);
       throw new BadRequestException(
-        `Insufficient credits. Required: ${requiredCredits}, Available: ${authUser.balance}`,
+        `Insufficient credits. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`,
       );
     }
 
     // Step 4: Deduct credits before making the API call
     const deductionDto: CreditDeductionDto = {
       user_id: authUser.user_id,
-      amount: requiredCredits,
-      description: `Generation request - ${createGenerationDto.model} ${createGenerationDto.model_version}`,
+      amount: totalRequiredCredits,
+      description: `Generation request - ${createGenerationDto.model} ${createGenerationDto.model_version}${isTextToImage ? ` (${imageCount} images)` : ''}`,
     };
 
     const deductionResult = await this.authService.deductCredits(deductionDto);
@@ -157,22 +162,56 @@ export class GenerationsService {
         createGenerationDto.model_version,
       );
 
-      // Step 7: Make request to Replicate API
-      const replicateResponse = await this.callReplicateAPI(
-        replicateEndpoint,
-        createGenerationDto.input,
-        serviceConfig,
-      );
+      // Step 7: Make request(s) to Replicate API
+      if (isTextToImage && imageCount > 1) {
+        // Make multiple parallel requests for text-to-image models
+        const requests = Array.from({ length: imageCount }, () => 
+          this.callReplicateAPI(replicateEndpoint, createGenerationDto.input, serviceConfig)
+        );
 
-      // Step 8: Transform and return response
-      this.logger.log(`Generation completed successfully for user: ${authUser.user_id}, ID: ${replicateResponse.id}`);
-      
-      return plainToInstance(GenerationResponseDto, replicateResponse, {
-        excludeExtraneousValues: true,
-      });
+        const responses = await Promise.all(requests);
+        
+        // Combine all image outputs into a single response
+        const combinedOutput = responses.reduce((acc, response) => {
+          if (Array.isArray(response.output)) {
+            return [...acc, ...response.output];
+          } else if (response.output) {
+            return [...acc, response.output];
+          }
+          return acc;
+        }, []);
+
+        const combinedResponse = {
+          ...responses[0],
+          output: combinedOutput,
+          urls: {
+            ...responses[0].urls,
+            get: responses[0].urls?.get || responses[0].urls?.stream || '',
+          }
+        };
+
+        this.logger.log(`Generation completed successfully for user: ${authUser.user_id}, Generated ${imageCount} images`);
+        
+        return plainToInstance(GenerationResponseDto, combinedResponse, {
+          excludeExtraneousValues: true,
+        });
+      } else {
+        // Single request for video models or single image
+        const replicateResponse = await this.callReplicateAPI(
+          replicateEndpoint,
+          createGenerationDto.input,
+          serviceConfig,
+        );
+
+        this.logger.log(`Generation completed successfully for user: ${authUser.user_id}, ID: ${replicateResponse.id}`);
+        
+        return plainToInstance(GenerationResponseDto, replicateResponse, {
+          excludeExtraneousValues: true,
+        });
+      }
     } catch (error) {
       // If API call fails, we could implement credit refund logic here
-      this.logger.error(`Generation API call failed for user ${authUser.user_id}, credits were already deducted: ${requiredCredits}`, error);
+      this.logger.error(`Generation API call failed for user ${authUser.user_id}, credits were already deducted: ${totalRequiredCredits}`, error);
       throw error;
     }
   }
@@ -189,21 +228,126 @@ export class GenerationsService {
     // Step 2: Validate input against service fields configuration
     await this.validateInputFields(estimateDto.input, serviceConfig.fields);
 
+    // Check if this is a text-to-image model and handle multiple image pricing
+    const isTextToImage = this.isTextToImageModel(estimateDto.model, estimateDto.model_version);
+    const imageCount = isTextToImage ? (estimateDto.image_count || 2) : 1;
+
     // Step 3: Calculate price estimation using the new credit system
-    const priceEstimation = await this.calculatePriceEstimation(
+    const basePriceEstimation = await this.calculatePriceEstimation(
       serviceConfig,
       estimateDto.input,
       estimateDto.model,
       estimateDto.model_version,
     );
 
-    this.logger.log(`Price estimated successfully: ${priceEstimation.estimated_credits} credits for ${estimateDto.model} ${estimateDto.model_version}`);
+    // Multiply by image count for text-to-image models
+    if (isTextToImage && imageCount > 1) {
+      basePriceEstimation.estimated_credits = basePriceEstimation.estimated_credits * imageCount;
+      basePriceEstimation.breakdown.estimated_credits_rounded = basePriceEstimation.breakdown.estimated_credits_rounded * imageCount;
+      basePriceEstimation.breakdown.estimated_credits_raw = basePriceEstimation.breakdown.estimated_credits_raw * imageCount;
+      basePriceEstimation.breakdown.total_cost_usd = basePriceEstimation.breakdown.total_cost_usd * imageCount;
+    }
 
-    return plainToInstance(PriceEstimationResponseDto, priceEstimation, {
+    this.logger.log(`Price estimated successfully: ${basePriceEstimation.estimated_credits} credits (${imageCount} images) for ${estimateDto.model} ${estimateDto.model_version}`);
+
+    return plainToInstance(PriceEstimationResponseDto, basePriceEstimation, {
       excludeExtraneousValues: true,
     });
   }
 
+  /**
+   * Estimates pricing for all available services based on input parameters
+   * @param estimateDto - Contains input parameters and optional image count
+   * @returns Promise with all service price estimations
+   */
+  async estimateAllPrices(estimateDto: EstimateAllPricesDto): Promise<AllPricesResponseDto> {
+    this.logger.log('Estimating prices for all available services');
+
+    try {
+      // Get all available services
+      const allServices = await this.servicesService.findAllServices();
+      
+      const imageCount = estimateDto.image_count || 2;
+      const servicePrices: ServicePriceDto[] = [];
+
+      // Process each service
+      for (const service of allServices) {
+        try {
+          // Check if service has pricing configuration
+          if (!service.pricing || !service.pricing.rule) {
+            this.logger.warn(`Skipping service ${service.model} ${service.model_version} - no pricing configuration`);
+            continue;
+          }
+
+          // Check if this is a text-to-image model
+          const isTextToImage = this.isTextToImageModel(service.model, service.model_version);
+          const currentImageCount = isTextToImage ? imageCount : 1;
+
+          // Calculate base price estimation
+          const basePriceEstimation = await this.calculatePriceEstimation(
+            service,
+            estimateDto.input,
+            service.model,
+            service.model_version,
+          );
+
+          // Apply image count multiplier for text-to-image models
+          if (isTextToImage && currentImageCount > 1) {
+            basePriceEstimation.estimated_credits = basePriceEstimation.estimated_credits * currentImageCount;
+            basePriceEstimation.breakdown.estimated_credits_rounded = basePriceEstimation.breakdown.estimated_credits_rounded * currentImageCount;
+            basePriceEstimation.breakdown.estimated_credits_raw = basePriceEstimation.breakdown.estimated_credits_raw * currentImageCount;
+            basePriceEstimation.breakdown.total_cost_usd = basePriceEstimation.breakdown.total_cost_usd * currentImageCount;
+          }
+
+          // Create service price entry with proper display name fallback
+          const displayName = service.display_name || 
+            `${service.model.replace(/_/g, ' ')} ${service.model_version?.replace(/_/g, ' ') || ''}`.trim();
+          
+          const servicePrice: ServicePriceDto = {
+            model: service.model,
+            model_version: service.model_version,
+            display_name: displayName,
+            service_type: isTextToImage ? 'image' : 'video',
+            estimated_credits: basePriceEstimation.estimated_credits,
+            breakdown: basePriceEstimation.breakdown,
+            service_details: basePriceEstimation.service_details,
+          };
+
+          servicePrices.push(servicePrice);
+
+        } catch (error) {
+          this.logger.warn(`Failed to estimate price for ${service.model} ${service.model_version}: ${error.message}`);
+          // Continue with other services
+        }
+      }
+
+      const response: AllPricesResponseDto = {
+        services: servicePrices,
+        input_used: estimateDto.input,
+        image_count: imageCount,
+        total_services: servicePrices.length,
+      };
+
+      this.logger.log(`Successfully estimated prices for ${servicePrices.length} services`);
+
+      return plainToInstance(AllPricesResponseDto, response, {
+        excludeExtraneousValues: true,
+      });
+
+    } catch (error) {
+      this.logger.error('Error estimating prices for all services:', error);
+      throw new InternalServerErrorException(`Failed to estimate prices for all services: ${error.message}`);
+    }
+  }
+
+  /**
+   * Calculates price estimation for a specific service configuration
+   * @param serviceConfig - Service configuration with pricing rules
+   * @param input - User input parameters for calculation
+   * @param model - Service model enum
+   * @param modelVersion - Model version enum
+   * @returns Promise with detailed price estimation
+   */
   private async calculatePriceEstimation(
     serviceConfig: any,
     input: Record<string, any>,
@@ -211,9 +355,9 @@ export class GenerationsService {
     modelVersion: ModelVersion,
   ): Promise<PriceEstimationResponseDto> {
     try {
-      console.log(serviceConfig);
-      if (!serviceConfig.pricing || !serviceConfig.pricing.rule) {
-        this.logger.warn(`No pricing rule found for service config ID: ${serviceConfig.id}`);
+      if (!serviceConfig?.pricing?.rule) {
+        const configId = serviceConfig?.id || 'unknown';
+        this.logger.warn(`No pricing rule found for service config ID: ${configId}`);
         throw new BadRequestException('No pricing configuration found for this service');
       }
 
@@ -309,13 +453,19 @@ export class GenerationsService {
     }
   }
 
+  /**
+   * Validates user input against service field specifications
+   * @param input - User provided input parameters
+   * @param serviceFields - Service field validation rules
+   * @throws BadRequestException if validation fails
+   */
   private async validateInputFields(
     input: Record<string, any>,
     serviceFields: ServiceFields,
   ): Promise<void> {
     const validationErrors: ValidationError[] = [];
 
-    // Check for required fields
+    // Check for required fields and validate types
     for (const [fieldName, fieldConfig] of Object.entries(serviceFields)) {
       const fieldValue = input[fieldName];
 
@@ -335,7 +485,8 @@ export class GenerationsService {
       }
 
       // Validate field type and constraints
-      switch (fieldConfig.type) {
+      const fieldType = fieldConfig.type;
+      switch (fieldType) {
         case 'string':
           if (typeof fieldValue !== 'string') {
             validationErrors.push({
@@ -357,10 +508,11 @@ export class GenerationsService {
           break;
 
         case 'enum':
-          if (!fieldConfig.values || !fieldConfig.values.includes(fieldValue)) {
+          const allowedValues = fieldConfig.values;
+          if (!allowedValues || !allowedValues.includes(fieldValue)) {
             validationErrors.push({
               field: fieldName,
-              message: `Field '${fieldName}' must be one of: ${fieldConfig.values?.join(', ')}`,
+              message: `Field '${fieldName}' must be one of: ${allowedValues?.join(', ') || 'no values specified'}`,
               value: fieldValue,
             });
           }
@@ -369,7 +521,7 @@ export class GenerationsService {
         default:
           validationErrors.push({
             field: fieldName,
-            message: `Field '${fieldName}' has unsupported type: ${fieldConfig.type}`,
+            message: `Field '${fieldName}' has unsupported type: ${fieldType}`,
             value: fieldValue,
           });
       }

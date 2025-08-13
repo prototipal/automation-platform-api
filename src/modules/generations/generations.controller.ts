@@ -14,7 +14,7 @@ import {
 } from '@nestjs/swagger';
 
 import { GenerationsService } from './generations.service';
-import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto } from './dto';
+import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto } from './dto';
 import { ApiKeyAuth, AuthUser, AuthUserDto, Public } from '@/modules/auth';
 
 @ApiTags('Generations')
@@ -94,6 +94,70 @@ export class GenerationsController {
         `Failed to estimate price for ${estimateDto.model} ${estimateDto.model_version}: ${error.message}`,
         error.stack,
       );
+      throw error;
+    }
+  }
+
+  @Post('estimate-all-prices')
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @ApiOperation({
+    summary: 'Estimate prices for all available services',
+    description: `
+      Returns price estimations for all available AI models/services without authentication.
+      
+      **Public Endpoint:**
+      - No authentication required
+      - Returns pricing for all configured services
+      - Applies image count multiplier for text-to-image models
+      
+      **Response includes:**
+      - List of all services with their price estimations
+      - Service details (model, version, type, display name)
+      - Detailed cost breakdown for each service
+      - Input parameters and image count used for calculations
+      
+      **Image Count Logic:**
+      - Text-to-image models: Pricing multiplied by image_count (default: 2)
+      - Text-to-video models: Image count ignored (always 1)
+      
+      **Use Cases:**
+      - Display pricing table in frontend
+      - Service comparison
+      - Cost planning for users
+    `,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Price estimations calculated successfully for all services',
+    type: AllPricesResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid request data or validation errors',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { 
+          type: 'string', 
+          example: 'Validation failed: input must be an object' 
+        },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  async estimateAllPrices(
+    @Body() estimateDto: EstimateAllPricesDto,
+  ): Promise<AllPricesResponseDto> {
+    this.logger.log('Estimating prices for all available services');
+
+    try {
+      const estimations = await this.generationsService.estimateAllPrices(estimateDto);
+      
+      this.logger.log(`Successfully estimated prices for ${estimations.total_services} services`);
+      return estimations;
+    } catch (error) {
+      this.logger.error(`Failed to estimate prices for all services: ${error.message}`, error.stack);
       throw error;
     }
   }
