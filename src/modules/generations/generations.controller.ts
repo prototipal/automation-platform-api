@@ -21,7 +21,7 @@ import {
 
 import { GenerationsService } from './generations.service';
 import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto } from './dto';
-import { ApiKeyAuth, AuthUser, AuthUserDto, Public } from '@/modules/auth';
+import { HybridAuth, AuthUser, AuthUserDto, Public } from '@/modules/auth';
 
 @ApiTags('Generations')
 @Controller('generations')
@@ -170,7 +170,7 @@ export class GenerationsController {
 
   @Post('generate')
   @HttpCode(HttpStatus.OK)
-  @ApiKeyAuth()
+  @HybridAuth()
   @ApiOperation({
     summary: 'Generate content with API key authentication',
     description: `
@@ -242,7 +242,7 @@ export class GenerationsController {
   }
 
   @Get('by-session/:sessionId')
-  @ApiKeyAuth()
+  @HybridAuth()
   @ApiOperation({
     summary: 'Get generations by session ID',
     description: `
@@ -325,7 +325,7 @@ export class GenerationsController {
   }
 
   @Get('user')
-  @ApiKeyAuth()
+  @HybridAuth()
   @ApiOperation({
     summary: 'Get user generations across all sessions',
     description: `

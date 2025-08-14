@@ -47,3 +47,15 @@ export class CreditDeductionFailedException extends BadRequestException {
     super(message);
   }
 }
+
+export class InvalidSupabaseTokenException extends UnauthorizedException {
+  constructor(message = 'Invalid Supabase token') {
+    super(message);
+  }
+}
+
+export class SupabaseUserNotFoundException extends UnauthorizedException {
+  constructor(message = 'User not found in system. Please ensure your account is properly set up.') {
+    super(message);
+  }
+}

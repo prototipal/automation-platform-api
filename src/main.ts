@@ -62,6 +62,26 @@ async function bootstrap() {
           description: 'Enter your API key',
           in: 'header',
         }, 'ApiKey')
+        .addBearerAuth({
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'Supabase Token',
+          description: 'Enter your Supabase JWT token',
+          in: 'header',
+        }, 'SupabaseToken')
+        .addApiKey({
+          type: 'apiKey',
+          name: 'X-API-Key',
+          in: 'header',
+          description: 'API key sent via X-API-Key header',
+        }, 'ApiKeyHeader')
+        .addApiKey({
+          type: 'apiKey',
+          name: 'X-Supabase-Token',
+          in: 'header',
+          description: 'Supabase token sent via X-Supabase-Token header',
+        }, 'SupabaseTokenHeader')
         .setContact(
           'API Support',
           'https://github.com/your-repo/automation-platform-api',

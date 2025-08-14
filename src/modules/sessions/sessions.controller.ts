@@ -21,8 +21,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 
-import { ApiKeyAuthGuard } from '@/modules/auth/guards';
-import { AuthUser, ApiKeyAuth } from '@/modules/auth/decorators';
+import { AuthUser, HybridAuth } from '@/modules/auth/decorators';
 import { AuthUserDto } from '@/modules/auth/dto';
 import {
   CreateSessionDto,
@@ -38,7 +37,7 @@ import {
 
 @ApiTags('Sessions')
 @Controller('sessions')
-@ApiKeyAuth()
+@HybridAuth()
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 

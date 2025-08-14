@@ -7,4 +7,6 @@ export {
   UserNotFoundException,
   InactiveUserException,
   CreditDeductionFailedException,
+  InvalidSupabaseTokenException,
+  SupabaseUserNotFoundException,
 } from './auth.exceptions';
