@@ -4,10 +4,13 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
 import { AuthUserDto } from '@/modules/auth/dto';
+import { GenerationsService } from '@/modules/generations';
 import {
   CreateSessionDto,
   SessionResponseDto,
@@ -38,7 +41,11 @@ export interface UserSessionStatsResponse {
 export class SessionsService {
   private readonly logger = new Logger(SessionsService.name);
 
-  constructor(private readonly sessionsRepository: SessionsRepository) {}
+  constructor(
+    private readonly sessionsRepository: SessionsRepository,
+    @Inject(forwardRef(() => GenerationsService))
+    private readonly generationsService: GenerationsService,
+  ) {}
 
   /**
    * Create a new session for the authenticated user
@@ -372,9 +379,25 @@ export class SessionsService {
         throw new BadRequestException('Failed to deactivate session');
       }
 
-      this.logger.log(
-        `Session ${sessionId} deactivated successfully for user: ${authUser.user_id}`,
-      );
+      // Also soft delete all related generations
+      try {
+        const deletedGenerationsCount =
+          await this.generationsService.softDeleteGenerationsBySession(
+            sessionId,
+            authUser.user_id,
+          );
+
+        this.logger.log(
+          `Session ${sessionId} deactivated successfully with ${deletedGenerationsCount} generations soft deleted for user: ${authUser.user_id}`,
+        );
+      } catch (generationError) {
+        this.logger.error(
+          `Session ${sessionId} was deactivated but failed to soft delete generations:`,
+          generationError,
+        );
+        // Don't throw error as the session was successfully deactivated
+        // The generations will be handled in a separate cleanup process if needed
+      }
     } catch (error) {
       if (
         error instanceof NotFoundException ||

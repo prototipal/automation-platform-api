@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,6 +9,7 @@ import { StorageModule } from '@/modules/storage';
 import { SessionsModule } from '@/modules/sessions';
 import { GenerationsController } from './generations.controller';
 import { GenerationsService } from './generations.service';
+import { GenerationsRepository } from './generations.repository';
 import { Generation } from './entities';
 
 @Module({
@@ -22,10 +23,10 @@ import { Generation } from './entities';
     ServicesModule,
     AuthModule,
     StorageModule,
-    SessionsModule,
+    forwardRef(() => SessionsModule),
   ],
   controllers: [GenerationsController],
-  providers: [GenerationsService],
-  exports: [GenerationsService],
+  providers: [GenerationsService, GenerationsRepository],
+  exports: [GenerationsService, GenerationsRepository],
 })
 export class GenerationsModule {}

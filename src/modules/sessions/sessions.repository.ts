@@ -92,7 +92,7 @@ export class SessionsRepository {
           COUNT(*) as generation_count,
           SUM(credits_used) as total_credits_spent
         FROM generations
-        WHERE session_id IS NOT NULL
+        WHERE session_id IS NOT NULL AND is_active = true
         GROUP BY session_id
       ) g ON s.id = g.session_id
       LEFT JOIN (
@@ -112,7 +112,7 @@ export class SessionsRepository {
           created_at,
           status
         FROM generations
-        WHERE session_id IS NOT NULL
+        WHERE session_id IS NOT NULL AND is_active = true
         ORDER BY session_id, created_at DESC
       ) lg ON s.id = lg.session_id
       WHERE s.id = $1
@@ -282,12 +282,18 @@ export class SessionsRepository {
       `;
     }
 
-    // Add filters
+    // Add filters - default to active sessions only
     if (is_active !== undefined) {
       paramIndex++;
       query += ` AND s.is_active = $${paramIndex}`;
       countQuery += ` AND s.is_active = $${paramIndex}`;
       params.push(is_active);
+    } else {
+      // Default to active sessions only when is_active is not specified
+      paramIndex++;
+      query += ` AND s.is_active = $${paramIndex}`;
+      countQuery += ` AND s.is_active = $${paramIndex}`;
+      params.push(true);
     }
 
     if (search) {
@@ -470,7 +476,7 @@ export class SessionsRepository {
           COUNT(*) as generation_count,
           SUM(credits_used) as total_credits_spent
         FROM generations
-        WHERE session_id IS NOT NULL
+        WHERE session_id IS NOT NULL AND is_active = true
         GROUP BY session_id
       ) g ON s.id = g.session_id
       WHERE s.user_id = $1

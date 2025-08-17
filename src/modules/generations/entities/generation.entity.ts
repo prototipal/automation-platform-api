@@ -150,4 +150,13 @@ export class Generation {
   })
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Indicates if the generation is active (not soft deleted)',
+    example: true,
+    default: true,
+  })
+  @Column({ type: 'boolean', default: true, nullable: false })
+  @Index('idx_generations_is_active')
+  is_active: boolean;
 }

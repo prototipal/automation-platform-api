@@ -15,3 +15,4 @@ export {
   AllPricesResponseDto,
   ServicePriceDto,
 } from './all-prices-response.dto';
+export { QueryGenerationDto } from './query-generation.dto';

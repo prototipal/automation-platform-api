@@ -28,6 +28,7 @@ import {
   PriceEstimationResponseDto,
   EstimateAllPricesDto,
   AllPricesResponseDto,
+  QueryGenerationDto,
 } from './dto';
 import { HybridAuth, AuthUser, AuthUserDto, Public } from '@/modules/auth';
 
@@ -285,18 +286,6 @@ export class GenerationsController {
     type: Number,
     description: 'Session ID to retrieve generations for',
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (default: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page (default: 10)',
-  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Generations retrieved successfully with service information',
@@ -321,8 +310,7 @@ export class GenerationsController {
   })
   async getGenerationsBySession(
     @Param('sessionId', ParseIntPipe) sessionId: number,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @Query() queryDto: QueryGenerationDto,
     @AuthUser() user: AuthUserDto,
   ) {
     this.logger.log(
@@ -333,8 +321,7 @@ export class GenerationsController {
       const result = await this.generationsService.getGenerationsBySession(
         sessionId,
         user.user_id,
-        page,
-        limit,
+        queryDto,
       );
 
       this.logger.log(
@@ -366,18 +353,6 @@ export class GenerationsController {
       - Includes generation details and Supabase URLs
     `,
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (default: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page (default: 10)',
-  })
   @ApiResponse({
     status: HttpStatus.OK,
     description:
@@ -399,8 +374,7 @@ export class GenerationsController {
     },
   })
   async getUserGenerations(
-    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @Query() queryDto: QueryGenerationDto,
     @AuthUser() user: AuthUserDto,
   ) {
     this.logger.log(`Fetching user generations for user ${user.user_id}`);
@@ -408,8 +382,7 @@ export class GenerationsController {
     try {
       const result = await this.generationsService.getUserGenerations(
         user.user_id,
-        page,
-        limit,
+        queryDto,
       );
 
       this.logger.log(

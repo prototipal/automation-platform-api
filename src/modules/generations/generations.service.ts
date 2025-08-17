@@ -7,8 +7,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
@@ -26,6 +24,7 @@ import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
 import { StorageService } from '@/modules/storage';
 import { SessionsService } from '@/modules/sessions';
 import { Generation } from './entities';
+import { GenerationsRepository } from './generations.repository';
 import {
   CreateGenerationDto,
   GenerationResponseDto,
@@ -36,6 +35,7 @@ import {
   EstimateAllPricesDto,
   AllPricesResponseDto,
   ServicePriceDto,
+  QueryGenerationDto,
 } from './dto';
 import {
   ReplicateRequest,
@@ -81,8 +81,7 @@ export class GenerationsService {
   };
 
   constructor(
-    @InjectRepository(Generation)
-    private readonly generationRepository: Repository<Generation>,
+    private readonly generationsRepository: GenerationsRepository,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly servicesService: ServicesService,
@@ -878,8 +877,8 @@ export class GenerationsService {
       // Calculate processing time
       const processingTimeSeconds = (Date.now() - startTime) / 1000;
 
-      // Create generation record
-      const generation = this.generationRepository.create({
+      // Create generation record using repository
+      const savedGeneration = await this.generationsRepository.create({
         user_id: userId,
         session_id: createGenerationDto.session_id,
         replicate_id: replicateResponse.id,
@@ -898,8 +897,6 @@ export class GenerationsService {
           api_response_size: JSON.stringify(replicateResponse).length,
         },
       });
-
-      const savedGeneration = await this.generationRepository.save(generation);
 
       this.logger.log(`Generation saved with ID: ${savedGeneration.id}`);
       return savedGeneration;
@@ -1004,8 +1001,7 @@ export class GenerationsService {
   async getGenerationsBySession(
     sessionId: number,
     userId: string,
-    page: number = 1,
-    limit: number = 10,
+    queryDto?: QueryGenerationDto,
   ): Promise<{
     generations: GenerationWithServiceResponseDto[];
     total: number;
@@ -1022,12 +1018,12 @@ export class GenerationsService {
       );
     }
 
-    const [generations, total] = await this.generationRepository.findAndCount({
-      where: { session_id: sessionId, user_id: userId },
-      order: { created_at: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const query: QueryGenerationDto = queryDto || new QueryGenerationDto();
+    const { generations, total } = await this.generationsRepository.findBySession(
+      sessionId,
+      userId,
+      query,
+    );
 
     // Fetch service information for each generation
     const transformedGenerations = await Promise.all(
@@ -1043,9 +1039,9 @@ export class GenerationsService {
     return {
       generations: transformedGenerations,
       total,
-      page,
-      limit,
-      total_pages: Math.ceil(total / limit),
+      page: query.page,
+      limit: query.limit,
+      total_pages: Math.ceil(total / query.limit),
     };
   }
 
@@ -1054,8 +1050,7 @@ export class GenerationsService {
    */
   async getUserGenerations(
     userId: string,
-    page: number = 1,
-    limit: number = 10,
+    queryDto?: QueryGenerationDto,
   ): Promise<{
     generations: GenerationWithServiceResponseDto[];
     total: number;
@@ -1063,12 +1058,11 @@ export class GenerationsService {
     limit: number;
     total_pages: number;
   }> {
-    const [generations, total] = await this.generationRepository.findAndCount({
-      where: { user_id: userId },
-      order: { created_at: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const query: QueryGenerationDto = queryDto || new QueryGenerationDto();
+    const { generations, total } = await this.generationsRepository.findByUser(
+      userId,
+      query,
+    );
 
     // Fetch service information for each generation
     const transformedGenerations = await Promise.all(
@@ -1084,9 +1078,9 @@ export class GenerationsService {
     return {
       generations: transformedGenerations,
       total,
-      page,
-      limit,
-      total_pages: Math.ceil(total / limit),
+      page: query.page,
+      limit: query.limit,
+      total_pages: Math.ceil(total / query.limit),
     };
   }
 
@@ -1134,5 +1128,103 @@ export class GenerationsService {
         excludeExtraneousValues: true,
       },
     );
+  }
+
+  /**
+   * Soft delete all generations for a session (cascade from session deactivation)
+   */
+  async softDeleteGenerationsBySession(
+    sessionId: number,
+    userId: string,
+  ): Promise<number> {
+    this.logger.log(
+      `Soft deleting generations for session ${sessionId} and user ${userId}`,
+    );
+
+    try {
+      const affectedRows = await this.generationsRepository.softDeleteBySession(
+        sessionId,
+        userId,
+      );
+
+      this.logger.log(
+        `Soft deleted ${affectedRows} generations for session ${sessionId}`,
+      );
+
+      return affectedRows;
+    } catch (error) {
+      this.logger.error(
+        `Failed to soft delete generations for session ${sessionId}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Failed to soft delete generations',
+      );
+    }
+  }
+
+  /**
+   * Soft delete a specific generation
+   */
+  async softDeleteGeneration(
+    generationId: number,
+    userId: string,
+  ): Promise<boolean> {
+    this.logger.log(
+      `Soft deleting generation ${generationId} for user ${userId}`,
+    );
+
+    try {
+      const success = await this.generationsRepository.softDelete(
+        generationId,
+        userId,
+      );
+
+      if (success) {
+        this.logger.log(
+          `Generation ${generationId} soft deleted successfully`,
+        );
+      } else {
+        this.logger.warn(
+          `Generation ${generationId} not found or already deleted`,
+        );
+      }
+
+      return success;
+    } catch (error) {
+      this.logger.error(
+        `Failed to soft delete generation ${generationId}:`,
+        error,
+      );
+      throw new InternalServerErrorException('Failed to soft delete generation');
+    }
+  }
+
+  /**
+   * Restore a soft deleted generation
+   */
+  async restoreGeneration(
+    generationId: number,
+    userId: string,
+  ): Promise<boolean> {
+    this.logger.log(`Restoring generation ${generationId} for user ${userId}`);
+
+    try {
+      const success = await this.generationsRepository.restore(
+        generationId,
+        userId,
+      );
+
+      if (success) {
+        this.logger.log(`Generation ${generationId} restored successfully`);
+      } else {
+        this.logger.warn(`Generation ${generationId} not found or not deleted`);
+      }
+
+      return success;
+    } catch (error) {
+      this.logger.error(`Failed to restore generation ${generationId}:`, error);
+      throw new InternalServerErrorException('Failed to restore generation');
+    }
   }
 }
