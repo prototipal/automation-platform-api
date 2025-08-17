@@ -50,6 +50,13 @@ export class ServiceResponseDto {
   @Expose()
   display_name: string | null;
 
+  @ApiPropertyOptional({
+    description: 'Logo URL or logo data for the service',
+    example: 'https://example.com/logo.png',
+  })
+  @Expose()
+  logo: string | null;
+
   @ApiProperty({
     description: 'Field specifications for the model',
     type: 'object',

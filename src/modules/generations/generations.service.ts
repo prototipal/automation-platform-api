@@ -18,10 +18,10 @@ import { PricingCalculationService } from '@/modules/services/services/pricing-c
 import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
 import { ServiceFields } from '@/modules/services/entities';
 import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
-import { StorageService, FileUploadResult } from '@/modules/storage';
+import { StorageService } from '@/modules/storage';
 import { SessionsService } from '@/modules/sessions';
 import { Generation } from './entities';
-import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto, ServicePriceDto } from './dto';
+import { CreateGenerationDto, GenerationResponseDto, GenerationWithServiceResponseDto, ServiceInfoDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto, ServicePriceDto } from './dto';
 import {
   ReplicateRequest,
   ReplicateResponse,
@@ -842,7 +842,7 @@ export class GenerationsService {
     page: number = 1,
     limit: number = 10,
   ): Promise<{
-    generations: Generation[];
+    generations: GenerationWithServiceResponseDto[];
     total: number;
     page: number;
     limit: number;
@@ -861,8 +861,19 @@ export class GenerationsService {
       take: limit,
     });
 
+    // Fetch service information for each generation
+    const transformedGenerations = await Promise.all(
+      generations.map(async generation => {
+        const service = await this.servicesService.findByModelAndVersion(
+          generation.model, 
+          generation.model_version
+        );
+        return this.transformGenerationWithService(generation, service);
+      })
+    );
+
     return {
-      generations,
+      generations: transformedGenerations,
       total,
       page,
       limit,
@@ -878,7 +889,7 @@ export class GenerationsService {
     page: number = 1,
     limit: number = 10,
   ): Promise<{
-    generations: Generation[];
+    generations: GenerationWithServiceResponseDto[];
     total: number;
     page: number;
     limit: number;
@@ -891,12 +902,59 @@ export class GenerationsService {
       take: limit,
     });
 
+    // Fetch service information for each generation
+    const transformedGenerations = await Promise.all(
+      generations.map(async generation => {
+        const service = await this.servicesService.findByModelAndVersion(
+          generation.model, 
+          generation.model_version
+        );
+        return this.transformGenerationWithService(generation, service);
+      })
+    );
+
     return {
-      generations,
+      generations: transformedGenerations,
       total,
       page,
       limit,
       total_pages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Transform generation entity to include service information
+   */
+  private transformGenerationWithService(generation: Generation, service?: any): GenerationWithServiceResponseDto {
+    const serviceInfo: ServiceInfoDto | undefined = service ? {
+      model: service.model,
+      model_version: service.model_version || '',
+      display_name: service.display_name || 
+        `${service.model.replace(/_/g, ' ')} ${service.model_version?.replace(/_/g, ' ') || ''}`.trim(),
+      logo: service.logo || undefined,
+      type: service.type,
+    } : undefined;
+
+    return plainToInstance(GenerationWithServiceResponseDto, {
+      id: generation.id,
+      user_id: generation.user_id,
+      session_id: generation.session_id,
+      replicate_id: generation.replicate_id,
+      model: generation.model,
+      model_version: generation.model_version,
+      input_parameters: generation.input_parameters,
+      output_data: generation.output_data,
+      status: generation.status,
+      credits_used: generation.credits_used,
+      error_message: generation.error_message,
+      supabase_urls: generation.supabase_urls,
+      created_at: generation.created_at,
+      updated_at: generation.updated_at,
+      processing_time_seconds: generation.processing_time_seconds,
+      metadata: generation.metadata,
+      service_info: serviceInfo,
+    }, {
+      excludeExtraneousValues: true,
+    });
   }
 }

@@ -56,6 +56,14 @@ export class CreateServiceDto {
   @IsString()
   display_name?: string;
 
+  @ApiPropertyOptional({
+    description: 'Logo URL or logo data for the service',
+    example: 'https://example.com/logo.png',
+  })
+  @IsOptional()
+  @IsString()
+  logo?: string;
+
   @ApiProperty({
     description: 'Field specifications for the model',
     type: 'object',

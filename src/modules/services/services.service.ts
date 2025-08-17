@@ -118,6 +118,18 @@ export class ServicesService {
     );
   }
 
+  async findByModelAndVersion(model: ServiceModel, modelVersion: ModelVersion): Promise<ServiceResponseDto | null> {
+    const service = await this.servicesRepository.findByModelAndVersion(model, modelVersion);
+    
+    if (!service) {
+      return null;
+    }
+
+    return plainToInstance(ServiceResponseDto, service, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   async update(
     id: string,
     updateServiceDto: UpdateServiceDto,

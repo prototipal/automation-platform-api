@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 
 import { GenerationsService } from './generations.service';
-import { CreateGenerationDto, GenerationResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto } from './dto';
+import { CreateGenerationDto, GenerationResponseDto, GenerationWithServiceResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto } from './dto';
 import { HybridAuth, AuthUser, AuthUserDto, Public } from '@/modules/auth';
 
 @ApiTags('Generations')
@@ -277,13 +277,13 @@ export class GenerationsController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Generations retrieved successfully',
+    description: 'Generations retrieved successfully with service information',
     schema: {
       type: 'object',
       properties: {
         generations: {
           type: 'array',
-          items: { $ref: '#/components/schemas/Generation' },
+          items: { $ref: '#/components/schemas/GenerationWithServiceResponseDto' },
         },
         total: { type: 'number' },
         page: { type: 'number' },
@@ -354,13 +354,13 @@ export class GenerationsController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'User generations retrieved successfully',
+    description: 'User generations retrieved successfully with service information',
     schema: {
       type: 'object',
       properties: {
         generations: {
           type: 'array',
-          items: { $ref: '#/components/schemas/Generation' },
+          items: { $ref: '#/components/schemas/GenerationWithServiceResponseDto' },
         },
         total: { type: 'number' },
         page: { type: 'number' },

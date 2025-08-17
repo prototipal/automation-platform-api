@@ -78,6 +78,12 @@ export class Service {
   pricing: ServicePricing;
 
   @Column({
+    type: 'text',
+    nullable: true,
+  })
+  logo: string | null;
+
+  @Column({
     type: 'boolean',
     default: true,
     nullable: false,
