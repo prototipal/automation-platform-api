@@ -16,7 +16,7 @@ export class AppController {
       version: '1.0.0',
       docs: '/api/docs',
       health: '/api/health',
-      storage: '/api/storage/health'
+      storage: '/api/storage/health',
     };
   }
 
@@ -25,12 +25,15 @@ export class AppController {
     try {
       const storageHealth = await this.storageService.getHealthStatus();
       const bucketInfo = this.storageService.getBucketInfo();
-      
+
       return {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         storage: {
-          healthy: storageHealth.connectionHealthy && storageHealth.bucketExists && storageHealth.bucketAccessible,
+          healthy:
+            storageHealth.connectionHealthy &&
+            storageHealth.bucketExists &&
+            storageHealth.bucketAccessible,
           bucket: {
             name: bucketInfo.bucketName,
             exists: storageHealth.bucketExists,

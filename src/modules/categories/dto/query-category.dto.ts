@@ -5,7 +5,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class QueryCategoryDto {
   @ApiPropertyOptional({
     description: 'Filter by category name (partial match)',
-    example: 'General'
+    example: 'General',
   })
   @IsOptional()
   @IsString()
@@ -13,31 +13,33 @@ export class QueryCategoryDto {
 
   @ApiPropertyOptional({
     description: 'Filter by category type',
-    enum: ['photo', 'video']
+    enum: ['photo', 'video'],
   })
   @IsOptional()
   @IsEnum(['photo', 'video'])
   type?: 'photo' | 'video';
 
   @ApiPropertyOptional({
-    description: 'Page number for pagination. If not provided, all results are returned without pagination',
+    description:
+      'Page number for pagination. If not provided, all results are returned without pagination',
     minimum: 1,
-    example: 1
+    example: 1,
   })
   @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value) : undefined))
   @IsInt()
   @Min(1)
   page?: number;
 
   @ApiPropertyOptional({
-    description: 'Number of items per page. If not provided with page, all results are returned',
+    description:
+      'Number of items per page. If not provided with page, all results are returned',
     default: 10,
     minimum: 1,
-    example: 10
+    example: 10,
   })
   @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value) : undefined))
   @IsInt()
   @Min(1)
   limit?: number;
@@ -45,7 +47,7 @@ export class QueryCategoryDto {
   @ApiPropertyOptional({
     description: 'Sort by field',
     enum: ['name', 'type', 'created_at', 'updated_at'],
-    default: 'created_at'
+    default: 'created_at',
   })
   @IsOptional()
   @IsString()
@@ -54,7 +56,7 @@ export class QueryCategoryDto {
   @ApiPropertyOptional({
     description: 'Sort order',
     enum: ['ASC', 'DESC'],
-    default: 'DESC'
+    default: 'DESC',
   })
   @IsOptional()
   @IsEnum(['ASC', 'DESC'])
@@ -62,7 +64,7 @@ export class QueryCategoryDto {
 
   @ApiPropertyOptional({
     description: 'Include template count in response',
-    default: false
+    default: false,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -70,7 +72,7 @@ export class QueryCategoryDto {
 
   @ApiPropertyOptional({
     description: 'Filter by main category ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsOptional()
   @IsString()

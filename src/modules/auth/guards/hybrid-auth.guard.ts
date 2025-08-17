@@ -45,10 +45,10 @@ export class HybridAuthGuard implements CanActivate {
       return true;
     }
 
-    const requiresHybridAuth = this.reflector.getAllAndOverride<boolean>(HYBRID_AUTH_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiresHybridAuth = this.reflector.getAllAndOverride<boolean>(
+      HYBRID_AUTH_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiresHybridAuth) {
       return true;
@@ -62,7 +62,9 @@ export class HybridAuthGuard implements CanActivate {
       const apiKeyResult = await this.tryApiKeyAuth(tokens.apiKey);
       if (apiKeyResult.success) {
         request.user = apiKeyResult.user;
-        this.logger.log(`API key authentication successful for user: ${apiKeyResult.user.user_id}`);
+        this.logger.log(
+          `API key authentication successful for user: ${apiKeyResult.user.user_id}`,
+        );
         return true;
       }
     }
@@ -72,14 +74,18 @@ export class HybridAuthGuard implements CanActivate {
       const supabaseResult = await this.trySupabaseAuth(tokens.supabaseToken);
       if (supabaseResult.success) {
         request.user = supabaseResult.user;
-        this.logger.log(`Supabase token authentication successful for user: ${supabaseResult.user.user_id}`);
+        this.logger.log(
+          `Supabase token authentication successful for user: ${supabaseResult.user.user_id}`,
+        );
         return true;
       }
     }
 
     // If no valid authentication method found
     this.logger.warn('No valid authentication method provided');
-    throw new InvalidApiKeyException('Valid API key or Supabase token is required');
+    throw new InvalidApiKeyException(
+      'Valid API key or Supabase token is required',
+    );
   }
 
   private extractTokens(request: AuthenticatedRequest): ExtractedTokens {
@@ -89,7 +95,7 @@ export class HybridAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      
+
       // Determine if it's a Supabase JWT or API key
       if (this.supabaseAuthService.isSupabaseToken(token)) {
         tokens.supabaseToken = token;
@@ -123,7 +129,9 @@ export class HybridAuthGuard implements CanActivate {
     return tokens;
   }
 
-  private async tryApiKeyAuth(apiKey: string): Promise<{ success: boolean; user?: AuthUserDto }> {
+  private async tryApiKeyAuth(
+    apiKey: string,
+  ): Promise<{ success: boolean; user?: AuthUserDto }> {
     try {
       const user = await this.authService.validateApiKey(apiKey);
       return { success: true, user };
@@ -133,12 +141,16 @@ export class HybridAuthGuard implements CanActivate {
     }
   }
 
-  private async trySupabaseAuth(token: string): Promise<{ success: boolean; user?: AuthUserDto }> {
+  private async trySupabaseAuth(
+    token: string,
+  ): Promise<{ success: boolean; user?: AuthUserDto }> {
     try {
       const user = await this.supabaseAuthService.validateSupabaseToken(token);
       return { success: true, user };
     } catch (error) {
-      this.logger.debug(`Supabase token authentication failed: ${error.message}`);
+      this.logger.debug(
+        `Supabase token authentication failed: ${error.message}`,
+      );
       return { success: false };
     }
   }

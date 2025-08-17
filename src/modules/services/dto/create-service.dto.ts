@@ -7,7 +7,12 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ServiceType, ServiceModel, TextToImageModelVersion, TextToVideoModelVersion } from '../enums';
+import {
+  ServiceType,
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+} from '../enums';
 import type { ModelVersion } from '../enums';
 import type { ServiceFields } from '../entities';
 
@@ -41,11 +46,17 @@ export class CreateServiceDto {
 
   @ApiPropertyOptional({
     description: 'Specific model version',
-    enum: [...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)],
+    enum: [
+      ...Object.values(TextToImageModelVersion),
+      ...Object.values(TextToVideoModelVersion),
+    ],
     example: TextToVideoModelVersion.VEO_3,
   })
   @IsOptional()
-  @IsEnum([...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)])
+  @IsEnum([
+    ...Object.values(TextToImageModelVersion),
+    ...Object.values(TextToVideoModelVersion),
+  ])
   model_version?: ModelVersion;
 
   @ApiPropertyOptional({

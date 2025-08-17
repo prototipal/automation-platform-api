@@ -35,7 +35,10 @@ export class SessionsRepository {
   /**
    * Create a new session
    */
-  async create(userId: string, createSessionDto: CreateSessionDto): Promise<Session> {
+  async create(
+    userId: string,
+    createSessionDto: CreateSessionDto,
+  ): Promise<Session> {
     const session = this.sessionRepository.create({
       user_id: userId,
       ...createSessionDto,
@@ -48,7 +51,8 @@ export class SessionsRepository {
    * Find a session by ID with optional user validation
    */
   async findById(sessionId: number, userId?: string): Promise<Session | null> {
-    const queryBuilder = this.sessionRepository.createQueryBuilder('session')
+    const queryBuilder = this.sessionRepository
+      .createQueryBuilder('session')
       .where('session.id = :sessionId', { sessionId });
 
     if (userId) {
@@ -61,7 +65,10 @@ export class SessionsRepository {
   /**
    * Find a session by ID with generation statistics
    */
-  async findByIdWithStats(sessionId: number, userId?: string): Promise<SessionWithStats | null> {
+  async findByIdWithStats(
+    sessionId: number,
+    userId?: string,
+  ): Promise<SessionWithStats | null> {
     let query = `
       SELECT 
         s.id,
@@ -119,7 +126,7 @@ export class SessionsRepository {
     }
 
     const result = await this.sessionRepository.manager.query(query, params);
-    
+
     if (result.length === 0) {
       return null;
     }
@@ -156,17 +163,17 @@ export class SessionsRepository {
    * Find sessions by user with optional filtering and statistics
    */
   async findByUser(
-    userId: string, 
+    userId: string,
     queryDto: QuerySessionDto,
-    includeStats: boolean = false
+    includeStats: boolean = false,
   ): Promise<{ sessions: SessionWithStats[]; total: number }> {
-    const { 
-      is_active, 
-      search, 
-      page = 1, 
-      limit = 10, 
-      sort_by = 'created_at', 
-      sort_order = 'DESC' 
+    const {
+      is_active,
+      search,
+      page = 1,
+      limit = 10,
+      sort_by = 'created_at',
+      sort_order = 'DESC',
     } = queryDto;
 
     let query: string;
@@ -291,15 +298,19 @@ export class SessionsRepository {
     }
 
     // Add sorting
-    const sortColumn = sort_by === 'name' ? 's.name' : 
-                      sort_by === 'updated_at' ? 's.updated_at' : 's.created_at';
+    const sortColumn =
+      sort_by === 'name'
+        ? 's.name'
+        : sort_by === 'updated_at'
+          ? 's.updated_at'
+          : 's.created_at';
     query += ` ORDER BY ${sortColumn} ${sort_order}`;
 
     // Add pagination
     paramIndex++;
     query += ` LIMIT $${paramIndex}`;
     params.push(limit);
-    
+
     paramIndex++;
     query += ` OFFSET $${paramIndex}`;
     params.push((page - 1) * limit);
@@ -308,16 +319,20 @@ export class SessionsRepository {
     const [sessions, totalResult] = await Promise.all([
       this.sessionRepository.manager.query(query, params),
       this.sessionRepository.manager.query(
-        countQuery.replace('SELECT.*FROM', 'SELECT COUNT(*) as total FROM'), 
-        params.slice(0, -2) // Remove limit and offset params
+        countQuery.replace('SELECT.*FROM', 'SELECT COUNT(*) as total FROM'),
+        params.slice(0, -2), // Remove limit and offset params
       ),
     ]);
 
     const processedSessions = sessions.map((session: any) => {
       const result: any = {
         ...session,
-        generation_count: session.generation_count ? parseInt(session.generation_count) : 0,
-        total_credits_spent: session.total_credits_spent ? parseFloat(session.total_credits_spent) : 0,
+        generation_count: session.generation_count
+          ? parseInt(session.generation_count)
+          : 0,
+        total_credits_spent: session.total_credits_spent
+          ? parseFloat(session.total_credits_spent)
+          : 0,
       };
 
       // Add latest_generation if exists
@@ -351,13 +366,13 @@ export class SessionsRepository {
    * Update a session
    */
   async update(
-    sessionId: number, 
-    userId: string, 
-    updateSessionDto: UpdateSessionDto
+    sessionId: number,
+    userId: string,
+    updateSessionDto: UpdateSessionDto,
   ): Promise<Session | null> {
     await this.sessionRepository.update(
       { id: sessionId, user_id: userId },
-      updateSessionDto
+      updateSessionDto,
     );
 
     return await this.findById(sessionId, userId);
@@ -369,7 +384,7 @@ export class SessionsRepository {
   async softDelete(sessionId: number, userId: string): Promise<boolean> {
     const result = await this.sessionRepository.update(
       { id: sessionId, user_id: userId },
-      { is_active: false }
+      { is_active: false },
     );
 
     return result.affected > 0;
@@ -380,10 +395,57 @@ export class SessionsRepository {
    */
   async isOwnedByUser(sessionId: number, userId: string): Promise<boolean> {
     const count = await this.sessionRepository.count({
-      where: { id: sessionId, user_id: userId }
+      where: { id: sessionId, user_id: userId },
     });
 
     return count > 0;
+  }
+
+  /**
+   * Hard delete a session and handle related generations
+   */
+  async hardDelete(sessionId: number, userId: string): Promise<boolean> {
+    const queryRunner =
+      this.sessionRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // First, verify session exists and user owns it
+      const session = await queryRunner.manager.findOne('sessions', {
+        where: { id: sessionId, user_id: userId },
+      });
+
+      if (!session) {
+        await queryRunner.rollbackTransaction();
+        return false;
+      }
+
+      // Update generations to remove session_id reference (preserve generations but unlink them)
+      // This is safer than cascading delete as it preserves user's generation history
+      await queryRunner.manager.query(
+        'UPDATE generations SET session_id = NULL WHERE session_id = $1 AND user_id = $2',
+        [sessionId, userId],
+      );
+
+      // Delete the session
+      const deleteResult = await queryRunner.manager.delete('sessions', {
+        id: sessionId,
+        user_id: userId,
+      });
+
+      await queryRunner.commitTransaction();
+      return deleteResult.affected > 0;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `Failed to hard delete session ${sessionId} for user ${userId}:`,
+        error,
+      );
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**
@@ -415,7 +477,7 @@ export class SessionsRepository {
     `;
 
     const result = await this.sessionRepository.manager.query(query, [userId]);
-    
+
     if (result.length === 0) {
       return {
         total_sessions: 0,

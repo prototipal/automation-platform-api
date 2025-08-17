@@ -8,10 +8,7 @@ import { TemplatesRepository } from './templates.repository';
 import { CategoriesModule } from '@/modules/categories';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Template]),
-    CategoriesModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Template]), CategoriesModule],
   controllers: [TemplatesController],
   providers: [TemplatesService, TemplatesRepository],
   exports: [TemplatesService, TemplatesRepository],

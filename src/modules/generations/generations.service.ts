@@ -15,13 +15,28 @@ import { AxiosError } from 'axios';
 
 import { ServicesService } from '@/modules/services/services.service';
 import { PricingCalculationService } from '@/modules/services/services/pricing-calculation.service';
-import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
+import {
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+  ModelVersion,
+} from '@/modules/services/enums';
 import { ServiceFields } from '@/modules/services/entities';
 import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
 import { StorageService } from '@/modules/storage';
 import { SessionsService } from '@/modules/sessions';
 import { Generation } from './entities';
-import { CreateGenerationDto, GenerationResponseDto, GenerationWithServiceResponseDto, ServiceInfoDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto, ServicePriceDto } from './dto';
+import {
+  CreateGenerationDto,
+  GenerationResponseDto,
+  GenerationWithServiceResponseDto,
+  ServiceInfoDto,
+  EstimateGenerationPriceDto,
+  PriceEstimationResponseDto,
+  EstimateAllPricesDto,
+  AllPricesResponseDto,
+  ServicePriceDto,
+} from './dto';
 import {
   ReplicateRequest,
   ReplicateResponse,
@@ -54,10 +69,12 @@ export class GenerationsService {
       [TextToVideoModelVersion.SEEDANCE_1_PRO]: 'bytedance/seedance-1-pro',
     },
     [ServiceModel.IDEOGRAM_AI]: {
-      [TextToImageModelVersion.IDEOGRAM_V3_TURBO]: 'ideogram-ai/ideogram-v3-turbo',
+      [TextToImageModelVersion.IDEOGRAM_V3_TURBO]:
+        'ideogram-ai/ideogram-v3-turbo',
     },
     [ServiceModel.BLACK_FOREST_LABS]: {
-      [TextToImageModelVersion.FLUX_KONTEXT_MAX]: 'black-forest-labs/flux-kontext-max',
+      [TextToImageModelVersion.FLUX_KONTEXT_MAX]:
+        'black-forest-labs/flux-kontext-max',
     },
     [ServiceModel.WAN_VIDEO]: {},
     [ServiceModel.WAVESPEEDAI]: {},
@@ -74,16 +91,23 @@ export class GenerationsService {
     private readonly storageService: StorageService,
     private readonly sessionsService: SessionsService,
   ) {
-    this.replicateApiToken = this.configService.get<string>('REPLICATE_API_TOKEN') || '';
-    
+    this.replicateApiToken =
+      this.configService.get<string>('REPLICATE_API_TOKEN') || '';
+
     if (!this.replicateApiToken) {
       this.logger.error('REPLICATE_API_TOKEN is not configured');
-      throw new InternalServerErrorException('Replicate API token is not configured');
+      throw new InternalServerErrorException(
+        'Replicate API token is not configured',
+      );
     }
   }
 
-  async create(createGenerationDto: CreateGenerationDto): Promise<GenerationResponseDto> {
-    this.logger.log(`Creating generation for model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`);
+  async create(
+    createGenerationDto: CreateGenerationDto,
+  ): Promise<GenerationResponseDto> {
+    this.logger.log(
+      `Creating generation for model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`,
+    );
 
     // Step 1: Get service configuration for validation
     const serviceConfig = await this.getServiceConfiguration(
@@ -92,7 +116,10 @@ export class GenerationsService {
     );
 
     // Step 2: Validate input against service fields configuration
-    await this.validateInputFields(createGenerationDto.input, serviceConfig.fields);
+    await this.validateInputFields(
+      createGenerationDto.input,
+      serviceConfig.fields,
+    );
 
     // Step 3: Map to Replicate API endpoint
     const replicateEndpoint = this.buildReplicateEndpoint(
@@ -114,20 +141,23 @@ export class GenerationsService {
   }
 
   async createWithAuth(
-    createGenerationDto: CreateGenerationDto, 
-    authUser: AuthUserDto
+    createGenerationDto: CreateGenerationDto,
+    authUser: AuthUserDto,
   ): Promise<GenerationResponseDto> {
-    this.logger.log(`Creating authenticated generation for user: ${authUser.user_id}, session: ${createGenerationDto.session_id}, model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`);
+    this.logger.log(
+      `Creating authenticated generation for user: ${authUser.user_id}, session: ${createGenerationDto.session_id}, model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`,
+    );
 
     // Step 1: Validate session ownership
-    const sessionOwnership = await this.sessionsService.validateSessionOwnership(
-      createGenerationDto.session_id, 
-      authUser.user_id
-    );
-    
+    const sessionOwnership =
+      await this.sessionsService.validateSessionOwnership(
+        createGenerationDto.session_id,
+        authUser.user_id,
+      );
+
     if (!sessionOwnership) {
       throw new BadRequestException(
-        `Session ${createGenerationDto.session_id} not found or access denied`
+        `Session ${createGenerationDto.session_id} not found or access denied`,
       );
     }
 
@@ -138,17 +168,24 @@ export class GenerationsService {
     );
 
     // Check if this is a text-to-image model and handle multiple image generation
-    const isTextToImage = this.isTextToImageModel(createGenerationDto.model, createGenerationDto.model_version);
-    const imageCount = isTextToImage ? (createGenerationDto.image_count || 2) : 1;
+    const isTextToImage = this.isTextToImageModel(
+      createGenerationDto.model,
+      createGenerationDto.model_version,
+    );
+    const imageCount = isTextToImage ? createGenerationDto.image_count || 2 : 1;
 
     // Step 2: Calculate required credits (multiply by image count for text-to-image models)
     const baseCreditCost = await this.calculateRequiredCredits(
       serviceConfig,
       createGenerationDto.input,
     );
-    const totalRequiredCredits = isTextToImage ? baseCreditCost * imageCount : baseCreditCost;
+    const totalRequiredCredits = isTextToImage
+      ? baseCreditCost * imageCount
+      : baseCreditCost;
 
-    this.logger.log(`Required credits for generation: ${totalRequiredCredits} (${baseCreditCost} x ${imageCount}) for user: ${authUser.user_id}`);
+    this.logger.log(
+      `Required credits for generation: ${totalRequiredCredits} (${baseCreditCost} x ${imageCount}) for user: ${authUser.user_id}`,
+    );
 
     // Step 3: Check sufficient credits
     const hasSufficientCredits = await this.authService.checkSufficientCredits(
@@ -157,7 +194,9 @@ export class GenerationsService {
     );
 
     if (!hasSufficientCredits) {
-      this.logger.warn(`Insufficient credits for user ${authUser.user_id}. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`);
+      this.logger.warn(
+        `Insufficient credits for user ${authUser.user_id}. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`,
+      );
       throw new BadRequestException(
         `Insufficient credits. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`,
       );
@@ -171,11 +210,16 @@ export class GenerationsService {
     };
 
     const deductionResult = await this.authService.deductCredits(deductionDto);
-    this.logger.log(`Credits deducted successfully for user ${authUser.user_id}. New balance: ${deductionResult.remaining_balance}`);
+    this.logger.log(
+      `Credits deducted successfully for user ${authUser.user_id}. New balance: ${deductionResult.remaining_balance}`,
+    );
 
     try {
       // Step 5: Validate input against service fields configuration
-      await this.validateInputFields(createGenerationDto.input, serviceConfig.fields);
+      await this.validateInputFields(
+        createGenerationDto.input,
+        serviceConfig.fields,
+      );
 
       // Step 6: Map to Replicate API endpoint
       const replicateEndpoint = this.buildReplicateEndpoint(
@@ -186,12 +230,16 @@ export class GenerationsService {
       // Step 7: Make request(s) to Replicate API
       if (isTextToImage && imageCount > 1) {
         // Make multiple parallel requests for text-to-image models
-        const requests = Array.from({ length: imageCount }, () => 
-          this.callReplicateAPI(replicateEndpoint, createGenerationDto.input, serviceConfig)
+        const requests = Array.from({ length: imageCount }, () =>
+          this.callReplicateAPI(
+            replicateEndpoint,
+            createGenerationDto.input,
+            serviceConfig,
+          ),
         );
 
         const responses = await Promise.all(requests);
-        
+
         // Combine all image outputs into a single response
         const combinedOutput = responses.reduce((acc, response) => {
           if (Array.isArray(response.output)) {
@@ -208,27 +256,33 @@ export class GenerationsService {
           urls: {
             ...responses[0].urls,
             get: responses[0].urls?.get || responses[0].urls?.stream || '',
-          }
+          },
         };
 
-        this.logger.log(`Generation completed successfully for user: ${authUser.user_id}, Generated ${imageCount} images`);
-        
+        this.logger.log(
+          `Generation completed successfully for user: ${authUser.user_id}, Generated ${imageCount} images`,
+        );
+
         // Save to database and upload to Supabase
         const savedGeneration = await this.saveGenerationAndUpload(
           combinedResponse,
           createGenerationDto,
           authUser.user_id,
           totalRequiredCredits,
-          serviceConfig
+          serviceConfig,
         );
-        
-        return plainToInstance(GenerationResponseDto, {
-          ...combinedResponse,
-          id: savedGeneration.id,
-          supabase_urls: savedGeneration.supabase_urls,
-        }, {
-          excludeExtraneousValues: true,
-        });
+
+        return plainToInstance(
+          GenerationResponseDto,
+          {
+            ...combinedResponse,
+            id: savedGeneration.id,
+            supabase_urls: savedGeneration.supabase_urls,
+          },
+          {
+            excludeExtraneousValues: true,
+          },
+        );
       } else {
         // Single request for video models or single image
         const replicateResponse = await this.callReplicateAPI(
@@ -237,34 +291,47 @@ export class GenerationsService {
           serviceConfig,
         );
 
-        this.logger.log(`Generation completed successfully for user: ${authUser.user_id}, ID: ${replicateResponse.id}`);
-        
+        this.logger.log(
+          `Generation completed successfully for user: ${authUser.user_id}, ID: ${replicateResponse.id}`,
+        );
+
         // Save to database and upload to Supabase
         const savedGeneration = await this.saveGenerationAndUpload(
           replicateResponse,
           createGenerationDto,
           authUser.user_id,
           totalRequiredCredits,
-          serviceConfig
+          serviceConfig,
         );
-        
-        return plainToInstance(GenerationResponseDto, {
-          ...replicateResponse,
-          id: savedGeneration.id,
-          supabase_urls: savedGeneration.supabase_urls,
-        }, {
-          excludeExtraneousValues: true,
-        });
+
+        return plainToInstance(
+          GenerationResponseDto,
+          {
+            ...replicateResponse,
+            id: savedGeneration.id,
+            supabase_urls: savedGeneration.supabase_urls,
+          },
+          {
+            excludeExtraneousValues: true,
+          },
+        );
       }
     } catch (error) {
       // If API call fails, we could implement credit refund logic here
-      this.logger.error(`Generation API call failed for user ${authUser.user_id}, credits were already deducted: ${totalRequiredCredits}`, error);
+      this.logger.error(
+        `Generation API call failed for user ${authUser.user_id}, credits were already deducted: ${totalRequiredCredits}`,
+        error,
+      );
       throw error;
     }
   }
 
-  async estimatePrice(estimateDto: EstimateGenerationPriceDto): Promise<PriceEstimationResponseDto> {
-    this.logger.log(`Estimating price for model: ${estimateDto.model}, version: ${estimateDto.model_version}`);
+  async estimatePrice(
+    estimateDto: EstimateGenerationPriceDto,
+  ): Promise<PriceEstimationResponseDto> {
+    this.logger.log(
+      `Estimating price for model: ${estimateDto.model}, version: ${estimateDto.model_version}`,
+    );
 
     // Step 1: Get service configuration for pricing calculation
     const serviceConfig = await this.getServiceConfiguration(
@@ -276,8 +343,11 @@ export class GenerationsService {
     await this.validateInputFields(estimateDto.input, serviceConfig.fields);
 
     // Check if this is a text-to-image model and handle multiple image pricing
-    const isTextToImage = this.isTextToImageModel(estimateDto.model, estimateDto.model_version);
-    const imageCount = isTextToImage ? (estimateDto.image_count || 2) : 1;
+    const isTextToImage = this.isTextToImageModel(
+      estimateDto.model,
+      estimateDto.model_version,
+    );
+    const imageCount = isTextToImage ? estimateDto.image_count || 2 : 1;
 
     // Step 3: Calculate price estimation using the new credit system
     const basePriceEstimation = await this.calculatePriceEstimation(
@@ -289,13 +359,19 @@ export class GenerationsService {
 
     // Multiply by image count for text-to-image models
     if (isTextToImage && imageCount > 1) {
-      basePriceEstimation.estimated_credits = basePriceEstimation.estimated_credits * imageCount;
-      basePriceEstimation.breakdown.estimated_credits_rounded = basePriceEstimation.breakdown.estimated_credits_rounded * imageCount;
-      basePriceEstimation.breakdown.estimated_credits_raw = basePriceEstimation.breakdown.estimated_credits_raw * imageCount;
-      basePriceEstimation.breakdown.total_cost_usd = basePriceEstimation.breakdown.total_cost_usd * imageCount;
+      basePriceEstimation.estimated_credits =
+        basePriceEstimation.estimated_credits * imageCount;
+      basePriceEstimation.breakdown.estimated_credits_rounded =
+        basePriceEstimation.breakdown.estimated_credits_rounded * imageCount;
+      basePriceEstimation.breakdown.estimated_credits_raw =
+        basePriceEstimation.breakdown.estimated_credits_raw * imageCount;
+      basePriceEstimation.breakdown.total_cost_usd =
+        basePriceEstimation.breakdown.total_cost_usd * imageCount;
     }
 
-    this.logger.log(`Price estimated successfully: ${basePriceEstimation.estimated_credits} credits (${imageCount} images) for ${estimateDto.model} ${estimateDto.model_version}`);
+    this.logger.log(
+      `Price estimated successfully: ${basePriceEstimation.estimated_credits} credits (${imageCount} images) for ${estimateDto.model} ${estimateDto.model_version}`,
+    );
 
     return plainToInstance(PriceEstimationResponseDto, basePriceEstimation, {
       excludeExtraneousValues: true,
@@ -307,13 +383,15 @@ export class GenerationsService {
    * @param estimateDto - Contains input parameters and optional image count
    * @returns Promise with all service price estimations
    */
-  async estimateAllPrices(estimateDto: EstimateAllPricesDto): Promise<AllPricesResponseDto> {
+  async estimateAllPrices(
+    estimateDto: EstimateAllPricesDto,
+  ): Promise<AllPricesResponseDto> {
     this.logger.log('Estimating prices for all available services');
 
     try {
       // Get all available services
       const allServices = await this.servicesService.findAllServices();
-      
+
       const imageCount = estimateDto.image_count || 2;
       const servicePrices: ServicePriceDto[] = [];
 
@@ -322,12 +400,17 @@ export class GenerationsService {
         try {
           // Check if service has pricing configuration
           if (!service.pricing || !service.pricing.rule) {
-            this.logger.warn(`Skipping service ${service.model} ${service.model_version} - no pricing configuration`);
+            this.logger.warn(
+              `Skipping service ${service.model} ${service.model_version} - no pricing configuration`,
+            );
             continue;
           }
 
           // Check if this is a text-to-image model
-          const isTextToImage = this.isTextToImageModel(service.model, service.model_version);
+          const isTextToImage = this.isTextToImageModel(
+            service.model,
+            service.model_version,
+          );
           const currentImageCount = isTextToImage ? imageCount : 1;
 
           // Calculate base price estimation
@@ -340,16 +423,23 @@ export class GenerationsService {
 
           // Apply image count multiplier for text-to-image models
           if (isTextToImage && currentImageCount > 1) {
-            basePriceEstimation.estimated_credits = basePriceEstimation.estimated_credits * currentImageCount;
-            basePriceEstimation.breakdown.estimated_credits_rounded = basePriceEstimation.breakdown.estimated_credits_rounded * currentImageCount;
-            basePriceEstimation.breakdown.estimated_credits_raw = basePriceEstimation.breakdown.estimated_credits_raw * currentImageCount;
-            basePriceEstimation.breakdown.total_cost_usd = basePriceEstimation.breakdown.total_cost_usd * currentImageCount;
+            basePriceEstimation.estimated_credits =
+              basePriceEstimation.estimated_credits * currentImageCount;
+            basePriceEstimation.breakdown.estimated_credits_rounded =
+              basePriceEstimation.breakdown.estimated_credits_rounded *
+              currentImageCount;
+            basePriceEstimation.breakdown.estimated_credits_raw =
+              basePriceEstimation.breakdown.estimated_credits_raw *
+              currentImageCount;
+            basePriceEstimation.breakdown.total_cost_usd =
+              basePriceEstimation.breakdown.total_cost_usd * currentImageCount;
           }
 
           // Create service price entry with proper display name fallback
-          const displayName = service.display_name || 
+          const displayName =
+            service.display_name ||
             `${service.model.replace(/_/g, ' ')} ${service.model_version?.replace(/_/g, ' ') || ''}`.trim();
-          
+
           const servicePrice: ServicePriceDto = {
             model: service.model,
             model_version: service.model_version,
@@ -361,9 +451,10 @@ export class GenerationsService {
           };
 
           servicePrices.push(servicePrice);
-
         } catch (error) {
-          this.logger.warn(`Failed to estimate price for ${service.model} ${service.model_version}: ${error.message}`);
+          this.logger.warn(
+            `Failed to estimate price for ${service.model} ${service.model_version}: ${error.message}`,
+          );
           // Continue with other services
         }
       }
@@ -375,15 +466,18 @@ export class GenerationsService {
         total_services: servicePrices.length,
       };
 
-      this.logger.log(`Successfully estimated prices for ${servicePrices.length} services`);
+      this.logger.log(
+        `Successfully estimated prices for ${servicePrices.length} services`,
+      );
 
       return plainToInstance(AllPricesResponseDto, response, {
         excludeExtraneousValues: true,
       });
-
     } catch (error) {
       this.logger.error('Error estimating prices for all services:', error);
-      throw new InternalServerErrorException(`Failed to estimate prices for all services: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to estimate prices for all services: ${error.message}`,
+      );
     }
   }
 
@@ -404,25 +498,38 @@ export class GenerationsService {
     try {
       if (!serviceConfig?.pricing?.rule) {
         const configId = serviceConfig?.id || 'unknown';
-        this.logger.warn(`No pricing rule found for service config ID: ${configId}`);
-        throw new BadRequestException('No pricing configuration found for this service');
+        this.logger.warn(
+          `No pricing rule found for service config ID: ${configId}`,
+        );
+        throw new BadRequestException(
+          'No pricing configuration found for this service',
+        );
       }
 
       // Prepare calculation parameters from user input
-      const calculationParams = this.pricingCalculationService.prepareCalculationParams(input);
+      const calculationParams =
+        this.pricingCalculationService.prepareCalculationParams(input);
 
       // Use the new price estimation method with detailed breakdown
-      const priceEstimation = this.pricingCalculationService.createPriceEstimation(
-        serviceConfig.pricing.rule,
-        calculationParams,
-        model,
-        modelVersion,
-      );
+      const priceEstimation =
+        this.pricingCalculationService.createPriceEstimation(
+          serviceConfig.pricing.rule,
+          calculationParams,
+          model,
+          modelVersion,
+        );
 
-      if (priceEstimation.breakdown.estimated_credits_rounded === 0 && 
-          priceEstimation.breakdown.replicate_cost_usd > 0) {
-        this.logger.warn(`Price estimation resulted in 0 credits, using fallback calculation`);
-        const fallbackCredits = this.pricingCalculationService.getDefaultCredits(serviceConfig.pricing.rule);
+      if (
+        priceEstimation.breakdown.estimated_credits_rounded === 0 &&
+        priceEstimation.breakdown.replicate_cost_usd > 0
+      ) {
+        this.logger.warn(
+          `Price estimation resulted in 0 credits, using fallback calculation`,
+        );
+        const fallbackCredits =
+          this.pricingCalculationService.getDefaultCredits(
+            serviceConfig.pricing.rule,
+          );
         priceEstimation.estimated_credits = fallbackCredits;
         priceEstimation.breakdown.estimated_credits_rounded = fallbackCredits;
       }
@@ -430,7 +537,9 @@ export class GenerationsService {
       return priceEstimation;
     } catch (error) {
       this.logger.error('Error calculating price estimation:', error);
-      throw new InternalServerErrorException(`Failed to calculate price estimation: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to calculate price estimation: ${error.message}`,
+      );
     }
   }
 
@@ -440,28 +549,34 @@ export class GenerationsService {
   ): Promise<number> {
     try {
       if (!serviceConfig.pricing || !serviceConfig.pricing.rule) {
-        this.logger.warn(`No pricing rule found for service config ID: ${serviceConfig.id}`);
+        this.logger.warn(
+          `No pricing rule found for service config ID: ${serviceConfig.id}`,
+        );
         return 0;
       }
 
       // Prepare calculation parameters from user input
-      const calculationParams = this.pricingCalculationService.prepareCalculationParams(input);
+      const calculationParams =
+        this.pricingCalculationService.prepareCalculationParams(input);
 
       // Use the new credit calculation method with profit margin
-      const creditResult = this.pricingCalculationService.calculateRequiredCredits(
-        serviceConfig.pricing.rule,
-        calculationParams,
-      );
+      const creditResult =
+        this.pricingCalculationService.calculateRequiredCredits(
+          serviceConfig.pricing.rule,
+          calculationParams,
+        );
 
       if (creditResult.error) {
         this.logger.warn(`Credit calculation error: ${creditResult.error}`);
         // Fall back to default credits if calculation fails
-        return this.pricingCalculationService.getDefaultCredits(serviceConfig.pricing.rule);
+        return this.pricingCalculationService.getDefaultCredits(
+          serviceConfig.pricing.rule,
+        );
       }
 
       this.logger.log(
         `Credit calculation completed: ${creditResult.estimated_credits} credits ` +
-        `(USD: $${creditResult.breakdown.replicate_cost_usd} -> $${creditResult.breakdown.total_cost_usd} with ${creditResult.breakdown.profit_margin}x margin)`,
+          `(USD: $${creditResult.breakdown.replicate_cost_usd} -> $${creditResult.breakdown.total_cost_usd} with ${creditResult.breakdown.profit_margin}x margin)`,
       );
 
       return creditResult.estimated_credits;
@@ -478,7 +593,7 @@ export class GenerationsService {
     try {
       // Find services that match the model and version
       const services = await this.servicesService.findByModel(model);
-      
+
       const matchingService = services.find(
         (service) => service.model_version === modelVersion,
       );
@@ -494,9 +609,11 @@ export class GenerationsService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      
+
       this.logger.error('Error retrieving service configuration:', error);
-      throw new InternalServerErrorException('Failed to retrieve service configuration');
+      throw new InternalServerErrorException(
+        'Failed to retrieve service configuration',
+      );
     }
   }
 
@@ -517,7 +634,10 @@ export class GenerationsService {
       const fieldValue = input[fieldName];
 
       // Check if required field is missing
-      if (fieldConfig.required && (fieldValue === undefined || fieldValue === null || fieldValue === '')) {
+      if (
+        fieldConfig.required &&
+        (fieldValue === undefined || fieldValue === null || fieldValue === '')
+      ) {
         validationErrors.push({
           field: fieldName,
           message: `Field '${fieldName}' is required`,
@@ -527,7 +647,10 @@ export class GenerationsService {
       }
 
       // Skip validation for optional fields that are not provided
-      if (!fieldConfig.required && (fieldValue === undefined || fieldValue === null)) {
+      if (
+        !fieldConfig.required &&
+        (fieldValue === undefined || fieldValue === null)
+      ) {
         continue;
       }
 
@@ -577,10 +700,12 @@ export class GenerationsService {
     // Check for unknown fields
     const allowedFields = Object.keys(serviceFields);
     const providedFields = Object.keys(input);
-    const unknownFields = providedFields.filter(field => !allowedFields.includes(field));
+    const unknownFields = providedFields.filter(
+      (field) => !allowedFields.includes(field),
+    );
 
     if (unknownFields.length > 0) {
-      unknownFields.forEach(field => {
+      unknownFields.forEach((field) => {
         validationErrors.push({
           field,
           message: `Unknown field '${field}' is not allowed`,
@@ -591,16 +716,19 @@ export class GenerationsService {
 
     if (validationErrors.length > 0) {
       const errorMessage = validationErrors
-        .map(error => `${error.field}: ${error.message}`)
+        .map((error) => `${error.field}: ${error.message}`)
         .join('; ');
-      
+
       throw new BadRequestException(`Validation failed: ${errorMessage}`);
     }
   }
 
-  private buildReplicateEndpoint(model: ServiceModel, modelVersion: ModelVersion): string {
+  private buildReplicateEndpoint(
+    model: ServiceModel,
+    modelVersion: ModelVersion,
+  ): string {
     const modelMapping = this.modelVersionMapping[model];
-    
+
     if (!modelMapping || Object.keys(modelMapping).length === 0) {
       throw new BadRequestException(
         `Model '${model}' is not supported for Replicate API integration`,
@@ -608,7 +736,7 @@ export class GenerationsService {
     }
 
     const replicateModel = modelMapping[modelVersion];
-    
+
     if (!replicateModel) {
       throw new BadRequestException(
         `Model version '${modelVersion}' is not supported for model '${model}'`,
@@ -625,14 +753,17 @@ export class GenerationsService {
   ): Promise<ReplicateResponse> {
     try {
       const requestData: ReplicateRequest = { input };
-      
+
       this.logger.log(`Making request to Replicate API: ${endpoint}`);
-      
+
       // Check if this is a text-to-image model to add wait header
-      const isTextToImage = this.isTextToImageModel(serviceConfig?.model, serviceConfig?.model_version);
-      
+      const isTextToImage = this.isTextToImageModel(
+        serviceConfig?.model,
+        serviceConfig?.model_version,
+      );
+
       const headers: Record<string, string> = {
-        'Authorization': `Bearer ${this.replicateApiToken}`,
+        Authorization: `Bearer ${this.replicateApiToken}`,
         'Content-Type': 'application/json',
       };
 
@@ -641,7 +772,7 @@ export class GenerationsService {
         headers['Prefer'] = 'wait';
         this.logger.log('Added Prefer: wait header for text-to-image request');
       }
-      
+
       const response = await firstValueFrom(
         this.httpService.post<ReplicateResponse>(endpoint, requestData, {
           headers,
@@ -653,35 +784,46 @@ export class GenerationsService {
       return response.data;
     } catch (error) {
       this.logger.error('Error calling Replicate API:', error);
-      
+
       if (error instanceof AxiosError) {
         const replicateError = error.response?.data as ReplicateErrorResponse;
-        
+
         if (error.response?.status === 400) {
           throw new BadRequestException(
             replicateError?.detail || 'Invalid request to Replicate API',
           );
         }
-        
+
         if (error.response?.status === 401) {
-          throw new InternalServerErrorException('Unauthorized: Invalid Replicate API token');
+          throw new InternalServerErrorException(
+            'Unauthorized: Invalid Replicate API token',
+          );
         }
-        
+
         if (error.response?.status === 429) {
-          throw new InternalServerErrorException('Rate limit exceeded for Replicate API');
+          throw new InternalServerErrorException(
+            'Rate limit exceeded for Replicate API',
+          );
         }
-        
+
         throw new InternalServerErrorException(
           replicateError?.detail || `Replicate API error: ${error.message}`,
         );
       }
-      
-      throw new InternalServerErrorException('Failed to communicate with Replicate API');
+
+      throw new InternalServerErrorException(
+        'Failed to communicate with Replicate API',
+      );
     }
   }
 
-  private isTextToImageModel(_model: ServiceModel, modelVersion: ModelVersion): boolean {
-    const textToImageVersions = Object.values(TextToImageModelVersion) as string[];
+  private isTextToImageModel(
+    _model: ServiceModel,
+    modelVersion: ModelVersion,
+  ): boolean {
+    const textToImageVersions = Object.values(
+      TextToImageModelVersion,
+    ) as string[];
     return textToImageVersions.includes(modelVersion);
   }
 
@@ -700,27 +842,32 @@ export class GenerationsService {
     try {
       // Extract file URLs from Replicate response
       const fileUrls = this.extractFileUrls(replicateResponse);
-      
-      this.logger.log(`Found ${fileUrls.length} files to upload for generation ${replicateResponse.id}`);
+
+      this.logger.log(
+        `Found ${fileUrls.length} files to upload for generation ${replicateResponse.id}`,
+      );
 
       // Upload files to Supabase in parallel
       let supabaseUrls: string[] = [];
       if (fileUrls.length > 0) {
         try {
-          const uploadResults = await this.storageService.uploadMultipleFromUrls(fileUrls, {
-            userId,
-            sessionId: createGenerationDto.session_id,
-            folder: 'generations',
-            fileName: `gen_${replicateResponse.id}`,
-            metadata: {
-              model: createGenerationDto.model,
-              model_version: createGenerationDto.model_version,
-              replicate_id: replicateResponse.id,
-            },
-          });
+          const uploadResults =
+            await this.storageService.uploadMultipleFromUrls(fileUrls, {
+              userId,
+              sessionId: createGenerationDto.session_id,
+              folder: 'generations',
+              fileName: `gen_${replicateResponse.id}`,
+              metadata: {
+                model: createGenerationDto.model,
+                model_version: createGenerationDto.model_version,
+                replicate_id: replicateResponse.id,
+              },
+            });
 
-          supabaseUrls = uploadResults.map(result => result.public_url);
-          this.logger.log(`Successfully uploaded ${supabaseUrls.length} files to Supabase`);
+          supabaseUrls = uploadResults.map((result) => result.public_url);
+          this.logger.log(
+            `Successfully uploaded ${supabaseUrls.length} files to Supabase`,
+          );
         } catch (uploadError) {
           this.logger.error('Failed to upload files to Supabase:', uploadError);
           // Continue with saving the generation even if upload fails
@@ -753,13 +900,14 @@ export class GenerationsService {
       });
 
       const savedGeneration = await this.generationRepository.save(generation);
-      
+
       this.logger.log(`Generation saved with ID: ${savedGeneration.id}`);
       return savedGeneration;
-
     } catch (error) {
       this.logger.error('Failed to save generation:', error);
-      throw new InternalServerErrorException('Failed to save generation record');
+      throw new InternalServerErrorException(
+        'Failed to save generation record',
+      );
     }
   }
 
@@ -778,14 +926,17 @@ export class GenerationsService {
             urls.push(item);
           }
         });
-      } else if (typeof replicateResponse.output === 'string' && this.isMediaFileUrl(replicateResponse.output)) {
+      } else if (
+        typeof replicateResponse.output === 'string' &&
+        this.isMediaFileUrl(replicateResponse.output)
+      ) {
         // Single URL
         urls.push(replicateResponse.output);
       }
     }
 
     // Only return media file URLs, not API URLs
-    return urls.filter(url => url && url.length > 0);
+    return urls.filter((url) => url && url.length > 0);
   }
 
   /**
@@ -797,10 +948,12 @@ export class GenerationsService {
     }
 
     // Skip API URLs
-    if (url.includes('api.replicate.com') || 
-        url.includes('replicate.com/p/') || 
-        url.includes('/cancel') || 
-        url.includes('/stream')) {
+    if (
+      url.includes('api.replicate.com') ||
+      url.includes('replicate.com/p/') ||
+      url.includes('/cancel') ||
+      url.includes('/stream')
+    ) {
       return false;
     }
 
@@ -810,14 +963,26 @@ export class GenerationsService {
     }
 
     // Check for common media file extensions
-    const mediaExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi', '.webm'];
-    return mediaExtensions.some(ext => url.toLowerCase().includes(ext));
+    const mediaExtensions = [
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.webp',
+      '.mp4',
+      '.mov',
+      '.avi',
+      '.webm',
+    ];
+    return mediaExtensions.some((ext) => url.toLowerCase().includes(ext));
   }
 
   /**
    * Map Replicate status to our generation status
    */
-  private mapReplicateStatus(status: string): 'pending' | 'processing' | 'completed' | 'failed' {
+  private mapReplicateStatus(
+    status: string,
+  ): 'pending' | 'processing' | 'completed' | 'failed' {
     switch (status?.toLowerCase()) {
       case 'succeeded':
       case 'success':
@@ -849,9 +1014,12 @@ export class GenerationsService {
     total_pages: number;
   }> {
     // Validate session ownership
-    const sessionOwnership = await this.sessionsService.validateSessionOwnership(sessionId, userId);
+    const sessionOwnership =
+      await this.sessionsService.validateSessionOwnership(sessionId, userId);
     if (!sessionOwnership) {
-      throw new BadRequestException(`Session ${sessionId} not found or access denied`);
+      throw new BadRequestException(
+        `Session ${sessionId} not found or access denied`,
+      );
     }
 
     const [generations, total] = await this.generationRepository.findAndCount({
@@ -863,13 +1031,13 @@ export class GenerationsService {
 
     // Fetch service information for each generation
     const transformedGenerations = await Promise.all(
-      generations.map(async generation => {
+      generations.map(async (generation) => {
         const service = await this.servicesService.findByModelAndVersion(
-          generation.model, 
-          generation.model_version
+          generation.model,
+          generation.model_version,
         );
         return this.transformGenerationWithService(generation, service);
-      })
+      }),
     );
 
     return {
@@ -904,13 +1072,13 @@ export class GenerationsService {
 
     // Fetch service information for each generation
     const transformedGenerations = await Promise.all(
-      generations.map(async generation => {
+      generations.map(async (generation) => {
         const service = await this.servicesService.findByModelAndVersion(
-          generation.model, 
-          generation.model_version
+          generation.model,
+          generation.model_version,
         );
         return this.transformGenerationWithService(generation, service);
-      })
+      }),
     );
 
     return {
@@ -925,36 +1093,46 @@ export class GenerationsService {
   /**
    * Transform generation entity to include service information
    */
-  private transformGenerationWithService(generation: Generation, service?: any): GenerationWithServiceResponseDto {
-    const serviceInfo: ServiceInfoDto | undefined = service ? {
-      model: service.model,
-      model_version: service.model_version || '',
-      display_name: service.display_name || 
-        `${service.model.replace(/_/g, ' ')} ${service.model_version?.replace(/_/g, ' ') || ''}`.trim(),
-      logo: service.logo || undefined,
-      type: service.type,
-    } : undefined;
+  private transformGenerationWithService(
+    generation: Generation,
+    service?: any,
+  ): GenerationWithServiceResponseDto {
+    const serviceInfo: ServiceInfoDto | undefined = service
+      ? {
+          model: service.model,
+          model_version: service.model_version || '',
+          display_name:
+            service.display_name ||
+            `${service.model.replace(/_/g, ' ')} ${service.model_version?.replace(/_/g, ' ') || ''}`.trim(),
+          logo: service.logo || undefined,
+          type: service.type,
+        }
+      : undefined;
 
-    return plainToInstance(GenerationWithServiceResponseDto, {
-      id: generation.id,
-      user_id: generation.user_id,
-      session_id: generation.session_id,
-      replicate_id: generation.replicate_id,
-      model: generation.model,
-      model_version: generation.model_version,
-      input_parameters: generation.input_parameters,
-      output_data: generation.output_data,
-      status: generation.status,
-      credits_used: generation.credits_used,
-      error_message: generation.error_message,
-      supabase_urls: generation.supabase_urls,
-      created_at: generation.created_at,
-      updated_at: generation.updated_at,
-      processing_time_seconds: generation.processing_time_seconds,
-      metadata: generation.metadata,
-      service_info: serviceInfo,
-    }, {
-      excludeExtraneousValues: true,
-    });
+    return plainToInstance(
+      GenerationWithServiceResponseDto,
+      {
+        id: generation.id,
+        user_id: generation.user_id,
+        session_id: generation.session_id,
+        replicate_id: generation.replicate_id,
+        model: generation.model,
+        model_version: generation.model_version,
+        input_parameters: generation.input_parameters,
+        output_data: generation.output_data,
+        status: generation.status,
+        credits_used: generation.credits_used,
+        error_message: generation.error_message,
+        supabase_urls: generation.supabase_urls,
+        created_at: generation.created_at,
+        updated_at: generation.updated_at,
+        processing_time_seconds: generation.processing_time_seconds,
+        metadata: generation.metadata,
+        service_info: serviceInfo,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 }

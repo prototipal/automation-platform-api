@@ -1,7 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, JoinColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  JoinColumn,
+  ManyToOne,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Service } from '@/modules/services/entities';
-import { ServiceModel, ModelVersion, TextToImageModelVersion, TextToVideoModelVersion } from '@/modules/services/enums';
+import {
+  ServiceModel,
+  ModelVersion,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+} from '@/modules/services/enums';
 
 @Entity('generations')
 @Index('idx_generation_user_id', ['user_id'])
@@ -50,7 +64,14 @@ export class Generation {
     description: 'Model version used for generation',
     example: 'KLING_V2_1',
   })
-  @Column({ type: 'enum', enum: [...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)], nullable: false })
+  @Column({
+    type: 'enum',
+    enum: [
+      ...Object.values(TextToImageModelVersion),
+      ...Object.values(TextToVideoModelVersion),
+    ],
+    nullable: false,
+  })
   model_version: ModelVersion;
 
   @ApiProperty({
@@ -72,10 +93,10 @@ export class Generation {
     example: 'completed',
     enum: ['pending', 'processing', 'completed', 'failed'],
   })
-  @Column({ 
-    type: 'enum', 
+  @Column({
+    type: 'enum',
     enum: ['pending', 'processing', 'completed', 'failed'],
-    default: 'pending' 
+    default: 'pending',
   })
   status: 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -95,7 +116,9 @@ export class Generation {
 
   @ApiProperty({
     description: 'Supabase file URLs for generated content',
-    example: ['https://supabase.com/storage/v1/object/public/generations/abc123.jpg'],
+    example: [
+      'https://supabase.com/storage/v1/object/public/generations/abc123.jpg',
+    ],
   })
   @Column({ type: 'jsonb', nullable: true })
   supabase_urls?: string[];
@@ -127,5 +150,4 @@ export class Generation {
   })
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
-
 }

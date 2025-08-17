@@ -10,7 +10,7 @@ export class AddPricingToServices1754513000000 implements MigrationInterface {
         name: 'pricing',
         type: 'jsonb',
         isNullable: false,
-        default: "'{\"default\": 0}'",
+        default: '\'{"default": 0}\'',
       }),
     );
   }

@@ -3,7 +3,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class EstimateAllPricesDto {
   @ApiProperty({
-    description: 'Input parameters for the AI models (structure varies by model)',
+    description:
+      'Input parameters for the AI models (structure varies by model)',
     type: 'object',
     additionalProperties: true,
     example: {
@@ -16,11 +17,12 @@ export class EstimateAllPricesDto {
 
   @ApiProperty({
     type: 'number',
-    description: 'Number of images to generate (only affects text-to-image models). Default is 2.',
+    description:
+      'Number of images to generate (only affects text-to-image models). Default is 2.',
     example: 2,
     required: false,
     minimum: 2,
-    maximum: 4
+    maximum: 4,
   })
   @IsOptional()
   @IsNumber()

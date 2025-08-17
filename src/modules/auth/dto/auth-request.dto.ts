@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ApiKeyAuthRequestDto {
@@ -21,7 +27,7 @@ export class CreditDeductionDto {
 
   @ApiProperty({
     description: 'Amount of credits to deduct',
-    example: 1.50,
+    example: 1.5,
     minimum: 0.01,
   })
   @IsNumber()

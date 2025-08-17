@@ -1,6 +1,6 @@
 /**
  * PricingCalculationService Kullanım Örnekleri
- * 
+ *
  * Bu dosya dinamik pricing sisteminin nasıl kullanılacağına dair örnekler içerir.
  * Gerçek kodda bu dosya silinebilir, sadece referans amaçlıdır.
  */
@@ -28,8 +28,8 @@ function calculateKlingPrice(): void {
     type: PricingType.PER_SECOND,
     parameter: 'mode',
     rates: {
-      'standard': 0.05,
-      'pro': 0.09,
+      standard: 0.05,
+      pro: 0.09,
     },
   };
 
@@ -38,15 +38,19 @@ function calculateKlingPrice(): void {
     mode: 'standard',
     duration: 10,
   };
-  const standardResult: PricingCalculationResult = pricingService.calculatePrice(klingRule, standardParams);
+  const standardResult: PricingCalculationResult =
+    pricingService.calculatePrice(klingRule, standardParams);
   console.log('Kling Standard 10s:', standardResult.totalPrice); // 0.50
 
-  // Pro mode, 5 saniye  
+  // Pro mode, 5 saniye
   const proParams: PricingCalculationParams = {
     mode: 'pro',
     duration: 5,
   };
-  const proResult: PricingCalculationResult = pricingService.calculatePrice(klingRule, proParams);
+  const proResult: PricingCalculationResult = pricingService.calculatePrice(
+    klingRule,
+    proParams,
+  );
   console.log('Kling Pro 5s:', proResult.totalPrice); // 0.45
 }
 
@@ -57,7 +61,7 @@ function calculateHailuoPrice(): void {
   const hailuoRule: ConditionalPricing = {
     type: PricingType.CONDITIONAL,
     rules: [
-      { conditions: { resolution: '512p', duration: 6 }, price: 0.10 },
+      { conditions: { resolution: '512p', duration: 6 }, price: 0.1 },
       { conditions: { resolution: '512p', duration: 10 }, price: 0.15 },
       { conditions: { resolution: '768p', duration: 6 }, price: 0.27 },
       { conditions: { resolution: '768p', duration: 10 }, price: 0.45 },
@@ -70,7 +74,10 @@ function calculateHailuoPrice(): void {
     resolution: '768p',
     duration: 10,
   };
-  const result: PricingCalculationResult = pricingService.calculatePrice(hailuoRule, params1);
+  const result: PricingCalculationResult = pricingService.calculatePrice(
+    hailuoRule,
+    params1,
+  );
   console.log('Hailuo 768p 10s:', result.totalPrice); // 0.45
 
   // 1080p + 10 saniye (desteklenmiyor)
@@ -78,7 +85,8 @@ function calculateHailuoPrice(): void {
     resolution: '1080p',
     duration: 10,
   };
-  const unsupportedResult: PricingCalculationResult = pricingService.calculatePrice(hailuoRule, params2);
+  const unsupportedResult: PricingCalculationResult =
+    pricingService.calculatePrice(hailuoRule, params2);
   console.log('Hailuo 1080p 10s Error:', unsupportedResult.error);
 }
 
@@ -100,7 +108,10 @@ function calculateSeedancePrice(): void {
     resolution: '1080p',
     duration: 10,
   };
-  const result: PricingCalculationResult = pricingService.calculatePrice(seedanceRule, params);
+  const result: PricingCalculationResult = pricingService.calculatePrice(
+    seedanceRule,
+    params,
+  );
   console.log('Seedance 1080p 10s:', result.totalPrice); // 1.50
 }
 
@@ -111,20 +122,26 @@ function calculateFixedPrices(): void {
   // VIDEO-01
   const video01Rule: FixedPricing = {
     type: PricingType.FIXED,
-    price: 0.50,
+    price: 0.5,
   };
-  
+
   const emptyParams: PricingCalculationParams = {};
-  const video01Result: PricingCalculationResult = pricingService.calculatePrice(video01Rule, emptyParams);
+  const video01Result: PricingCalculationResult = pricingService.calculatePrice(
+    video01Rule,
+    emptyParams,
+  );
   console.log('Video-01:', video01Result.totalPrice); // 0.50
 
   // VEO-3-FAST
   const veo3Rule: FixedPricing = {
     type: PricingType.FIXED,
-    price: 3.20,
+    price: 3.2,
   };
-  
-  const veo3Result: PricingCalculationResult = pricingService.calculatePrice(veo3Rule, emptyParams);
+
+  const veo3Result: PricingCalculationResult = pricingService.calculatePrice(
+    veo3Rule,
+    emptyParams,
+  );
   console.log('VEO-3-FAST:', veo3Result.totalPrice); // 3.20
 
   // IDEOGRAM-V3-TURBO
@@ -132,8 +149,9 @@ function calculateFixedPrices(): void {
     type: PricingType.FIXED,
     price: 0.03,
   };
-  
-  const ideogramResult: PricingCalculationResult = pricingService.calculatePrice(ideogramRule, emptyParams);
+
+  const ideogramResult: PricingCalculationResult =
+    pricingService.calculatePrice(ideogramRule, emptyParams);
   console.log('Ideogram V3 Turbo:', ideogramResult.totalPrice); // 0.03
 }
 
@@ -141,25 +159,29 @@ function calculateFixedPrices(): void {
  * Örnek 5: Service'ten alınan parametrelerle kullanım
  */
 async function calculatePriceFromService(
-  serviceEntity: { pricing: { rule: PricingRule } }, 
-  userParams: Record<string, any>
+  serviceEntity: { pricing: { rule: PricingRule } },
+  userParams: Record<string, any>,
 ): Promise<number> {
   // Service entity'den pricing rule'ını al
   const pricingRule: PricingRule = serviceEntity.pricing.rule;
-  
+
   // User parametrelerini hazırla
-  const calculationParams: PricingCalculationParams = pricingService.prepareCalculationParams(userParams);
-  
+  const calculationParams: PricingCalculationParams =
+    pricingService.prepareCalculationParams(userParams);
+
   // Fiyatı hesapla
-  const result: PricingCalculationResult = pricingService.calculatePrice(pricingRule, calculationParams);
-  
+  const result: PricingCalculationResult = pricingService.calculatePrice(
+    pricingRule,
+    calculationParams,
+  );
+
   if (result.error) {
     console.error('Pricing calculation failed:', result.error);
     // Fallback: default fiyat kullan
     const defaultPrice: number = pricingService.getDefaultPrice(pricingRule);
     return defaultPrice;
   }
-  
+
   console.log('Calculation breakdown:', result.breakdown);
   return result.totalPrice;
 }
@@ -171,35 +193,38 @@ async function deductTokensForGeneration(
   userId: string,
   serviceEntity: { pricing: { rule: PricingRule } },
   generationParams: Record<string, any>,
-  userTokenBalance: number
+  userTokenBalance: number,
 ): Promise<{
   deductedAmount: number;
   newBalance: number;
   breakdown: PricingCalculationResult['breakdown'];
 }> {
   // Fiyatı hesapla
-  const calculationParams: PricingCalculationParams = pricingService.prepareCalculationParams(generationParams);
+  const calculationParams: PricingCalculationParams =
+    pricingService.prepareCalculationParams(generationParams);
   const pricingResult: PricingCalculationResult = pricingService.calculatePrice(
     serviceEntity.pricing.rule,
-    calculationParams
+    calculationParams,
   );
-  
+
   if (pricingResult.error) {
     throw new Error(`Cannot calculate price: ${pricingResult.error}`);
   }
-  
+
   const requiredTokens: number = pricingResult.totalPrice;
-  
+
   // Token kontrolü
   if (userTokenBalance < requiredTokens) {
-    throw new Error(`Insufficient tokens. Required: ${requiredTokens}, Available: ${userTokenBalance}`);
+    throw new Error(
+      `Insufficient tokens. Required: ${requiredTokens}, Available: ${userTokenBalance}`,
+    );
   }
-  
+
   // Token düş
   const newBalance: number = userTokenBalance - requiredTokens;
-  
+
   console.log(`Deducted ${requiredTokens} tokens. New balance: ${newBalance}`);
-  
+
   return {
     deductedAmount: requiredTokens,
     newBalance,

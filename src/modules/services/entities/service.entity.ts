@@ -6,7 +6,13 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { ServiceType, ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '../enums';
+import {
+  ServiceType,
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+  ModelVersion,
+} from '../enums';
 import { PricingRule } from '../interfaces/pricing.interface';
 
 export interface ServiceFields {
@@ -53,7 +59,10 @@ export class Service {
 
   @Column({
     type: 'enum',
-    enum: [...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)],
+    enum: [
+      ...Object.values(TextToImageModelVersion),
+      ...Object.values(TextToVideoModelVersion),
+    ],
     nullable: true,
   })
   model_version: ModelVersion | null;

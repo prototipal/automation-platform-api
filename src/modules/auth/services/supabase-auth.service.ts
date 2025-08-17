@@ -22,7 +22,9 @@ export class SupabaseAuthService {
     private readonly dataSource: DataSource,
   ) {
     const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
-    const supabaseServiceKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseServiceKey = this.configService.get<string>(
+      'SUPABASE_SERVICE_ROLE_KEY',
+    );
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Missing Supabase configuration');
@@ -36,13 +38,18 @@ export class SupabaseAuthService {
    */
   async validateSupabaseToken(token: string): Promise<AuthUserDto> {
     try {
-      this.logger.log(`Validating Supabase token: ${token.substring(0, 20)}...`);
+      this.logger.log(
+        `Validating Supabase token: ${token.substring(0, 20)}...`,
+      );
 
       // Verify JWT token with Supabase
-      const { data: tokenData, error: tokenError } = await this.supabase.auth.getUser(token);
+      const { data: tokenData, error: tokenError } =
+        await this.supabase.auth.getUser(token);
 
       if (tokenError || !tokenData?.user) {
-        this.logger.warn(`Invalid Supabase token: ${tokenError?.message || 'Token verification failed'}`);
+        this.logger.warn(
+          `Invalid Supabase token: ${tokenError?.message || 'Token verification failed'}`,
+        );
         throw new InvalidSupabaseTokenException();
       }
 
@@ -66,7 +73,9 @@ export class SupabaseAuthService {
       );
 
       if (!userDataResult || userDataResult.length === 0) {
-        this.logger.warn(`User not found in our database for Supabase user_id: ${supabaseUserId}`);
+        this.logger.warn(
+          `User not found in our database for Supabase user_id: ${supabaseUserId}`,
+        );
         throw new SupabaseUserNotFoundException();
       }
 
@@ -76,8 +85,10 @@ export class SupabaseAuthService {
         throw new InactiveUserException();
       }
 
-      this.logger.log(`Supabase token validated successfully for user: ${supabaseUserId}`);
-      
+      this.logger.log(
+        `Supabase token validated successfully for user: ${supabaseUserId}`,
+      );
+
       return plainToInstance(AuthUserDto, {
         user_id: userData.user_id,
         balance: parseFloat(userData.balance),
@@ -85,13 +96,18 @@ export class SupabaseAuthService {
         name: userData.name,
       });
     } catch (error) {
-      if (error instanceof InvalidSupabaseTokenException || 
-          error instanceof SupabaseUserNotFoundException || 
-          error instanceof InactiveUserException) {
+      if (
+        error instanceof InvalidSupabaseTokenException ||
+        error instanceof SupabaseUserNotFoundException ||
+        error instanceof InactiveUserException
+      ) {
         throw error;
       }
 
-      this.logger.error(`Unexpected error during Supabase token validation:`, error);
+      this.logger.error(
+        `Unexpected error during Supabase token validation:`,
+        error,
+      );
       throw new InvalidSupabaseTokenException();
     }
   }

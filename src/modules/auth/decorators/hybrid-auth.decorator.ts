@@ -1,5 +1,10 @@
 import { SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
-import { ApiBearerAuth, ApiUnauthorizedResponse, ApiForbiddenResponse, ApiSecurity } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import { HybridAuthGuard } from '@/modules/auth/guards/hybrid-auth.guard';
 
 export const HYBRID_AUTH_KEY = 'hybridAuth';
@@ -18,7 +23,10 @@ export const HybridAuth = () =>
         type: 'object',
         properties: {
           statusCode: { type: 'number', example: 401 },
-          message: { type: 'string', example: 'Valid API key or Supabase token is required' },
+          message: {
+            type: 'string',
+            example: 'Valid API key or Supabase token is required',
+          },
           error: { type: 'string', example: 'Unauthorized' },
         },
       },

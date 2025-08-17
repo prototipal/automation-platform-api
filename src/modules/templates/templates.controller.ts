@@ -23,7 +23,12 @@ import {
 } from '@nestjs/swagger';
 
 import { TemplatesService } from './templates.service';
-import { CreateTemplateDto, UpdateTemplateDto, QueryTemplateDto, TemplateResponseDto } from './dto';
+import {
+  CreateTemplateDto,
+  UpdateTemplateDto,
+  QueryTemplateDto,
+  TemplateResponseDto,
+} from './dto';
 import { StaticTokenAuth } from '@/modules/auth';
 
 @ApiTags('Templates')
@@ -47,20 +52,57 @@ export class TemplatesController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input data',
   })
-  async create(@Body() createTemplateDto: CreateTemplateDto): Promise<TemplateResponseDto> {
-    this.logger.log(`Creating new template for category ID: ${createTemplateDto.category_id}`);
+  async create(
+    @Body() createTemplateDto: CreateTemplateDto,
+  ): Promise<TemplateResponseDto> {
+    this.logger.log(
+      `Creating new template for category ID: ${createTemplateDto.category_id}`,
+    );
     return await this.templatesService.create(createTemplateDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all templates with pagination and filtering' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
-  @ApiQuery({ name: 'category_name', required: false, description: 'Filter by category name' })
-  @ApiQuery({ name: 'type', required: false, enum: ['photo', 'video'], description: 'Filter by type' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search in prompt text' })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['created_at', 'updated_at', 'category_name'], description: 'Sort field' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Sort direction' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'category_name',
+    required: false,
+    description: 'Filter by category name',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['photo', 'video'],
+    description: 'Filter by type',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search in prompt text',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['created_at', 'updated_at', 'category_name'],
+    description: 'Sort field',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort direction',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Templates retrieved successfully',
@@ -79,7 +121,9 @@ export class TemplatesController {
     },
   })
   async findAll(@Query() queryDto: QueryTemplateDto) {
-    this.logger.log(`Retrieving templates with filters: ${JSON.stringify(queryDto)}`);
+    this.logger.log(
+      `Retrieving templates with filters: ${JSON.stringify(queryDto)}`,
+    );
     return await this.templatesService.findAll(queryDto);
   }
 
@@ -93,7 +137,10 @@ export class TemplatesController {
       properties: {
         total: { type: 'number' },
         byType: { type: 'object', additionalProperties: { type: 'number' } },
-        byCategory: { type: 'object', additionalProperties: { type: 'number' } },
+        byCategory: {
+          type: 'object',
+          additionalProperties: { type: 'number' },
+        },
       },
     },
   })
@@ -110,7 +157,12 @@ export class TemplatesController {
       type: 'object',
       properties: {
         filePath: { type: 'string', description: 'Path to CSV file' },
-        forceType: { type: 'string', enum: ['photo', 'video'], default: 'photo', description: 'Force all imports to this type' },
+        forceType: {
+          type: 'string',
+          enum: ['photo', 'video'],
+          default: 'photo',
+          description: 'Force all imports to this type',
+        },
       },
       required: ['filePath'],
     },
@@ -127,9 +179,14 @@ export class TemplatesController {
       },
     },
   })
-  async importFromCsv(@Body() body: { filePath: string; forceType?: 'photo' | 'video' }) {
+  async importFromCsv(
+    @Body() body: { filePath: string; forceType?: 'photo' | 'video' },
+  ) {
     this.logger.log(`Starting CSV import from: ${body.filePath}`);
-    return await this.templatesService.importFromCsv(body.filePath, body.forceType || 'photo');
+    return await this.templatesService.importFromCsv(
+      body.filePath,
+      body.forceType || 'photo',
+    );
   }
 
   @Delete('clear')
@@ -157,7 +214,9 @@ export class TemplatesController {
     status: HttpStatus.NOT_FOUND,
     description: 'Template not found',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<TemplateResponseDto> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TemplateResponseDto> {
     this.logger.log(`Retrieving template with ID: ${id}`);
     return await this.templatesService.findOne(id);
   }

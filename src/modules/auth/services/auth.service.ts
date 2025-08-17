@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 
-import { AuthUserDto, CreditDeductionDto, CreditDeductionResponseDto } from '@/modules/auth/dto';
+import {
+  AuthUserDto,
+  CreditDeductionDto,
+  CreditDeductionResponseDto,
+} from '@/modules/auth/dto';
 import {
   ApiKeyNotFoundException,
   InactiveApiKeyException,
@@ -16,9 +20,7 @@ import {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
 
   /**
    * Validates API key and returns user information with credits
@@ -70,8 +72,10 @@ export class AuthService {
       throw new InactiveUserException();
     }
 
-    this.logger.log(`API key validated successfully for user: ${apiKey.user_id}`);
-    
+    this.logger.log(
+      `API key validated successfully for user: ${apiKey.user_id}`,
+    );
+
     return plainToInstance(AuthUserDto, {
       user_id: userData.user_id,
       balance: parseFloat(userData.balance),
@@ -83,7 +87,10 @@ export class AuthService {
   /**
    * Checks if user has sufficient credits for the requested amount
    */
-  async checkSufficientCredits(userId: string, requiredAmount: number): Promise<boolean> {
+  async checkSufficientCredits(
+    userId: string,
+    requiredAmount: number,
+  ): Promise<boolean> {
     const creditResult = await this.dataSource.query(
       `SELECT balance FROM user_credits WHERE user_id = $1`,
       [userId],
@@ -100,9 +107,11 @@ export class AuthService {
   /**
    * Deducts credits from user account with transaction safety
    */
-  async deductCredits(deductionDto: CreditDeductionDto): Promise<CreditDeductionResponseDto> {
+  async deductCredits(
+    deductionDto: CreditDeductionDto,
+  ): Promise<CreditDeductionResponseDto> {
     const { user_id, amount, description } = deductionDto;
-    
+
     this.logger.log(`Deducting ${amount} credits from user: ${user_id}`);
 
     // Use transaction to ensure atomicity
@@ -122,9 +131,11 @@ export class AuthService {
       }
 
       const currentBalance = parseFloat(balanceResult[0].balance);
-      
+
       if (currentBalance < amount) {
-        this.logger.warn(`Insufficient credits for user ${user_id}. Required: ${amount}, Available: ${currentBalance}`);
+        this.logger.warn(
+          `Insufficient credits for user ${user_id}. Required: ${amount}, Available: ${currentBalance}`,
+        );
         throw new InsufficientCreditsException();
       }
 
@@ -139,7 +150,9 @@ export class AuthService {
       );
 
       if (updateResult.affectedRows === 0 && !updateResult[1]) {
-        throw new CreditDeductionFailedException('Failed to update user balance');
+        throw new CreditDeductionFailedException(
+          'Failed to update user balance',
+        );
       }
 
       // Log transaction (if you have a transactions table, uncomment this)
@@ -151,7 +164,9 @@ export class AuthService {
 
       await queryRunner.commitTransaction();
 
-      this.logger.log(`Successfully deducted ${amount} credits from user ${user_id}. New balance: ${newBalance}`);
+      this.logger.log(
+        `Successfully deducted ${amount} credits from user ${user_id}. New balance: ${newBalance}`,
+      );
 
       return plainToInstance(CreditDeductionResponseDto, {
         success: true,
@@ -161,12 +176,17 @@ export class AuthService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`Failed to deduct credits for user ${user_id}:`, error);
-      
-      if (error instanceof InsufficientCreditsException || error instanceof UserNotFoundException) {
+
+      if (
+        error instanceof InsufficientCreditsException ||
+        error instanceof UserNotFoundException
+      ) {
         throw error;
       }
-      
-      throw new CreditDeductionFailedException(`Credit deduction failed: ${error.message}`);
+
+      throw new CreditDeductionFailedException(
+        `Credit deduction failed: ${error.message}`,
+      );
     } finally {
       await queryRunner.release();
     }

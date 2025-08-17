@@ -41,10 +41,10 @@ export class ApiKeyAuthGuard implements CanActivate {
       return true;
     }
 
-    const requiresApiKeyAuth = this.reflector.getAllAndOverride<boolean>(API_KEY_AUTH_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiresApiKeyAuth = this.reflector.getAllAndOverride<boolean>(
+      API_KEY_AUTH_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiresApiKeyAuth) {
       return true;
@@ -61,19 +61,23 @@ export class ApiKeyAuthGuard implements CanActivate {
     try {
       const user = await this.authService.validateApiKey(apiKey);
       request.user = user;
-      
-      this.logger.log(`API key authentication successful for user: ${user.user_id}`);
+
+      this.logger.log(
+        `API key authentication successful for user: ${user.user_id}`,
+      );
       return true;
     } catch (error) {
       this.logger.warn(`API key authentication failed: ${error.message}`);
-      
-      if (error instanceof ApiKeyNotFoundException ||
-          error instanceof InactiveApiKeyException ||
-          error instanceof UserNotFoundException ||
-          error instanceof InactiveUserException) {
+
+      if (
+        error instanceof ApiKeyNotFoundException ||
+        error instanceof InactiveApiKeyException ||
+        error instanceof UserNotFoundException ||
+        error instanceof InactiveUserException
+      ) {
         throw error;
       }
-      
+
       throw new InvalidApiKeyException('API key validation failed');
     }
   }

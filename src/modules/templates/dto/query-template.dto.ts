@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsEnum, IsNumber, Min, Max, IsUUID } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsNumber,
+  Min,
+  Max,
+  IsUUID,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -6,7 +14,7 @@ export class QueryTemplateDto {
   @ApiPropertyOptional({
     description: 'Page number for pagination',
     example: 1,
-    minimum: 1
+    minimum: 1,
   })
   @IsOptional()
   @Type(() => Number)
@@ -18,7 +26,7 @@ export class QueryTemplateDto {
     description: 'Number of items per page',
     example: 10,
     minimum: 1,
-    maximum: 100
+    maximum: 100,
   })
   @IsOptional()
   @Type(() => Number)
@@ -29,7 +37,7 @@ export class QueryTemplateDto {
 
   @ApiPropertyOptional({
     description: 'Filter by category ID',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
   })
   @IsOptional()
   @IsString()
@@ -38,7 +46,7 @@ export class QueryTemplateDto {
 
   @ApiPropertyOptional({
     description: 'Filter by category name (partial match)',
-    example: 'General'
+    example: 'General',
   })
   @IsOptional()
   @IsString()
@@ -46,7 +54,7 @@ export class QueryTemplateDto {
 
   @ApiPropertyOptional({
     description: 'Filter by template type',
-    enum: ['photo', 'video']
+    enum: ['photo', 'video'],
   })
   @IsOptional()
   @IsEnum(['photo', 'video'])
@@ -54,7 +62,7 @@ export class QueryTemplateDto {
 
   @ApiPropertyOptional({
     description: 'Search term for prompt text',
-    example: 'landscape'
+    example: 'landscape',
   })
   @IsOptional()
   @IsString()
@@ -63,7 +71,7 @@ export class QueryTemplateDto {
   @ApiPropertyOptional({
     description: 'Sort field',
     enum: ['created_at', 'updated_at', 'category_name'],
-    default: 'created_at'
+    default: 'created_at',
   })
   @IsOptional()
   @IsEnum(['created_at', 'updated_at', 'category_name'])
@@ -72,7 +80,7 @@ export class QueryTemplateDto {
   @ApiPropertyOptional({
     description: 'Sort direction',
     enum: ['ASC', 'DESC'],
-    default: 'DESC'
+    default: 'DESC',
   })
   @IsOptional()
   @Transform(({ value }) => value.toUpperCase())

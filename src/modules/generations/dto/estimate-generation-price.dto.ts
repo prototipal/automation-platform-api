@@ -1,8 +1,20 @@
-import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
-import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion } from '@/modules/services/enums';
+import {
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+} from '@/modules/services/enums';
 import type { ModelVersion } from '@/modules/services/enums';
 
 /**
@@ -25,14 +37,18 @@ export class EstimateGenerationPriceDto {
     enum: { ...TextToImageModelVersion, ...TextToVideoModelVersion },
     example: 'flux-kontext-max',
   })
-  @IsEnum({ ...TextToImageModelVersion, ...TextToVideoModelVersion }, {
-    message: 'model_version must be a valid ModelVersion enum value',
-  })
+  @IsEnum(
+    { ...TextToImageModelVersion, ...TextToVideoModelVersion },
+    {
+      message: 'model_version must be a valid ModelVersion enum value',
+    },
+  )
   @IsNotEmpty()
   model_version: ModelVersion;
 
   @ApiProperty({
-    description: 'Input parameters for the AI model (structure varies by model)',
+    description:
+      'Input parameters for the AI model (structure varies by model)',
     type: 'object',
     additionalProperties: true,
     example: {
@@ -46,11 +62,12 @@ export class EstimateGenerationPriceDto {
 
   @ApiProperty({
     type: 'number',
-    description: 'Number of images to generate (only for text-to-image models). Default is 2.',
+    description:
+      'Number of images to generate (only for text-to-image models). Default is 2.',
     example: 2,
     required: false,
     minimum: 2,
-    maximum: 4
+    maximum: 4,
   })
   @IsOptional()
   @IsNumber()

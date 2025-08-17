@@ -5,36 +5,36 @@ import { SubCategoryResponseDto } from './sub-category-response.dto';
 export class MainCategoryResponseDto {
   @ApiProperty({
     description: 'Main category unique identifier',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
   })
   @Expose()
   id: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Main category name',
-    example: 'Prototipal Halo'
+    example: 'Prototipal Halo',
   })
   @Expose()
   name: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Main category type',
     enum: ['photo', 'video'],
-    example: 'photo'
+    example: 'photo',
   })
   @Expose()
   type: 'photo' | 'video';
 
   @ApiProperty({
     description: 'Creation timestamp',
-    example: '2023-12-01T10:00:00Z'
+    example: '2023-12-01T10:00:00Z',
   })
   @Expose()
   created_at: Date;
 
   @ApiProperty({
     description: 'Last update timestamp',
-    example: '2023-12-01T10:00:00Z'
+    example: '2023-12-01T10:00:00Z',
   })
   @Expose()
   updated_at: Date;
@@ -42,7 +42,7 @@ export class MainCategoryResponseDto {
   @ApiProperty({
     description: 'Sub-categories under this main category',
     type: [SubCategoryResponseDto],
-    isArray: true
+    isArray: true,
   })
   @Expose()
   @Type(() => SubCategoryResponseDto)

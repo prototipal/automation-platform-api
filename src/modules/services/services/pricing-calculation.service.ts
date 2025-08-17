@@ -20,9 +20,14 @@ export class PricingCalculationService {
 
   constructor(private readonly configService: ConfigService) {
     this.profitMargin = this.configService.get<number>('PROFIT_MARGIN', 1.5);
-    this.creditValueUsd = this.configService.get<number>('CREDIT_VALUE_USD', 0.05);
-    
-    this.logger.log(`Pricing configuration - Profit Margin: ${this.profitMargin}, Credit Value: $${this.creditValueUsd}`);
+    this.creditValueUsd = this.configService.get<number>(
+      'CREDIT_VALUE_USD',
+      0.05,
+    );
+
+    this.logger.log(
+      `Pricing configuration - Profit Margin: ${this.profitMargin}, Credit Value: $${this.creditValueUsd}`,
+    );
   }
   /**
    * Verilen pricing rule'ına ve parametrelere göre toplam fiyatı hesaplar
@@ -76,9 +81,12 @@ export class PricingCalculationService {
     const { parameter, rates } = rule;
     const paramValue = params[parameter];
     const durationParam = params.duration || 1;
-    
+
     // Duration'ı number'a dönüştür
-    const duration = typeof durationParam === 'string' ? parseFloat(durationParam) : durationParam;
+    const duration =
+      typeof durationParam === 'string'
+        ? parseFloat(durationParam)
+        : durationParam;
 
     if (!paramValue) {
       return {
@@ -180,16 +188,16 @@ export class PricingCalculationService {
     switch (rule.type) {
       case PricingType.FIXED:
         return rule.price;
-      
+
       case PricingType.PER_SECOND:
         // İlk rate'i default olarak al
         const firstRate = Object.values(rule.rates)[0];
         return firstRate || 0;
-      
+
       case PricingType.CONDITIONAL:
         // İlk rule'ın fiyatını default olarak al
         return rule.rules[0]?.price || 0;
-      
+
       default:
         return 0;
     }
@@ -206,7 +214,7 @@ export class PricingCalculationService {
     try {
       // First calculate the base USD cost using existing pricing logic
       const pricingResult = this.calculatePrice(rule, params);
-      
+
       if (pricingResult.error) {
         return {
           estimated_credits: 0,
@@ -229,8 +237,8 @@ export class PricingCalculationService {
 
       this.logger.log(
         `Credit calculation - Replicate: $${replicateCostUsd}, ` +
-        `Total (${this.profitMargin}x): $${totalCostUsd}, ` +
-        `Credits: ${estimatedCreditsRaw} -> ${estimatedCreditsRounded}`,
+          `Total (${this.profitMargin}x): $${totalCostUsd}, ` +
+          `Credits: ${estimatedCreditsRaw} -> ${estimatedCreditsRounded}`,
       );
 
       return {
@@ -271,7 +279,7 @@ export class PricingCalculationService {
     modelVersion: string,
   ): PriceEstimationBreakdown {
     const creditResult = this.calculateRequiredCredits(rule, params);
-    
+
     return {
       estimated_credits: creditResult.estimated_credits,
       breakdown: creditResult.breakdown,

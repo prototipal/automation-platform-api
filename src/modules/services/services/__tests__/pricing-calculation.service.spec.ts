@@ -43,37 +43,37 @@ describe('PricingCalculationService', () => {
     it('should calculate fixed price correctly', () => {
       const rule = {
         type: PricingType.FIXED,
-        price: 0.50,
+        price: 0.5,
       };
 
       const result = service.calculatePrice(rule, {});
 
-      expect(result.totalPrice).toBe(0.50);
+      expect(result.totalPrice).toBe(0.5);
       expect(result.error).toBeUndefined();
-      expect(result.breakdown?.basePrice).toBe(0.50);
+      expect(result.breakdown?.basePrice).toBe(0.5);
     });
 
     it('should handle video-01 fixed pricing', () => {
       const rule = {
         type: PricingType.FIXED,
-        price: 0.50,
+        price: 0.5,
       };
 
       const result = service.calculatePrice(rule, { prompt: 'test' });
 
-      expect(result.totalPrice).toBe(0.50);
+      expect(result.totalPrice).toBe(0.5);
       expect(result.error).toBeUndefined();
     });
 
     it('should handle veo-3-fast fixed pricing', () => {
       const rule = {
         type: PricingType.FIXED,
-        price: 3.20,
+        price: 3.2,
       };
 
       const result = service.calculatePrice(rule, { prompt: 'test' });
 
-      expect(result.totalPrice).toBe(3.20);
+      expect(result.totalPrice).toBe(3.2);
       expect(result.error).toBeUndefined();
     });
   });
@@ -84,8 +84,8 @@ describe('PricingCalculationService', () => {
         type: PricingType.PER_SECOND,
         parameter: 'mode',
         rates: {
-          'standard': 0.05,
-          'pro': 0.09,
+          standard: 0.05,
+          pro: 0.09,
         },
       };
 
@@ -94,7 +94,7 @@ describe('PricingCalculationService', () => {
         duration: 10,
       });
 
-      expect(result.totalPrice).toBe(0.50); // 0.05 * 10
+      expect(result.totalPrice).toBe(0.5); // 0.05 * 10
       expect(result.error).toBeUndefined();
       expect(result.breakdown?.rate).toBe(0.05);
       expect(result.breakdown?.duration).toBe(10);
@@ -105,8 +105,8 @@ describe('PricingCalculationService', () => {
         type: PricingType.PER_SECOND,
         parameter: 'mode',
         rates: {
-          'standard': 0.05,
-          'pro': 0.09,
+          standard: 0.05,
+          pro: 0.09,
         },
       };
 
@@ -136,7 +136,7 @@ describe('PricingCalculationService', () => {
         duration: 10,
       });
 
-      expect(result.totalPrice).toBe(0.30); // 0.03 * 10
+      expect(result.totalPrice).toBe(0.3); // 0.03 * 10
       expect(result.error).toBeUndefined();
     });
 
@@ -164,7 +164,7 @@ describe('PricingCalculationService', () => {
         type: PricingType.PER_SECOND,
         parameter: 'mode',
         rates: {
-          'standard': 0.05,
+          standard: 0.05,
         },
       };
 
@@ -182,7 +182,7 @@ describe('PricingCalculationService', () => {
         type: PricingType.PER_SECOND,
         parameter: 'mode',
         rates: {
-          'standard': 0.05,
+          standard: 0.05,
         },
       };
 
@@ -191,7 +191,7 @@ describe('PricingCalculationService', () => {
       });
 
       expect(result.totalPrice).toBe(0);
-      expect(result.error).toContain('Required parameter \'mode\' is missing');
+      expect(result.error).toContain("Required parameter 'mode' is missing");
     });
 
     it('should return error if rate not found for parameter value', () => {
@@ -199,7 +199,7 @@ describe('PricingCalculationService', () => {
         type: PricingType.PER_SECOND,
         parameter: 'mode',
         rates: {
-          'standard': 0.05,
+          standard: 0.05,
         },
       };
 
@@ -209,7 +209,7 @@ describe('PricingCalculationService', () => {
       });
 
       expect(result.totalPrice).toBe(0);
-      expect(result.error).toContain('No rate found for mode=\'invalid\'');
+      expect(result.error).toContain("No rate found for mode='invalid'");
     });
   });
 
@@ -217,7 +217,7 @@ describe('PricingCalculationService', () => {
     const hailuoRule = {
       type: PricingType.CONDITIONAL,
       rules: [
-        { conditions: { resolution: '512p', duration: 6 }, price: 0.10 },
+        { conditions: { resolution: '512p', duration: 6 }, price: 0.1 },
         { conditions: { resolution: '512p', duration: 10 }, price: 0.15 },
         { conditions: { resolution: '768p', duration: 6 }, price: 0.27 },
         { conditions: { resolution: '768p', duration: 10 }, price: 0.45 },
@@ -231,9 +231,9 @@ describe('PricingCalculationService', () => {
         duration: 6,
       });
 
-      expect(result.totalPrice).toBe(0.10);
+      expect(result.totalPrice).toBe(0.1);
       expect(result.error).toBeUndefined();
-      expect(result.breakdown?.basePrice).toBe(0.10);
+      expect(result.breakdown?.basePrice).toBe(0.1);
     });
 
     it('should calculate hailuo-02 pricing for 512p + 10s', () => {
@@ -300,7 +300,7 @@ describe('PricingCalculationService', () => {
       const multiRule = {
         type: PricingType.CONDITIONAL,
         rules: [
-          { conditions: { resolution: '512p' }, price: 0.10 },
+          { conditions: { resolution: '512p' }, price: 0.1 },
           { conditions: { resolution: '512p', duration: 6 }, price: 0.15 },
         ],
       };
@@ -311,7 +311,7 @@ describe('PricingCalculationService', () => {
       });
 
       // İlk eşleşen kuralı kullanmalı
-      expect(result.totalPrice).toBe(0.10);
+      expect(result.totalPrice).toBe(0.1);
     });
   });
 
@@ -355,11 +355,11 @@ describe('PricingCalculationService', () => {
     it('should return fixed price for fixed pricing', () => {
       const rule = {
         type: PricingType.FIXED,
-        price: 0.50,
+        price: 0.5,
       };
 
       const defaultPrice = service.getDefaultPrice(rule);
-      expect(defaultPrice).toBe(0.50);
+      expect(defaultPrice).toBe(0.5);
     });
 
     it('should return first rate for per-second pricing', () => {
@@ -367,8 +367,8 @@ describe('PricingCalculationService', () => {
         type: PricingType.PER_SECOND,
         parameter: 'mode',
         rates: {
-          'standard': 0.05,
-          'pro': 0.09,
+          standard: 0.05,
+          pro: 0.09,
         },
       };
 
@@ -380,13 +380,13 @@ describe('PricingCalculationService', () => {
       const rule = {
         type: PricingType.CONDITIONAL,
         rules: [
-          { conditions: { resolution: '512p', duration: 6 }, price: 0.10 },
+          { conditions: { resolution: '512p', duration: 6 }, price: 0.1 },
           { conditions: { resolution: '768p', duration: 6 }, price: 0.27 },
         ],
       };
 
       const defaultPrice = service.getDefaultPrice(rule);
-      expect(defaultPrice).toBe(0.10);
+      expect(defaultPrice).toBe(0.1);
     });
 
     it('should return 0 for unknown pricing type', () => {
@@ -446,7 +446,7 @@ describe('PricingCalculationService', () => {
           type: PricingType.PER_SECOND,
           parameter: 'mode',
           rates: {
-            'standard': 0.05, // $0.05 per second
+            standard: 0.05, // $0.05 per second
           },
         };
 
@@ -458,10 +458,12 @@ describe('PricingCalculationService', () => {
         // Formula: (0.05 * 2 * 1.5) / 0.05 = (0.10 * 1.5) / 0.05 = 0.15 / 0.05 = 3
         // But since we round up, and there may be precision issues, let's check the actual result
         expect(result.estimated_credits).toBeGreaterThanOrEqual(3);
-        expect(result.breakdown.replicate_cost_usd).toBe(0.10); // 0.05 * 2
+        expect(result.breakdown.replicate_cost_usd).toBe(0.1); // 0.05 * 2
         expect(result.breakdown.total_cost_usd).toBeCloseTo(0.15, 2); // 0.10 * 1.5
         expect(result.breakdown.estimated_credits_raw).toBeCloseTo(3, 1);
-        expect(result.breakdown.estimated_credits_rounded).toBeGreaterThanOrEqual(3);
+        expect(
+          result.breakdown.estimated_credits_rounded,
+        ).toBeGreaterThanOrEqual(3);
       });
 
       it('should calculate credits for conditional pricing with profit margin', () => {
@@ -490,7 +492,7 @@ describe('PricingCalculationService', () => {
           type: PricingType.PER_SECOND,
           parameter: 'mode',
           rates: {
-            'standard': 0.05,
+            standard: 0.05,
           },
         };
 
@@ -504,7 +506,7 @@ describe('PricingCalculationService', () => {
         expect(result.breakdown.total_cost_usd).toBe(0);
         expect(result.breakdown.estimated_credits_raw).toBe(0);
         expect(result.breakdown.estimated_credits_rounded).toBe(0);
-        expect(result.error).toContain('Required parameter \'mode\' is missing');
+        expect(result.error).toContain("Required parameter 'mode' is missing");
       });
 
       it('should always round up fractional credits', () => {
@@ -589,7 +591,7 @@ describe('PricingCalculationService', () => {
       it('should calculate default credits for fixed pricing', () => {
         const rule = {
           type: PricingType.FIXED,
-          price: 0.50,
+          price: 0.5,
         };
 
         const defaultCredits = service.getDefaultCredits(rule);
@@ -603,8 +605,8 @@ describe('PricingCalculationService', () => {
           type: PricingType.PER_SECOND,
           parameter: 'mode',
           rates: {
-            'standard': 0.05,
-            'pro': 0.09,
+            standard: 0.05,
+            pro: 0.09,
           },
         };
 
@@ -618,7 +620,7 @@ describe('PricingCalculationService', () => {
         const rule = {
           type: PricingType.CONDITIONAL,
           rules: [
-            { conditions: { resolution: '512p', duration: 6 }, price: 0.10 },
+            { conditions: { resolution: '512p', duration: 6 }, price: 0.1 },
             { conditions: { resolution: '768p', duration: 6 }, price: 0.27 },
           ],
         };
@@ -650,8 +652,8 @@ describe('PricingCalculationService', () => {
         type: PricingType.PER_SECOND,
         parameter: 'mode',
         rates: {
-          'standard': 0.05,
-          'pro': 0.09,
+          standard: 0.05,
+          pro: 0.09,
         },
       };
 
@@ -662,7 +664,7 @@ describe('PricingCalculationService', () => {
 
       // Step 1: Calculate base pricing
       const pricingResult = service.calculatePrice(rule, params);
-      expect(pricingResult.totalPrice).toBeCloseTo(0.90, 2); // 0.09 * 10
+      expect(pricingResult.totalPrice).toBeCloseTo(0.9, 2); // 0.09 * 10
 
       // Step 2: Calculate credits with profit margin
       const creditResult = service.calculateRequiredCredits(rule, params);
@@ -677,7 +679,7 @@ describe('PricingCalculationService', () => {
       );
 
       expect(estimation.estimated_credits).toBe(27);
-      expect(estimation.breakdown.replicate_cost_usd).toBeCloseTo(0.90, 2);
+      expect(estimation.breakdown.replicate_cost_usd).toBeCloseTo(0.9, 2);
       expect(estimation.breakdown.total_cost_usd).toBeCloseTo(1.35, 2);
       expect(estimation.service_details.model).toBe('KWAIGI');
       expect(estimation.service_details.model_version).toBe('KLING_V2_1');
@@ -696,11 +698,20 @@ describe('PricingCalculationService', () => {
 
       // Both methods should produce same credit result
       const creditResult = service.calculateRequiredCredits(rule, params);
-      const estimation = service.createPriceEstimation(rule, params, 'MINIMAX', 'HAILUO_02');
+      const estimation = service.createPriceEstimation(
+        rule,
+        params,
+        'MINIMAX',
+        'HAILUO_02',
+      );
 
       expect(creditResult.estimated_credits).toBe(estimation.estimated_credits);
-      expect(creditResult.breakdown.replicate_cost_usd).toBe(estimation.breakdown.replicate_cost_usd);
-      expect(creditResult.breakdown.total_cost_usd).toBe(estimation.breakdown.total_cost_usd);
+      expect(creditResult.breakdown.replicate_cost_usd).toBe(
+        estimation.breakdown.replicate_cost_usd,
+      );
+      expect(creditResult.breakdown.total_cost_usd).toBe(
+        estimation.breakdown.total_cost_usd,
+      );
     });
   });
 });

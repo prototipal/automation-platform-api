@@ -1,37 +1,44 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUrl, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsUrl,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTemplateDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Category ID that this template belongs to',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
   })
   @IsString()
   @IsNotEmpty()
   @IsUUID()
   category_id: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Template image URL',
-    example: 'https://example.com/image.jpg'
+    example: 'https://example.com/image.jpg',
   })
   @IsString()
   @IsNotEmpty()
   @IsUrl()
   image_url: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Template prompt text',
-    example: 'A beautiful landscape photo...'
+    example: 'A beautiful landscape photo...',
   })
   @IsString()
   @IsNotEmpty()
   prompt: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Template type',
     enum: ['photo', 'video'],
-    default: 'photo'
+    default: 'photo',
   })
   @IsOptional()
   @IsEnum(['photo', 'video'])

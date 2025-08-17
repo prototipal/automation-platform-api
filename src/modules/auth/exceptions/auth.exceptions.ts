@@ -1,4 +1,8 @@
-import { UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 
 export class InvalidApiKeyException extends UnauthorizedException {
   constructor(message = 'Invalid API key') {
@@ -55,7 +59,9 @@ export class InvalidSupabaseTokenException extends UnauthorizedException {
 }
 
 export class SupabaseUserNotFoundException extends UnauthorizedException {
-  constructor(message = 'User not found in system. Please ensure your account is properly set up.') {
+  constructor(
+    message = 'User not found in system. Please ensure your account is properly set up.',
+  ) {
     super(message);
   }
 }

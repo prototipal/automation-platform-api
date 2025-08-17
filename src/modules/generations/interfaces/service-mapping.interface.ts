@@ -1,4 +1,9 @@
-import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '@/modules/services/enums';
+import {
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+  ModelVersion,
+} from '@/modules/services/enums';
 
 export interface ServiceMapping {
   model: ServiceModel;

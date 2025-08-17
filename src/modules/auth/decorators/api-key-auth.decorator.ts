@@ -1,5 +1,9 @@
 import { SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
-import { ApiBearerAuth, ApiUnauthorizedResponse, ApiForbiddenResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+} from '@nestjs/swagger';
 import { ApiKeyAuthGuard } from '@/modules/auth/guards';
 
 export const API_KEY_AUTH_KEY = 'apiKeyAuth';

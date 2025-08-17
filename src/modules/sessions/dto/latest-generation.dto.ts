@@ -19,7 +19,8 @@ export class LatestGenerationDto {
 
   @ApiProperty({
     description: 'First image URL from supabase_urls',
-    example: 'https://supabase.com/storage/v1/object/public/generations/abc123.jpg',
+    example:
+      'https://supabase.com/storage/v1/object/public/generations/abc123.jpg',
     required: false,
   })
   @Expose()

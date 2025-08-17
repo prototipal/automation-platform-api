@@ -8,10 +8,7 @@ import { SessionsRepository } from './sessions.repository';
 import { Session } from './entities';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Session]),
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Session]), AuthModule],
   controllers: [SessionsController],
   providers: [SessionsService, SessionsRepository],
   exports: [SessionsService, SessionsRepository],

@@ -24,7 +24,8 @@ export class PriceBreakdownDto {
   total_cost_usd: number;
 
   @ApiProperty({
-    description: 'Value of one credit in USD ($5 = 100 credits = $0.05 per credit)',
+    description:
+      'Value of one credit in USD ($5 = 100 credits = $0.05 per credit)',
     example: 0.05,
   })
   @Expose()

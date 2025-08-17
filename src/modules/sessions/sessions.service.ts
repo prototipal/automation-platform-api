@@ -8,7 +8,13 @@ import {
 import { plainToInstance } from 'class-transformer';
 
 import { AuthUserDto } from '@/modules/auth/dto';
-import { CreateSessionDto, SessionResponseDto, QuerySessionDto, UpdateSessionDto, LatestGenerationDto } from './dto';
+import {
+  CreateSessionDto,
+  SessionResponseDto,
+  QuerySessionDto,
+  UpdateSessionDto,
+  LatestGenerationDto,
+} from './dto';
 import { SessionsRepository, SessionWithStats } from './sessions.repository';
 
 export interface PaginatedSessionResponse {
@@ -32,9 +38,7 @@ export interface UserSessionStatsResponse {
 export class SessionsService {
   private readonly logger = new Logger(SessionsService.name);
 
-  constructor(
-    private readonly sessionsRepository: SessionsRepository,
-  ) {}
+  constructor(private readonly sessionsRepository: SessionsRepository) {}
 
   /**
    * Create a new session for the authenticated user
@@ -43,7 +47,9 @@ export class SessionsService {
     createSessionDto: CreateSessionDto,
     authUser: AuthUserDto,
   ): Promise<SessionResponseDto> {
-    this.logger.log(`Creating session '${createSessionDto.name}' for user: ${authUser.user_id}`);
+    this.logger.log(
+      `Creating session '${createSessionDto.name}' for user: ${authUser.user_id}`,
+    );
 
     // Validate session name is not empty after trim
     const trimmedName = createSessionDto.name?.trim();
@@ -59,24 +65,36 @@ export class SessionsService {
     };
 
     try {
-      const session = await this.sessionsRepository.create(authUser.user_id, sessionData);
-      
-      this.logger.log(`Session created successfully with ID: ${session.id} for user: ${authUser.user_id}`);
-      
+      const session = await this.sessionsRepository.create(
+        authUser.user_id,
+        sessionData,
+      );
+
+      this.logger.log(
+        `Session created successfully with ID: ${session.id} for user: ${authUser.user_id}`,
+      );
+
       const transformed = plainToInstance(SessionResponseDto, session, {
         excludeExtraneousValues: true,
       });
 
       // Handle latest_generation transformation (new sessions won't have any generations)
       if ((session as any).latest_generation) {
-        transformed.latest_generation = plainToInstance(LatestGenerationDto, (session as any).latest_generation, {
-          excludeExtraneousValues: true,
-        });
+        transformed.latest_generation = plainToInstance(
+          LatestGenerationDto,
+          (session as any).latest_generation,
+          {
+            excludeExtraneousValues: true,
+          },
+        );
       }
 
       return transformed;
     } catch (error) {
-      this.logger.error(`Failed to create session for user ${authUser.user_id}:`, error);
+      this.logger.error(
+        `Failed to create session for user ${authUser.user_id}:`,
+        error,
+      );
       throw new BadRequestException('Failed to create session');
     }
   }
@@ -89,7 +107,9 @@ export class SessionsService {
     authUser: AuthUserDto,
     includeStats: boolean = false,
   ): Promise<PaginatedSessionResponse> {
-    this.logger.log(`Fetching sessions for user: ${authUser.user_id} with stats: ${includeStats}`);
+    this.logger.log(
+      `Fetching sessions for user: ${authUser.user_id} with stats: ${includeStats}`,
+    );
 
     try {
       const { sessions, total } = await this.sessionsRepository.findByUser(
@@ -105,9 +125,13 @@ export class SessionsService {
 
         // Handle latest_generation transformation
         if (session.latest_generation) {
-          transformed.latest_generation = plainToInstance(LatestGenerationDto, session.latest_generation, {
-            excludeExtraneousValues: true,
-          });
+          transformed.latest_generation = plainToInstance(
+            LatestGenerationDto,
+            session.latest_generation,
+            {
+              excludeExtraneousValues: true,
+            },
+          );
         }
 
         return transformed;
@@ -115,7 +139,9 @@ export class SessionsService {
 
       const totalPages = Math.ceil(total / queryDto.limit);
 
-      this.logger.log(`Found ${sessions.length} sessions for user: ${authUser.user_id}`);
+      this.logger.log(
+        `Found ${sessions.length} sessions for user: ${authUser.user_id}`,
+      );
 
       return {
         sessions: sessionResponses,
@@ -127,7 +153,10 @@ export class SessionsService {
         },
       };
     } catch (error) {
-      this.logger.error(`Failed to fetch sessions for user ${authUser.user_id}:`, error);
+      this.logger.error(
+        `Failed to fetch sessions for user ${authUser.user_id}:`,
+        error,
+      );
       throw new BadRequestException('Failed to fetch sessions');
     }
   }
@@ -140,7 +169,9 @@ export class SessionsService {
     authUser: AuthUserDto,
     includeStats: boolean = true,
   ): Promise<SessionResponseDto> {
-    this.logger.log(`Fetching session ${sessionId} for user: ${authUser.user_id} with stats: ${includeStats}`);
+    this.logger.log(
+      `Fetching session ${sessionId} for user: ${authUser.user_id} with stats: ${includeStats}`,
+    );
 
     if (sessionId <= 0) {
       throw new BadRequestException('Invalid session ID');
@@ -150,21 +181,33 @@ export class SessionsService {
       let session: SessionWithStats | null;
 
       if (includeStats) {
-        session = await this.sessionsRepository.findByIdWithStats(sessionId, authUser.user_id);
+        session = await this.sessionsRepository.findByIdWithStats(
+          sessionId,
+          authUser.user_id,
+        );
       } else {
-        const basicSession = await this.sessionsRepository.findById(sessionId, authUser.user_id);
-        session = basicSession ? {
-          ...basicSession,
-          generation_count: 0,
-          total_credits_spent: 0,
-        } : null;
+        const basicSession = await this.sessionsRepository.findById(
+          sessionId,
+          authUser.user_id,
+        );
+        session = basicSession
+          ? {
+              ...basicSession,
+              generation_count: 0,
+              total_credits_spent: 0,
+            }
+          : null;
       }
 
       if (!session) {
-        throw new NotFoundException(`Session with ID ${sessionId} not found or access denied`);
+        throw new NotFoundException(
+          `Session with ID ${sessionId} not found or access denied`,
+        );
       }
 
-      this.logger.log(`Session ${sessionId} found for user: ${authUser.user_id}`);
+      this.logger.log(
+        `Session ${sessionId} found for user: ${authUser.user_id}`,
+      );
 
       const transformed = plainToInstance(SessionResponseDto, session, {
         excludeExtraneousValues: true,
@@ -172,9 +215,13 @@ export class SessionsService {
 
       // Handle latest_generation transformation
       if (session.latest_generation) {
-        transformed.latest_generation = plainToInstance(LatestGenerationDto, session.latest_generation, {
-          excludeExtraneousValues: true,
-        });
+        transformed.latest_generation = plainToInstance(
+          LatestGenerationDto,
+          session.latest_generation,
+          {
+            excludeExtraneousValues: true,
+          },
+        );
       }
 
       return transformed;
@@ -182,8 +229,11 @@ export class SessionsService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      
-      this.logger.error(`Failed to fetch session ${sessionId} for user ${authUser.user_id}:`, error);
+
+      this.logger.error(
+        `Failed to fetch session ${sessionId} for user ${authUser.user_id}:`,
+        error,
+      );
       throw new BadRequestException('Failed to fetch session');
     }
   }
@@ -196,15 +246,23 @@ export class SessionsService {
     updateSessionDto: UpdateSessionDto,
     authUser: AuthUserDto,
   ): Promise<SessionResponseDto> {
-    this.logger.log(`Updating session ${sessionId} for user: ${authUser.user_id}`);
+    this.logger.log(
+      `Updating session ${sessionId} for user: ${authUser.user_id}`,
+    );
 
     if (sessionId <= 0) {
       throw new BadRequestException('Invalid session ID');
     }
 
     // Validate at least one field is provided for update
-    if (!updateSessionDto.name && !updateSessionDto.description && updateSessionDto.is_active === undefined) {
-      throw new BadRequestException('At least one field must be provided for update');
+    if (
+      !updateSessionDto.name &&
+      !updateSessionDto.description &&
+      updateSessionDto.is_active === undefined
+    ) {
+      throw new BadRequestException(
+        'At least one field must be provided for update',
+      );
     }
 
     // Trim string fields if provided
@@ -221,18 +279,29 @@ export class SessionsService {
 
     try {
       // Check if session exists and user owns it
-      const existingSession = await this.sessionsRepository.findById(sessionId, authUser.user_id);
+      const existingSession = await this.sessionsRepository.findById(
+        sessionId,
+        authUser.user_id,
+      );
       if (!existingSession) {
-        throw new NotFoundException(`Session with ID ${sessionId} not found or access denied`);
+        throw new NotFoundException(
+          `Session with ID ${sessionId} not found or access denied`,
+        );
       }
 
-      const updatedSession = await this.sessionsRepository.update(sessionId, authUser.user_id, updateData);
-      
+      const updatedSession = await this.sessionsRepository.update(
+        sessionId,
+        authUser.user_id,
+        updateData,
+      );
+
       if (!updatedSession) {
         throw new BadRequestException('Failed to update session');
       }
 
-      this.logger.log(`Session ${sessionId} updated successfully for user: ${authUser.user_id}`);
+      this.logger.log(
+        `Session ${sessionId} updated successfully for user: ${authUser.user_id}`,
+      );
 
       const transformed = plainToInstance(SessionResponseDto, updatedSession, {
         excludeExtraneousValues: true,
@@ -240,18 +309,28 @@ export class SessionsService {
 
       // Handle latest_generation transformation if updatedSession has it
       if ((updatedSession as any).latest_generation) {
-        transformed.latest_generation = plainToInstance(LatestGenerationDto, (updatedSession as any).latest_generation, {
-          excludeExtraneousValues: true,
-        });
+        transformed.latest_generation = plainToInstance(
+          LatestGenerationDto,
+          (updatedSession as any).latest_generation,
+          {
+            excludeExtraneousValues: true,
+          },
+        );
       }
 
       return transformed;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      
-      this.logger.error(`Failed to update session ${sessionId} for user ${authUser.user_id}:`, error);
+
+      this.logger.error(
+        `Failed to update session ${sessionId} for user ${authUser.user_id}:`,
+        error,
+      );
       throw new BadRequestException('Failed to update session');
     }
   }
@@ -260,7 +339,9 @@ export class SessionsService {
    * Soft delete a session (set is_active to false)
    */
   async deactivate(sessionId: number, authUser: AuthUserDto): Promise<void> {
-    this.logger.log(`Deactivating session ${sessionId} for user: ${authUser.user_id}`);
+    this.logger.log(
+      `Deactivating session ${sessionId} for user: ${authUser.user_id}`,
+    );
 
     if (sessionId <= 0) {
       throw new BadRequestException('Invalid session ID');
@@ -268,46 +349,126 @@ export class SessionsService {
 
     try {
       // Check if session exists and user owns it
-      const existingSession = await this.sessionsRepository.findById(sessionId, authUser.user_id);
+      const existingSession = await this.sessionsRepository.findById(
+        sessionId,
+        authUser.user_id,
+      );
       if (!existingSession) {
-        throw new NotFoundException(`Session with ID ${sessionId} not found or access denied`);
+        throw new NotFoundException(
+          `Session with ID ${sessionId} not found or access denied`,
+        );
       }
 
       if (!existingSession.is_active) {
         throw new BadRequestException('Session is already inactive');
       }
 
-      const success = await this.sessionsRepository.softDelete(sessionId, authUser.user_id);
-      
+      const success = await this.sessionsRepository.softDelete(
+        sessionId,
+        authUser.user_id,
+      );
+
       if (!success) {
         throw new BadRequestException('Failed to deactivate session');
       }
 
-      this.logger.log(`Session ${sessionId} deactivated successfully for user: ${authUser.user_id}`);
+      this.logger.log(
+        `Session ${sessionId} deactivated successfully for user: ${authUser.user_id}`,
+      );
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      
-      this.logger.error(`Failed to deactivate session ${sessionId} for user ${authUser.user_id}:`, error);
+
+      this.logger.error(
+        `Failed to deactivate session ${sessionId} for user ${authUser.user_id}:`,
+        error,
+      );
       throw new BadRequestException('Failed to deactivate session');
+    }
+  }
+
+  /**
+   * Hard delete a session (permanently remove from database)
+   */
+  async delete(sessionId: number, authUser: AuthUserDto): Promise<void> {
+    this.logger.log(
+      `Permanently deleting session ${sessionId} for user: ${authUser.user_id}`,
+    );
+
+    if (sessionId <= 0) {
+      throw new BadRequestException('Invalid session ID');
+    }
+
+    try {
+      // Check if session exists and user owns it
+      const existingSession = await this.sessionsRepository.findById(
+        sessionId,
+        authUser.user_id,
+      );
+      if (!existingSession) {
+        throw new NotFoundException(
+          `Session with ID ${sessionId} not found or access denied`,
+        );
+      }
+
+      // Perform hard delete with transaction to handle related generations
+      const success = await this.sessionsRepository.hardDelete(
+        sessionId,
+        authUser.user_id,
+      );
+
+      if (!success) {
+        throw new BadRequestException('Failed to delete session');
+      }
+
+      this.logger.log(
+        `Session ${sessionId} permanently deleted for user: ${authUser.user_id}`,
+      );
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      this.logger.error(
+        `Failed to delete session ${sessionId} for user ${authUser.user_id}:`,
+        error,
+      );
+      throw new BadRequestException('Failed to delete session');
     }
   }
 
   /**
    * Get user's session statistics
    */
-  async getUserSessionStats(authUser: AuthUserDto): Promise<UserSessionStatsResponse> {
-    this.logger.log(`Fetching session statistics for user: ${authUser.user_id}`);
+  async getUserSessionStats(
+    authUser: AuthUserDto,
+  ): Promise<UserSessionStatsResponse> {
+    this.logger.log(
+      `Fetching session statistics for user: ${authUser.user_id}`,
+    );
 
     try {
-      const stats = await this.sessionsRepository.getUserSessionStats(authUser.user_id);
-      
-      this.logger.log(`Session statistics retrieved for user: ${authUser.user_id}`);
-      
+      const stats = await this.sessionsRepository.getUserSessionStats(
+        authUser.user_id,
+      );
+
+      this.logger.log(
+        `Session statistics retrieved for user: ${authUser.user_id}`,
+      );
+
       return stats;
     } catch (error) {
-      this.logger.error(`Failed to fetch session statistics for user ${authUser.user_id}:`, error);
+      this.logger.error(
+        `Failed to fetch session statistics for user ${authUser.user_id}:`,
+        error,
+      );
       throw new BadRequestException('Failed to fetch session statistics');
     }
   }
@@ -315,11 +476,17 @@ export class SessionsService {
   /**
    * Validate session ownership (for use by other services)
    */
-  async validateSessionOwnership(sessionId: number, userId: string): Promise<boolean> {
+  async validateSessionOwnership(
+    sessionId: number,
+    userId: string,
+  ): Promise<boolean> {
     try {
       return await this.sessionsRepository.isOwnedByUser(sessionId, userId);
     } catch (error) {
-      this.logger.error(`Failed to validate session ownership for session ${sessionId} and user ${userId}:`, error);
+      this.logger.error(
+        `Failed to validate session ownership for session ${sessionId} and user ${userId}:`,
+        error,
+      );
       return false;
     }
   }
@@ -327,11 +494,16 @@ export class SessionsService {
   /**
    * Get session for internal use (without auth validation)
    */
-  async getSessionForService(sessionId: number): Promise<SessionWithStats | null> {
+  async getSessionForService(
+    sessionId: number,
+  ): Promise<SessionWithStats | null> {
     try {
       return await this.sessionsRepository.findByIdWithStats(sessionId);
     } catch (error) {
-      this.logger.error(`Failed to fetch session ${sessionId} for service:`, error);
+      this.logger.error(
+        `Failed to fetch session ${sessionId} for service:`,
+        error,
+      );
       return null;
     }
   }

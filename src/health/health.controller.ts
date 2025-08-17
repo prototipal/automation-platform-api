@@ -24,7 +24,8 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({
     summary: 'Overall health check',
-    description: 'Performs a comprehensive health check of all application components including database connectivity',
+    description:
+      'Performs a comprehensive health check of all application components including database connectivity',
   })
   @ApiResponse({
     status: 200,
@@ -72,7 +73,8 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({
     summary: 'Database health check',
-    description: 'Checks the database connectivity and response time with a 1.5 second timeout',
+    description:
+      'Checks the database connectivity and response time with a 1.5 second timeout',
   })
   @ApiResponse({
     status: 200,

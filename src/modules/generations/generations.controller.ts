@@ -20,7 +20,15 @@ import {
 } from '@nestjs/swagger';
 
 import { GenerationsService } from './generations.service';
-import { CreateGenerationDto, GenerationResponseDto, GenerationWithServiceResponseDto, EstimateGenerationPriceDto, PriceEstimationResponseDto, EstimateAllPricesDto, AllPricesResponseDto } from './dto';
+import {
+  CreateGenerationDto,
+  GenerationResponseDto,
+  GenerationWithServiceResponseDto,
+  EstimateGenerationPriceDto,
+  PriceEstimationResponseDto,
+  EstimateAllPricesDto,
+  AllPricesResponseDto,
+} from './dto';
 import { HybridAuth, AuthUser, AuthUserDto, Public } from '@/modules/auth';
 
 @ApiTags('Generations')
@@ -73,9 +81,9 @@ export class GenerationsController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { 
-          type: 'string', 
-          example: 'Validation failed: prompt: Field \'prompt\' is required' 
+        message: {
+          type: 'string',
+          example: "Validation failed: prompt: Field 'prompt' is required",
         },
         error: { type: 'string', example: 'Bad Request' },
       },
@@ -89,8 +97,9 @@ export class GenerationsController {
     );
 
     try {
-      const estimation = await this.generationsService.estimatePrice(estimateDto);
-      
+      const estimation =
+        await this.generationsService.estimatePrice(estimateDto);
+
       this.logger.log(
         `Price estimated successfully: ${estimation.estimated_credits} credits for ${estimateDto.model} ${estimateDto.model_version}`,
       );
@@ -144,9 +153,9 @@ export class GenerationsController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { 
-          type: 'string', 
-          example: 'Validation failed: input must be an object' 
+        message: {
+          type: 'string',
+          example: 'Validation failed: input must be an object',
         },
         error: { type: 'string', example: 'Bad Request' },
       },
@@ -158,12 +167,18 @@ export class GenerationsController {
     this.logger.log('Estimating prices for all available services');
 
     try {
-      const estimations = await this.generationsService.estimateAllPrices(estimateDto);
-      
-      this.logger.log(`Successfully estimated prices for ${estimations.total_services} services`);
+      const estimations =
+        await this.generationsService.estimateAllPrices(estimateDto);
+
+      this.logger.log(
+        `Successfully estimated prices for ${estimations.total_services} services`,
+      );
       return estimations;
     } catch (error) {
-      this.logger.error(`Failed to estimate prices for all services: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to estimate prices for all services: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -202,18 +217,20 @@ export class GenerationsController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Generation request created successfully with credit deduction',
+    description:
+      'Generation request created successfully with credit deduction',
     type: GenerationResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid request data, validation errors, or insufficient credits',
+    description:
+      'Invalid request data, validation errors, or insufficient credits',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { 
-          type: 'string', 
-          example: 'Insufficient credits. Required: 1.50, Available: 0.80' 
+        message: {
+          type: 'string',
+          example: 'Insufficient credits. Required: 1.50, Available: 0.80',
         },
         error: { type: 'string', example: 'Bad Request' },
       },
@@ -228,9 +245,14 @@ export class GenerationsController {
     );
 
     try {
-      const result = await this.generationsService.createWithAuth(createGenerationDto, user);
-      
-      this.logger.log(`Authenticated generation created successfully with ID: ${result.id} for user: ${user.user_id}`);
+      const result = await this.generationsService.createWithAuth(
+        createGenerationDto,
+        user,
+      );
+
+      this.logger.log(
+        `Authenticated generation created successfully with ID: ${result.id} for user: ${user.user_id}`,
+      );
       return result;
     } catch (error) {
       this.logger.error(
@@ -283,7 +305,9 @@ export class GenerationsController {
       properties: {
         generations: {
           type: 'array',
-          items: { $ref: '#/components/schemas/GenerationWithServiceResponseDto' },
+          items: {
+            $ref: '#/components/schemas/GenerationWithServiceResponseDto',
+          },
         },
         total: { type: 'number' },
         page: { type: 'number' },
@@ -301,7 +325,9 @@ export class GenerationsController {
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
     @AuthUser() user: AuthUserDto,
   ) {
-    this.logger.log(`Fetching generations for session ${sessionId}, user ${user.user_id}`);
+    this.logger.log(
+      `Fetching generations for session ${sessionId}, user ${user.user_id}`,
+    );
 
     try {
       const result = await this.generationsService.getGenerationsBySession(
@@ -310,7 +336,7 @@ export class GenerationsController {
         page,
         limit,
       );
-      
+
       this.logger.log(
         `Found ${result.generations.length} generations for session ${sessionId}, user ${user.user_id}`,
       );
@@ -354,13 +380,16 @@ export class GenerationsController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'User generations retrieved successfully with service information',
+    description:
+      'User generations retrieved successfully with service information',
     schema: {
       type: 'object',
       properties: {
         generations: {
           type: 'array',
-          items: { $ref: '#/components/schemas/GenerationWithServiceResponseDto' },
+          items: {
+            $ref: '#/components/schemas/GenerationWithServiceResponseDto',
+          },
         },
         total: { type: 'number' },
         page: { type: 'number' },
@@ -382,7 +411,7 @@ export class GenerationsController {
         page,
         limit,
       );
-      
+
       this.logger.log(
         `Found ${result.generations.length} generations for user ${user.user_id}`,
       );

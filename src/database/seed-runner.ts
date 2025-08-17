@@ -35,7 +35,7 @@ async function runSeeds() {
 
     // Run seeds
     await ServicesSeed.run(dataSource);
-    
+
     // Import templates from CSV
     const templatesSeed = new TemplatesCsvImportSeed();
     await templatesSeed.run(dataSource);

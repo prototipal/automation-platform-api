@@ -2,26 +2,26 @@ import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCategoryDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Category name (must be unique)',
-    example: 'General'
+    example: 'General',
   })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Category link URL',
-    example: 'https://example.com/category'
+    example: 'https://example.com/category',
   })
   @IsOptional()
   @IsString()
   link?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Category type',
     enum: ['photo', 'video'],
-    default: 'photo'
+    default: 'photo',
   })
   @IsOptional()
   @IsEnum(['photo', 'video'])

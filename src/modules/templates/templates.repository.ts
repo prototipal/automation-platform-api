@@ -29,9 +29,11 @@ export class TemplatesRepository {
     return await this.templateRepository.save(template);
   }
 
-  async createMany(createTemplateDtos: CreateTemplateDto[]): Promise<Template[]> {
+  async createMany(
+    createTemplateDtos: CreateTemplateDto[],
+  ): Promise<Template[]> {
     const templates = this.templateRepository.create(
-      createTemplateDtos.map(dto => ({
+      createTemplateDtos.map((dto) => ({
         ...dto,
         type: dto.type || 'photo',
       })),
@@ -40,23 +42,35 @@ export class TemplatesRepository {
     return await this.templateRepository.save(templates);
   }
 
-  async findAll(queryDto: QueryTemplateDto): Promise<PaginatedResult<Template>> {
-    const { page = 1, limit = 10, category_id, category_name, type, search, sortBy = 'created_at', sortOrder = 'DESC' } = queryDto;
-    
+  async findAll(
+    queryDto: QueryTemplateDto,
+  ): Promise<PaginatedResult<Template>> {
+    const {
+      page = 1,
+      limit = 10,
+      category_id,
+      category_name,
+      type,
+      search,
+      sortBy = 'created_at',
+      sortOrder = 'DESC',
+    } = queryDto;
+
     const skip = (page - 1) * limit;
 
-    let query = this.templateRepository.createQueryBuilder('template')
+    let query = this.templateRepository
+      .createQueryBuilder('template')
       .leftJoinAndSelect('template.category', 'category');
 
     if (category_id) {
-      query = query.andWhere('template.category_id = :categoryId', { 
-        categoryId: category_id 
+      query = query.andWhere('template.category_id = :categoryId', {
+        categoryId: category_id,
       });
     }
 
     if (category_name) {
-      query = query.andWhere('category.name ILIKE :categoryName', { 
-        categoryName: `%${category_name}%` 
+      query = query.andWhere('category.name ILIKE :categoryName', {
+        categoryName: `%${category_name}%`,
       });
     }
 
@@ -65,20 +79,18 @@ export class TemplatesRepository {
     }
 
     if (search) {
-      query = query.andWhere('template.prompt ILIKE :search', { 
-        search: `%${search}%` 
+      query = query.andWhere('template.prompt ILIKE :search', {
+        search: `%${search}%`,
       });
     }
 
     // Handle sorting - if sorting by category_name, sort by the related category name
-    const orderField = sortBy === 'category_name' ? 'category.name' : `template.${sortBy}`;
-    query = query
-      .orderBy(orderField, sortOrder)
-      .skip(skip)
-      .take(limit);
+    const orderField =
+      sortBy === 'category_name' ? 'category.name' : `template.${sortBy}`;
+    query = query.orderBy(orderField, sortOrder).skip(skip).take(limit);
 
     const [data, total] = await query.getManyAndCount();
-    
+
     return {
       data,
       total,
@@ -102,13 +114,16 @@ export class TemplatesRepository {
     });
   }
 
-  async update(id: string, updateData: Partial<Template>): Promise<Template | null> {
+  async update(
+    id: string,
+    updateData: Partial<Template>,
+  ): Promise<Template | null> {
     const result = await this.templateRepository.update(id, updateData);
-    
+
     if (result.affected === 0) {
       return null;
     }
-    
+
     return await this.findById(id);
   }
 
@@ -141,8 +156,8 @@ export class TemplatesRepository {
     return await this.templateRepository
       .createQueryBuilder('template')
       .leftJoinAndSelect('template.category', 'category')
-      .where('category.name ILIKE :categoryName', { 
-        categoryName: `%${categoryName}%` 
+      .where('category.name ILIKE :categoryName', {
+        categoryName: `%${categoryName}%`,
       })
       .orderBy('template.created_at', 'DESC')
       .getMany();

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('sessions')
@@ -65,7 +72,7 @@ export class Session {
 
   @ApiProperty({
     description: 'Total credits spent in this session',
-    example: 12.50,
+    example: 12.5,
   })
   total_credits_spent?: number;
 }

@@ -1,6 +1,18 @@
-import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion } from '@/modules/services/enums';
+import {
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+} from '@/modules/services/enums';
 import type { ModelVersion } from '@/modules/services/enums';
 
 export class CreateGenerationDto {
@@ -23,35 +35,46 @@ export class CreateGenerationDto {
   model: ServiceModel;
 
   @ApiProperty({
-    enum: [...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)],
+    enum: [
+      ...Object.values(TextToImageModelVersion),
+      ...Object.values(TextToVideoModelVersion),
+    ],
     description: 'The model version to use for generation (video or image)',
     example: TextToVideoModelVersion.KLING_V2_1,
     required: false,
   })
-  @IsEnum([...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)], {
-    message: `model_version must be one of the following values: ${[...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)].join(', ')}`
-  })
+  @IsEnum(
+    [
+      ...Object.values(TextToImageModelVersion),
+      ...Object.values(TextToVideoModelVersion),
+    ],
+    {
+      message: `model_version must be one of the following values: ${[...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)].join(', ')}`,
+    },
+  )
   model_version: ModelVersion;
 
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
-    description: 'Input parameters for the generation, validated against service configuration',
+    description:
+      'Input parameters for the generation, validated against service configuration',
     examples: {
       'Text-to-Image': {
         summary: 'Generate an image from text',
         value: {
           prompt: 'A beautiful sunset over mountains, photorealistic style',
-          aspect_ratio: '16:9'
-        }
+          aspect_ratio: '16:9',
+        },
       },
       'Text-to-Video': {
         summary: 'Generate a video from text and image',
         value: {
-          prompt: 'a woman takes her hands out her pockets and gestures to the words with both hands, she is excited, behind her it is raining',
-          start_image: 'https://replicate.delivery/example.png'
-        }
-      }
+          prompt:
+            'a woman takes her hands out her pockets and gestures to the words with both hands, she is excited, behind her it is raining',
+          start_image: 'https://replicate.delivery/example.png',
+        },
+      },
     },
   })
   @IsObject()
@@ -60,11 +83,12 @@ export class CreateGenerationDto {
 
   @ApiProperty({
     type: 'number',
-    description: 'Number of images to generate (only for text-to-image models). Default is 2.',
+    description:
+      'Number of images to generate (only for text-to-image models). Default is 2.',
     example: 2,
     required: false,
     minimum: 2,
-    maximum: 4
+    maximum: 4,
   })
   @IsOptional()
   @IsNumber()

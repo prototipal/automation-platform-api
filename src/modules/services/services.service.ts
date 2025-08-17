@@ -13,7 +13,12 @@ import {
   ServiceResponseDto,
   QueryServiceDto,
 } from './dto';
-import { ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from './enums';
+import {
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+  ModelVersion,
+} from './enums';
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -84,9 +89,9 @@ export class ServicesService {
   }
 
   async findAllServices(): Promise<ServiceResponseDto[]> {
-    const [services] = await this.servicesRepository.findAll({ 
-      page: 1, 
-      limit: 1000 
+    const [services] = await this.servicesRepository.findAll({
+      page: 1,
+      limit: 1000,
     });
 
     return services.map((service) =>
@@ -118,9 +123,15 @@ export class ServicesService {
     );
   }
 
-  async findByModelAndVersion(model: ServiceModel, modelVersion: ModelVersion): Promise<ServiceResponseDto | null> {
-    const service = await this.servicesRepository.findByModelAndVersion(model, modelVersion);
-    
+  async findByModelAndVersion(
+    model: ServiceModel,
+    modelVersion: ModelVersion,
+  ): Promise<ServiceResponseDto | null> {
+    const service = await this.servicesRepository.findByModelAndVersion(
+      model,
+      modelVersion,
+    );
+
     if (!service) {
       return null;
     }
@@ -206,14 +217,23 @@ export class ServicesService {
     version: ModelVersion | null | undefined,
   ): void {
     const modelVersionMap: Record<ServiceModel, ModelVersion[]> = {
-      [ServiceModel.GOOGLE]: [TextToVideoModelVersion.VEO_3, TextToVideoModelVersion.VEO_3_FAST, TextToImageModelVersion.IMAGEN_4_FAST],
+      [ServiceModel.GOOGLE]: [
+        TextToVideoModelVersion.VEO_3,
+        TextToVideoModelVersion.VEO_3_FAST,
+        TextToImageModelVersion.IMAGEN_4_FAST,
+      ],
       [ServiceModel.KWAIGI]: [TextToVideoModelVersion.KLING_V2_1],
-      [ServiceModel.MINIMAX]: [TextToVideoModelVersion.HAILUO_02, TextToVideoModelVersion.VIDEO_01],
+      [ServiceModel.MINIMAX]: [
+        TextToVideoModelVersion.HAILUO_02,
+        TextToVideoModelVersion.VIDEO_01,
+      ],
       [ServiceModel.BYTEDANCE]: [TextToVideoModelVersion.SEEDANCE_1_PRO],
       [ServiceModel.WAN_VIDEO]: [],
       [ServiceModel.WAVESPEEDAI]: [],
       [ServiceModel.IDEOGRAM_AI]: [TextToImageModelVersion.IDEOGRAM_V3_TURBO],
-      [ServiceModel.BLACK_FOREST_LABS]: [TextToImageModelVersion.FLUX_KONTEXT_MAX],
+      [ServiceModel.BLACK_FOREST_LABS]: [
+        TextToImageModelVersion.FLUX_KONTEXT_MAX,
+      ],
     };
 
     const allowedVersions = modelVersionMap[model];

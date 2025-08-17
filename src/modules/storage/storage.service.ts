@@ -62,7 +62,7 @@ export interface StorageHealthCheck {
 
 /**
  * Enhanced StorageService with robust error handling, retry mechanisms, and health monitoring
- * 
+ *
  * Features:
  * - Automatic bucket creation and health checks
  * - URL validation with caching
@@ -71,7 +71,7 @@ export interface StorageHealthCheck {
  * - Comprehensive error handling for common Supabase/network issues
  * - Health monitoring and diagnostics
  * - Connection pooling and optimization
- * 
+ *
  * Error Handling Improvements:
  * - DNS/Fetch errors: Better detection and reporting
  * - 401/404 Replicate errors: Clear messaging about expired URLs
@@ -101,7 +101,7 @@ export class StorageService implements OnModuleInit {
     private readonly httpService: HttpService,
   ) {
     this.supabaseConfig = this.configService.get<SupabaseConfig>('supabase')!;
-    
+
     // Initialize Supabase client with service role key for server-side operations
     this.supabase = createClient(
       this.supabaseConfig.url,
@@ -111,7 +111,7 @@ export class StorageService implements OnModuleInit {
           autoRefreshToken: false,
           persistSession: false,
         },
-      }
+      },
     );
 
     this.logger.log('StorageService initialized with Supabase client');
@@ -133,7 +133,7 @@ export class StorageService implements OnModuleInit {
    */
   async uploadFromUrl(
     fileUrl: string,
-    options: FileUploadOptions = {}
+    options: FileUploadOptions = {},
   ): Promise<FileUploadResult> {
     const sanitizedUrl = fileUrl.substring(0, 100);
     this.logger.log(`Uploading file from URL: ${sanitizedUrl}...`);
@@ -141,45 +141,57 @@ export class StorageService implements OnModuleInit {
     try {
       // Perform pre-flight checks
       await this.ensureStorageHealth();
-      
+
       // Validate URL unless explicitly skipped
       if (!options.skipUrlValidation) {
         const urlValidation = await this.validateUrl(fileUrl);
         if (!urlValidation.isValid || !urlValidation.isAccessible) {
           throw new BadRequestException(
-            `URL validation failed: ${urlValidation.error || 'URL is not accessible'}`
+            `URL validation failed: ${urlValidation.error || 'URL is not accessible'}`,
           );
         }
       }
 
       // Download file with retry logic
-      const response = await this.downloadFileWithRetry(fileUrl, options.retryCount || this.retryConfig.maxRetries);
+      const response = await this.downloadFileWithRetry(
+        fileUrl,
+        options.retryCount || this.retryConfig.maxRetries,
+      );
       const fileBuffer = Buffer.from(response.data);
-      
+
       // Get content type from response headers or detect from URL
-      const contentType = response.headers['content-type'] || this.detectMimeType(fileUrl);
-      
+      const contentType =
+        response.headers['content-type'] || this.detectMimeType(fileUrl);
+
       // Validate file size
       if (fileBuffer.length > this.supabaseConfig.maxFileSizeBytes) {
         throw new BadRequestException(
-          `File size ${(fileBuffer.length / (1024 * 1024)).toFixed(2)}MB exceeds maximum allowed size of ${this.supabaseConfig.maxFileSizeBytes / (1024 * 1024)}MB`
+          `File size ${(fileBuffer.length / (1024 * 1024)).toFixed(2)}MB exceeds maximum allowed size of ${this.supabaseConfig.maxFileSizeBytes / (1024 * 1024)}MB`,
         );
       }
 
       // Validate MIME type
       if (!this.supabaseConfig.allowedMimeTypes.includes(contentType)) {
         throw new BadRequestException(
-          `File type '${contentType}' is not allowed. Supported types: ${this.supabaseConfig.allowedMimeTypes.join(', ')}`
+          `File type '${contentType}' is not allowed. Supported types: ${this.supabaseConfig.allowedMimeTypes.join(', ')}`,
         );
       }
 
       // Generate unique file path
       const filePath = this.generateFilePath(fileUrl, contentType, options);
 
-      this.logger.log(`Uploading to Supabase path: ${filePath}, size: ${fileBuffer.length} bytes, type: ${contentType}`);
+      this.logger.log(
+        `Uploading to Supabase path: ${filePath}, size: ${fileBuffer.length} bytes, type: ${contentType}`,
+      );
 
       // Upload to Supabase Storage with retry logic
-      const uploadResult = await this.uploadToSupabaseWithRetry(filePath, fileBuffer, contentType, fileUrl, options);
+      const uploadResult = await this.uploadToSupabaseWithRetry(
+        filePath,
+        fileBuffer,
+        contentType,
+        fileUrl,
+        options,
+      );
 
       // Get public URL
       const { data: publicUrlData } = this.supabase.storage
@@ -197,34 +209,38 @@ export class StorageService implements OnModuleInit {
 
       this.logger.log(`File uploaded successfully: ${result.public_url}`);
       return result;
-      
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
-      this.logger.error(`Error uploading file from URL ${sanitizedUrl}:`, error);
-      
+
+      this.logger.error(
+        `Error uploading file from URL ${sanitizedUrl}:`,
+        error,
+      );
+
       // Provide more specific error messages
       if (error.message?.includes('fetch failed')) {
         throw new InternalServerErrorException(
-          'Failed to connect to Supabase. Please check your network connection and Supabase configuration.'
+          'Failed to connect to Supabase. Please check your network connection and Supabase configuration.',
         );
       }
-      
+
       if (error.message?.includes('401')) {
         throw new InternalServerErrorException(
-          'Source URL authentication failed. The URL may have expired or be invalid.'
+          'Source URL authentication failed. The URL may have expired or be invalid.',
         );
       }
-      
+
       if (error.message?.includes('404')) {
         throw new BadRequestException(
-          'Source file not found. The URL may have expired or be invalid.'
+          'Source file not found. The URL may have expired or be invalid.',
         );
       }
-      
-      throw new InternalServerErrorException(`Failed to upload file: ${error.message}`);
+
+      throw new InternalServerErrorException(
+        `Failed to upload file: ${error.message}`,
+      );
     }
   }
 
@@ -233,7 +249,7 @@ export class StorageService implements OnModuleInit {
    */
   async uploadMultipleFromUrls(
     fileUrls: string[],
-    options: FileUploadOptions = {}
+    options: FileUploadOptions = {},
   ): Promise<FileUploadResult[]> {
     this.logger.log(`Uploading ${fileUrls.length} files from URLs`);
 
@@ -244,26 +260,31 @@ export class StorageService implements OnModuleInit {
     try {
       // Ensure storage health before starting batch upload
       await this.ensureStorageHealth();
-      
+
       // Pre-validate all URLs in parallel if not skipped
       if (!options.skipUrlValidation) {
         this.logger.log('Pre-validating URLs...');
-        const validationPromises = fileUrls.map(url => this.validateUrl(url));
+        const validationPromises = fileUrls.map((url) => this.validateUrl(url));
         const validations = await Promise.allSettled(validationPromises);
-        
+
         const invalidUrls: string[] = [];
         validations.forEach((validation, index) => {
           if (validation.status === 'fulfilled') {
             if (!validation.value.isValid || !validation.value.isAccessible) {
-              invalidUrls.push(`${fileUrls[index]}: ${validation.value.error || 'Not accessible'}`);
+              invalidUrls.push(
+                `${fileUrls[index]}: ${validation.value.error || 'Not accessible'}`,
+              );
             }
           } else {
             invalidUrls.push(`${fileUrls[index]}: Validation failed`);
           }
         });
-        
+
         if (invalidUrls.length > 0) {
-          this.logger.warn(`${invalidUrls.length} URLs failed validation:`, invalidUrls);
+          this.logger.warn(
+            `${invalidUrls.length} URLs failed validation:`,
+            invalidUrls,
+          );
           // Continue with valid URLs only, don't fail completely
         }
       }
@@ -279,20 +300,25 @@ export class StorageService implements OnModuleInit {
           const globalIndex = i + batchIndex;
           return this.uploadFromUrl(url, {
             ...options,
-            fileName: options.fileName ? `${options.fileName}_${globalIndex + 1}` : undefined,
+            fileName: options.fileName
+              ? `${options.fileName}_${globalIndex + 1}`
+              : undefined,
             skipUrlValidation: true, // Already validated above
-          }).catch(error => {
+          }).catch((error) => {
             const errorMsg = `File ${globalIndex + 1} (${url.substring(0, 50)}...): ${error.message}`;
             errors.push(errorMsg);
-            this.logger.warn(`Upload failed for file ${globalIndex + 1}:`, error.message);
+            this.logger.warn(
+              `Upload failed for file ${globalIndex + 1}:`,
+              error.message,
+            );
             return null;
           });
         });
 
         const batchResults = await Promise.all(batchPromises);
-        
+
         // Add successful results
-        batchResults.forEach(result => {
+        batchResults.forEach((result) => {
           if (result) {
             results.push(result);
           }
@@ -300,7 +326,7 @@ export class StorageService implements OnModuleInit {
 
         // Small delay between batches to avoid overwhelming the service
         if (i + concurrency < fileUrls.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
 
@@ -308,26 +334,31 @@ export class StorageService implements OnModuleInit {
       const failureCount = fileUrls.length - successCount;
 
       if (failureCount > 0) {
-        this.logger.warn(`${failureCount} out of ${fileUrls.length} files failed to upload`);
+        this.logger.warn(
+          `${failureCount} out of ${fileUrls.length} files failed to upload`,
+        );
         if (errors.length > 0) {
           this.logger.warn('Upload errors:', errors.slice(0, 5)); // Log first 5 errors
         }
       }
 
-      this.logger.log(`Successfully uploaded ${successCount} out of ${fileUrls.length} files`);
-      
+      this.logger.log(
+        `Successfully uploaded ${successCount} out of ${fileUrls.length} files`,
+      );
+
       // If no files were uploaded successfully, throw an error
       if (successCount === 0 && fileUrls.length > 0) {
         throw new InternalServerErrorException(
-          `Failed to upload any files. Errors: ${errors.slice(0, 3).join('; ')}`
+          `Failed to upload any files. Errors: ${errors.slice(0, 3).join('; ')}`,
         );
       }
-      
+
       return results;
-      
     } catch (error) {
       this.logger.error('Error uploading multiple files:', error);
-      throw new InternalServerErrorException(`Failed to upload files: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to upload files: ${error.message}`,
+      );
     }
   }
 
@@ -394,37 +425,47 @@ export class StorageService implements OnModuleInit {
           isAccessible: false,
           error: 'URL must use HTTP or HTTPS protocol',
         };
-        this.urlValidationCache.set(url, { ...result, lastChecked: Date.now() });
+        this.urlValidationCache.set(url, {
+          ...result,
+          lastChecked: Date.now(),
+        });
         return result;
       }
 
       // Make HEAD request to check accessibility
       const response = await firstValueFrom(
-        this.httpService.head(url, {
-          timeout: 10000,
-          headers: {
-            'User-Agent': 'AutomationPlatform/1.0',
-          },
-        }).pipe(
-          timeout(10000),
-          catchError((error) => {
-            throw error;
+        this.httpService
+          .head(url, {
+            timeout: 10000,
+            headers: {
+              'User-Agent': 'AutomationPlatform/1.0',
+            },
           })
-        )
+          .pipe(
+            timeout(10000),
+            catchError((error) => {
+              throw error;
+            }),
+          ),
       );
 
       const result: UrlValidationResult = {
         isValid: true,
         isAccessible: response.status >= 200 && response.status < 300,
         contentType: response.headers['content-type'],
-        contentLength: response.headers['content-length'] ? parseInt(response.headers['content-length']) : undefined,
+        contentLength: response.headers['content-length']
+          ? parseInt(response.headers['content-length'])
+          : undefined,
       };
 
       this.urlValidationCache.set(url, { ...result, lastChecked: Date.now() });
       return result;
     } catch (error) {
-      this.logger.warn(`URL validation failed for ${url.substring(0, 100)}:`, error.message);
-      
+      this.logger.warn(
+        `URL validation failed for ${url.substring(0, 100)}:`,
+        error.message,
+      );
+
       let errorMessage = 'URL is not accessible';
       if (error instanceof AxiosError) {
         if (error.code === 'ENOTFOUND') {
@@ -456,46 +497,58 @@ export class StorageService implements OnModuleInit {
   /**
    * Download file from URL with retry logic
    */
-  private async downloadFileWithRetry(url: string, maxRetries: number = 3): Promise<AxiosResponse<ArrayBuffer>> {
+  private async downloadFileWithRetry(
+    url: string,
+    maxRetries: number = 3,
+  ): Promise<AxiosResponse<ArrayBuffer>> {
     let lastError: any;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        this.logger.log(`Download attempt ${attempt}/${maxRetries} for URL: ${url.substring(0, 100)}`);
-        
-        const response = await firstValueFrom(
-          this.httpService.get<ArrayBuffer>(url, {
-            responseType: 'arraybuffer',
-            timeout: 60000, // 60 seconds timeout
-            maxContentLength: this.supabaseConfig.maxFileSizeBytes,
-            headers: {
-              'User-Agent': 'AutomationPlatform/1.0',
-              'Accept': '*/*',
-              'Accept-Encoding': 'gzip, deflate',
-            },
-          }).pipe(
-            timeout(60000),
-            retry({
-              count: 2,
-              delay: 1000,
-              resetOnSuccess: true
-            }),
-            catchError((error) => {
-              this.logger.warn(`Download attempt ${attempt} failed:`, error.message);
-              throw error;
-            })
-          )
+        this.logger.log(
+          `Download attempt ${attempt}/${maxRetries} for URL: ${url.substring(0, 100)}`,
         );
-        
-        this.logger.log(`Successfully downloaded file on attempt ${attempt}, size: ${response.data.byteLength} bytes`);
+
+        const response = await firstValueFrom(
+          this.httpService
+            .get<ArrayBuffer>(url, {
+              responseType: 'arraybuffer',
+              timeout: 60000, // 60 seconds timeout
+              maxContentLength: this.supabaseConfig.maxFileSizeBytes,
+              headers: {
+                'User-Agent': 'AutomationPlatform/1.0',
+                Accept: '*/*',
+                'Accept-Encoding': 'gzip, deflate',
+              },
+            })
+            .pipe(
+              timeout(60000),
+              retry({
+                count: 2,
+                delay: 1000,
+                resetOnSuccess: true,
+              }),
+              catchError((error) => {
+                this.logger.warn(
+                  `Download attempt ${attempt} failed:`,
+                  error.message,
+                );
+                throw error;
+              }),
+            ),
+        );
+
+        this.logger.log(
+          `Successfully downloaded file on attempt ${attempt}, size: ${response.data.byteLength} bytes`,
+        );
         return response;
       } catch (error) {
         lastError = error;
-        
+
         if (attempt === maxRetries) {
           break;
         }
-        
+
         // Check if error is retryable
         if (error instanceof AxiosError) {
           const status = error.response?.status;
@@ -505,20 +558,27 @@ export class StorageService implements OnModuleInit {
             break;
           }
         }
-        
+
         // Calculate delay with exponential backoff
         const delay = Math.min(
-          this.retryConfig.baseDelay * Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
-          this.retryConfig.maxDelay
+          this.retryConfig.baseDelay *
+            Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
+          this.retryConfig.maxDelay,
         );
-        
-        this.logger.log(`Waiting ${delay}ms before retry attempt ${attempt + 1}`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+
+        this.logger.log(
+          `Waiting ${delay}ms before retry attempt ${attempt + 1}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
-    
-    this.logger.error(`All download attempts failed for URL: ${url.substring(0, 100)}`);
-    throw new BadRequestException(`Failed to download file after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
+
+    this.logger.error(
+      `All download attempts failed for URL: ${url.substring(0, 100)}`,
+    );
+    throw new BadRequestException(
+      `Failed to download file after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+    );
   }
 
   /**
@@ -534,12 +594,12 @@ export class StorageService implements OnModuleInit {
   private generateFilePath(
     originalUrl: string,
     contentType: string,
-    options: FileUploadOptions
+    options: FileUploadOptions,
   ): string {
     const extension = this.getFileExtension(originalUrl, contentType);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const randomHash = crypto.randomBytes(8).toString('hex');
-    
+
     // Create folder structure: folder/userId/sessionId/timestamp_hash.ext
     const parts = [
       options.folder || 'generations',
@@ -549,7 +609,8 @@ export class StorageService implements OnModuleInit {
     ];
 
     if (options.fileName) {
-      parts[parts.length - 1] = `${options.fileName}_${timestamp}_${randomHash}${extension}`;
+      parts[parts.length - 1] =
+        `${options.fileName}_${timestamp}_${randomHash}${extension}`;
     }
 
     return parts.join('/');
@@ -586,7 +647,7 @@ export class StorageService implements OnModuleInit {
    */
   private detectMimeType(url: string): string {
     const extension = path.extname(new URL(url).pathname).toLowerCase();
-    
+
     const extToMime: Record<string, string> = {
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
@@ -610,14 +671,16 @@ export class StorageService implements OnModuleInit {
     fileBuffer: Buffer,
     contentType: string,
     originalUrl: string,
-    options: FileUploadOptions
+    options: FileUploadOptions,
   ): Promise<{ path: string }> {
     let lastError: any;
-    
+
     for (let attempt = 1; attempt <= this.retryConfig.maxRetries; attempt++) {
       try {
-        this.logger.log(`Supabase upload attempt ${attempt}/${this.retryConfig.maxRetries} for path: ${filePath}`);
-        
+        this.logger.log(
+          `Supabase upload attempt ${attempt}/${this.retryConfig.maxRetries} for path: ${filePath}`,
+        );
+
         const { data, error } = await this.supabase.storage
           .from(this.supabaseConfig.bucketName)
           .upload(filePath, fileBuffer, {
@@ -634,65 +697,83 @@ export class StorageService implements OnModuleInit {
           });
 
         if (error) {
-          this.logger.error(`Supabase upload error on attempt ${attempt}:`, error);
+          this.logger.error(
+            `Supabase upload error on attempt ${attempt}:`,
+            error,
+          );
           lastError = error;
-          
+
           // Check if error is retryable
-          if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+          if (
+            error.message?.includes('already exists') ||
+            error.message?.includes('duplicate')
+          ) {
             // Try with a new path
             const timestamp = Date.now();
             const newPath = filePath.replace(/(\.\w+)$/, `_${timestamp}$1`);
             this.logger.log(`File exists, trying new path: ${newPath}`);
-            
-            const { data: retryData, error: retryError } = await this.supabase.storage
-              .from(this.supabaseConfig.bucketName)
-              .upload(newPath, fileBuffer, {
-                contentType,
-                upsert: false,
-                metadata: {
-                  originalUrl,
-                  uploadedAt: new Date().toISOString(),
-                  userId: options.userId?.toString(),
-                  sessionId: options.sessionId?.toString(),
-                  uploadAttempt: attempt,
-                  pathRetry: true,
-                  ...options.metadata,
-                },
-              });
-            
+
+            const { data: retryData, error: retryError } =
+              await this.supabase.storage
+                .from(this.supabaseConfig.bucketName)
+                .upload(newPath, fileBuffer, {
+                  contentType,
+                  upsert: false,
+                  metadata: {
+                    originalUrl,
+                    uploadedAt: new Date().toISOString(),
+                    userId: options.userId?.toString(),
+                    sessionId: options.sessionId?.toString(),
+                    uploadAttempt: attempt,
+                    pathRetry: true,
+                    ...options.metadata,
+                  },
+                });
+
             if (retryError) {
-              throw new InternalServerErrorException(`Failed to upload with retry path: ${retryError.message}`);
+              throw new InternalServerErrorException(
+                `Failed to upload with retry path: ${retryError.message}`,
+              );
             }
-            
+
             return { path: retryData.path };
           }
-          
+
           if (attempt === this.retryConfig.maxRetries) {
-            throw new InternalServerErrorException(`Failed to upload file after ${this.retryConfig.maxRetries} attempts: ${error.message}`);
+            throw new InternalServerErrorException(
+              `Failed to upload file after ${this.retryConfig.maxRetries} attempts: ${error.message}`,
+            );
           }
         } else {
-          this.logger.log(`Successfully uploaded to Supabase on attempt ${attempt}`);
+          this.logger.log(
+            `Successfully uploaded to Supabase on attempt ${attempt}`,
+          );
           return { path: data.path };
         }
       } catch (error) {
         lastError = error;
-        
+
         if (attempt === this.retryConfig.maxRetries) {
           break;
         }
-        
+
         // Calculate delay with exponential backoff
         const delay = Math.min(
-          this.retryConfig.baseDelay * Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
-          this.retryConfig.maxDelay
+          this.retryConfig.baseDelay *
+            Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
+          this.retryConfig.maxDelay,
         );
-        
-        this.logger.log(`Waiting ${delay}ms before Supabase upload retry attempt ${attempt + 1}`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+
+        this.logger.log(
+          `Waiting ${delay}ms before Supabase upload retry attempt ${attempt + 1}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
-    
-    throw new InternalServerErrorException(`Failed to upload to Supabase after ${this.retryConfig.maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
+
+    throw new InternalServerErrorException(
+      `Failed to upload to Supabase after ${this.retryConfig.maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+    );
   }
 
   /**
@@ -707,46 +788,55 @@ export class StorageService implements OnModuleInit {
 
     try {
       // Test basic connection
-      const { data: buckets, error: bucketsError } = await this.supabase.storage.listBuckets();
-      
+      const { data: buckets, error: bucketsError } =
+        await this.supabase.storage.listBuckets();
+
       if (bucketsError) {
         errors.push(`Failed to list buckets: ${bucketsError.message}`);
       } else {
         connectionHealthy = true;
-        bucketExists = buckets.some(bucket => bucket.name === this.supabaseConfig.bucketName);
-        
+        bucketExists = buckets.some(
+          (bucket) => bucket.name === this.supabaseConfig.bucketName,
+        );
+
         if (!bucketExists) {
-          errors.push(`Bucket '${this.supabaseConfig.bucketName}' does not exist`);
-          
+          errors.push(
+            `Bucket '${this.supabaseConfig.bucketName}' does not exist`,
+          );
+
           // Try to create the bucket
           try {
-            const { error: createError } = await this.supabase.storage.createBucket(
-              this.supabaseConfig.bucketName,
-              {
-                public: true,
-                allowedMimeTypes: this.supabaseConfig.allowedMimeTypes,
-                fileSizeLimit: this.supabaseConfig.maxFileSizeBytes,
-              }
-            );
-            
+            const { error: createError } =
+              await this.supabase.storage.createBucket(
+                this.supabaseConfig.bucketName,
+                {
+                  public: true,
+                  allowedMimeTypes: this.supabaseConfig.allowedMimeTypes,
+                  fileSizeLimit: this.supabaseConfig.maxFileSizeBytes,
+                },
+              );
+
             if (createError) {
               errors.push(`Failed to create bucket: ${createError.message}`);
             } else {
               bucketExists = true;
-              this.logger.log(`Successfully created bucket '${this.supabaseConfig.bucketName}'`);
+              this.logger.log(
+                `Successfully created bucket '${this.supabaseConfig.bucketName}'`,
+              );
             }
           } catch (createError) {
             errors.push(`Failed to create bucket: ${createError.message}`);
           }
         }
-        
+
         // Test bucket accessibility
         if (bucketExists) {
           try {
-            const { data: files, error: listError } = await this.supabase.storage
-              .from(this.supabaseConfig.bucketName)
-              .list('', { limit: 1 });
-            
+            const { data: files, error: listError } =
+              await this.supabase.storage
+                .from(this.supabaseConfig.bucketName)
+                .list('', { limit: 1 });
+
             if (listError) {
               errors.push(`Cannot access bucket: ${listError.message}`);
             } else {
@@ -757,14 +847,13 @@ export class StorageService implements OnModuleInit {
           }
         }
       }
-      
+
       // Check policies (simplified check)
       if (bucketExists && bucketAccessible) {
         // For now, assume policies are configured if we can access the bucket
         // In a real implementation, you might want to test actual upload/download operations
         policiesConfigured = true;
       }
-      
     } catch (error) {
       errors.push(`Health check failed: ${error.message}`);
     }
@@ -795,21 +884,30 @@ export class StorageService implements OnModuleInit {
    */
   private async ensureStorageHealth(): Promise<void> {
     // Check if we need to refresh health check
-    if (!this.healthCheckCache || Date.now() - this.lastHealthCheck > this.healthCheckInterval) {
+    if (
+      !this.healthCheckCache ||
+      Date.now() - this.lastHealthCheck > this.healthCheckInterval
+    ) {
       await this.performHealthCheck();
     }
 
     const health = this.healthCheckCache;
     if (!health || !health.connectionHealthy) {
-      throw new InternalServerErrorException('Supabase storage is not accessible. Please check your configuration.');
+      throw new InternalServerErrorException(
+        'Supabase storage is not accessible. Please check your configuration.',
+      );
     }
 
     if (!health.bucketExists) {
-      throw new InternalServerErrorException(`Storage bucket '${this.supabaseConfig.bucketName}' does not exist.`);
+      throw new InternalServerErrorException(
+        `Storage bucket '${this.supabaseConfig.bucketName}' does not exist.`,
+      );
     }
 
     if (!health.bucketAccessible) {
-      throw new InternalServerErrorException(`Storage bucket '${this.supabaseConfig.bucketName}' is not accessible.`);
+      throw new InternalServerErrorException(
+        `Storage bucket '${this.supabaseConfig.bucketName}' is not accessible.`,
+      );
     }
   }
 
@@ -817,7 +915,10 @@ export class StorageService implements OnModuleInit {
    * Get storage health status
    */
   async getHealthStatus(): Promise<StorageHealthCheck> {
-    if (!this.healthCheckCache || Date.now() - this.lastHealthCheck > this.healthCheckInterval) {
+    if (
+      !this.healthCheckCache ||
+      Date.now() - this.lastHealthCheck > this.healthCheckInterval
+    ) {
       return await this.performHealthCheck();
     }
     return this.healthCheckCache;

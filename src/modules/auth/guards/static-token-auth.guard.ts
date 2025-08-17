@@ -8,10 +8,11 @@ import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 
+import { InvalidStaticTokenException } from '@/modules/auth/exceptions';
 import {
-  InvalidStaticTokenException,
-} from '@/modules/auth/exceptions';
-import { STATIC_TOKEN_AUTH_KEY, IS_PUBLIC_KEY } from '@/modules/auth/decorators';
+  STATIC_TOKEN_AUTH_KEY,
+  IS_PUBLIC_KEY,
+} from '@/modules/auth/decorators';
 
 @Injectable()
 export class StaticTokenAuthGuard implements CanActivate {
@@ -22,8 +23,9 @@ export class StaticTokenAuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
   ) {
-    this.staticToken = this.configService.get<string>('STATIC_AUTH_TOKEN') || '';
-    
+    this.staticToken =
+      this.configService.get<string>('STATIC_AUTH_TOKEN') || '';
+
     if (!this.staticToken) {
       this.logger.warn('STATIC_AUTH_TOKEN is not configured');
     }
@@ -39,10 +41,10 @@ export class StaticTokenAuthGuard implements CanActivate {
       return true;
     }
 
-    const requiresStaticTokenAuth = this.reflector.getAllAndOverride<boolean>(STATIC_TOKEN_AUTH_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiresStaticTokenAuth = this.reflector.getAllAndOverride<boolean>(
+      STATIC_TOKEN_AUTH_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiresStaticTokenAuth) {
       return true;
@@ -58,7 +60,9 @@ export class StaticTokenAuthGuard implements CanActivate {
 
     if (!this.staticToken) {
       this.logger.error('Static token is not configured on server');
-      throw new InvalidStaticTokenException('Authentication is not properly configured');
+      throw new InvalidStaticTokenException(
+        'Authentication is not properly configured',
+      );
     }
 
     if (providedToken !== this.staticToken) {

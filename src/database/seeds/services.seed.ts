@@ -49,7 +49,7 @@ export class ServicesSeed {
           rule: {
             type: PricingType.CONDITIONAL,
             rules: [
-              { conditions: { resolution: '512p', duration: 6 }, price: 0.10 },
+              { conditions: { resolution: '512p', duration: 6 }, price: 0.1 },
               { conditions: { resolution: '512p', duration: 10 }, price: 0.15 },
               { conditions: { resolution: '768p', duration: 6 }, price: 0.27 },
               { conditions: { resolution: '768p', duration: 10 }, price: 0.45 },
@@ -85,7 +85,7 @@ export class ServicesSeed {
         pricing: {
           rule: {
             type: PricingType.FIXED,
-            price: 3.20,
+            price: 3.2,
           },
         },
       },
@@ -171,7 +171,7 @@ export class ServicesSeed {
         pricing: {
           rule: {
             type: PricingType.FIXED,
-            price: 0.50,
+            price: 0.5,
           },
         },
       },
@@ -210,8 +210,8 @@ export class ServicesSeed {
             type: PricingType.PER_SECOND,
             parameter: 'mode',
             rates: {
-              'standard': 0.05,
-              'pro': 0.09,
+              standard: 0.05,
+              pro: 0.09,
             },
           },
         },

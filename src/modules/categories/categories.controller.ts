@@ -20,7 +20,13 @@ import {
 } from '@nestjs/swagger';
 
 import { CategoriesService } from './categories.service';
-import { CreateCategoryDto, UpdateCategoryDto, QueryCategoryDto, CategoryResponseDto, MainCategoryResponseDto } from './dto';
+import {
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  QueryCategoryDto,
+  CategoryResponseDto,
+  MainCategoryResponseDto,
+} from './dto';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -28,9 +34,10 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new category',
-    description: 'Creates a new category with the provided details. Category names must be unique.' 
+    description:
+      'Creates a new category with the provided details. Category names must be unique.',
   })
   @ApiResponse({
     status: 201,
@@ -45,22 +52,62 @@ export class CategoriesController {
     status: 409,
     description: 'Conflict - category name already exists',
   })
-  async create(@Body() createCategoryDto: CreateCategoryDto): Promise<CategoryResponseDto> {
+  async create(
+    @Body() createCategoryDto: CreateCategoryDto,
+  ): Promise<CategoryResponseDto> {
     return this.categoriesService.create(createCategoryDto);
   }
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all categories',
-    description: 'Retrieves categories with optional filtering, sorting and pagination. If page parameter is not provided, all results are returned without pagination.' 
+    description:
+      'Retrieves categories with optional filtering, sorting and pagination. If page parameter is not provided, all results are returned without pagination.',
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination. If not provided, all results are returned' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, only applies with page parameter)' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter by category name (partial match)' })
-  @ApiQuery({ name: 'type', required: false, enum: ['photo', 'video'], description: 'Filter by category type' })
-  @ApiQuery({ name: 'sort_by', required: false, type: String, description: 'Sort by field (default: created_at)' })
-  @ApiQuery({ name: 'sort_order', required: false, enum: ['ASC', 'DESC'], description: 'Sort order (default: DESC)' })
-  @ApiQuery({ name: 'include_template_count', required: false, type: Boolean, description: 'Include template count in response' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description:
+      'Page number for pagination. If not provided, all results are returned',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description:
+      'Items per page (default: 10, only applies with page parameter)',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Filter by category name (partial match)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['photo', 'video'],
+    description: 'Filter by category type',
+  })
+  @ApiQuery({
+    name: 'sort_by',
+    required: false,
+    type: String,
+    description: 'Sort by field (default: created_at)',
+  })
+  @ApiQuery({
+    name: 'sort_order',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort order (default: DESC)',
+  })
+  @ApiQuery({
+    name: 'include_template_count',
+    required: false,
+    type: Boolean,
+    description: 'Include template count in response',
+  })
   @ApiResponse({
     status: 200,
     description: 'Categories retrieved successfully',
@@ -72,9 +119,18 @@ export class CategoriesController {
           items: { $ref: '#/components/schemas/CategoryResponseDto' },
         },
         total: { type: 'number', description: 'Total number of categories' },
-        page: { type: 'number', description: 'Current page (only present when paginated)' },
-        limit: { type: 'number', description: 'Items per page (only present when paginated)' },
-        totalPages: { type: 'number', description: 'Total number of pages (only present when paginated)' },
+        page: {
+          type: 'number',
+          description: 'Current page (only present when paginated)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Items per page (only present when paginated)',
+        },
+        totalPages: {
+          type: 'number',
+          description: 'Total number of pages (only present when paginated)',
+        },
       },
     },
   })
@@ -83,20 +139,60 @@ export class CategoriesController {
   }
 
   @Get('nested')
-  @ApiOperation({ 
-    summary: 'Get all main categories with nested sub-categories (paginated by sub-categories)',
-    description: 'Retrieves main categories with their sub-categories nested underneath. Pagination is applied to sub-categories, not main categories. This means when you request page=1&limit=5, you get 5 sub-categories distributed across their respective main categories.' 
+  @ApiOperation({
+    summary:
+      'Get all main categories with nested sub-categories (paginated by sub-categories)',
+    description:
+      'Retrieves main categories with their sub-categories nested underneath. Pagination is applied to sub-categories, not main categories. This means when you request page=1&limit=5, you get 5 sub-categories distributed across their respective main categories.',
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for sub-category pagination. If not provided, all results are returned' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of sub-categories per page (default: 10, only applies with page parameter)' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter by sub-category name (partial match)' })
-  @ApiQuery({ name: 'type', required: false, enum: ['photo', 'video'], description: 'Filter by sub-category type' })
-  @ApiQuery({ name: 'sort_by', required: false, type: String, description: 'Sort sub-categories by field (default: created_at)' })
-  @ApiQuery({ name: 'sort_order', required: false, enum: ['ASC', 'DESC'], description: 'Sort order (default: DESC)' })
-  @ApiQuery({ name: 'include_template_count', required: false, type: Boolean, description: 'Include template count in sub-categories response' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description:
+      'Page number for sub-category pagination. If not provided, all results are returned',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description:
+      'Number of sub-categories per page (default: 10, only applies with page parameter)',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Filter by sub-category name (partial match)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['photo', 'video'],
+    description: 'Filter by sub-category type',
+  })
+  @ApiQuery({
+    name: 'sort_by',
+    required: false,
+    type: String,
+    description: 'Sort sub-categories by field (default: created_at)',
+  })
+  @ApiQuery({
+    name: 'sort_order',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort order (default: DESC)',
+  })
+  @ApiQuery({
+    name: 'include_template_count',
+    required: false,
+    type: Boolean,
+    description: 'Include template count in sub-categories response',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Main categories with nested sub-categories retrieved successfully',
+    description:
+      'Main categories with nested sub-categories retrieved successfully',
     schema: {
       type: 'object',
       properties: {
@@ -104,10 +200,23 @@ export class CategoriesController {
           type: 'array',
           items: { $ref: '#/components/schemas/MainCategoryResponseDto' },
         },
-        total: { type: 'number', description: 'Total number of sub-categories (not main categories)' },
-        page: { type: 'number', description: 'Current page (only present when paginated)' },
-        limit: { type: 'number', description: 'Sub-categories per page (only present when paginated)' },
-        totalPages: { type: 'number', description: 'Total number of pages based on sub-categories (only present when paginated)' },
+        total: {
+          type: 'number',
+          description: 'Total number of sub-categories (not main categories)',
+        },
+        page: {
+          type: 'number',
+          description: 'Current page (only present when paginated)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Sub-categories per page (only present when paginated)',
+        },
+        totalPages: {
+          type: 'number',
+          description:
+            'Total number of pages based on sub-categories (only present when paginated)',
+        },
       },
     },
   })
@@ -116,9 +225,10 @@ export class CategoriesController {
   }
 
   @Get('stats')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get category statistics',
-    description: 'Returns statistics about categories including totals by type and template usage.' 
+    description:
+      'Returns statistics about categories including totals by type and template usage.',
   })
   @ApiResponse({
     status: 200,
@@ -127,12 +237,15 @@ export class CategoriesController {
       type: 'object',
       properties: {
         total: { type: 'number', description: 'Total number of categories' },
-        byType: { 
-          type: 'object', 
+        byType: {
+          type: 'object',
           additionalProperties: { type: 'number' },
-          description: 'Count of categories by type' 
+          description: 'Count of categories by type',
         },
-        withTemplates: { type: 'number', description: 'Number of categories that have templates' },
+        withTemplates: {
+          type: 'number',
+          description: 'Number of categories that have templates',
+        },
       },
     },
   })
@@ -141,15 +254,23 @@ export class CategoriesController {
   }
 
   @Get('main/:id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get main category by ID with nested sub-categories',
-    description: 'Retrieves a single main category by its ID with all sub-categories nested underneath.' 
+    description:
+      'Retrieves a single main category by its ID with all sub-categories nested underneath.',
   })
   @ApiParam({ name: 'id', description: 'Main Category UUID' })
-  @ApiQuery({ name: 'include_template_count', required: false, type: Boolean, description: 'Include template count in sub-categories response (default: true)' })
+  @ApiQuery({
+    name: 'include_template_count',
+    required: false,
+    type: Boolean,
+    description:
+      'Include template count in sub-categories response (default: true)',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Main category with nested sub-categories retrieved successfully',
+    description:
+      'Main category with nested sub-categories retrieved successfully',
     type: MainCategoryResponseDto,
   })
   @ApiResponse({
@@ -158,15 +279,16 @@ export class CategoriesController {
   })
   async findOneMainCategory(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('include_template_count') includeTemplateCount: boolean = true
+    @Query('include_template_count') includeTemplateCount: boolean = true,
   ): Promise<MainCategoryResponseDto> {
     return this.categoriesService.findOneMainCategory(id, includeTemplateCount);
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get category by ID',
-    description: 'Retrieves a single category by its ID, including template count.' 
+    description:
+      'Retrieves a single category by its ID, including template count.',
   })
   @ApiParam({ name: 'id', description: 'Category UUID' })
   @ApiResponse({
@@ -178,14 +300,17 @@ export class CategoriesController {
     status: 404,
     description: 'Category not found',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<CategoryResponseDto> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CategoryResponseDto> {
     return this.categoriesService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update category',
-    description: 'Updates an existing category. Category names must remain unique.' 
+    description:
+      'Updates an existing category. Category names must remain unique.',
   })
   @ApiParam({ name: 'id', description: 'Category UUID' })
   @ApiResponse({
@@ -214,9 +339,10 @@ export class CategoriesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete category',
-    description: 'Deletes a category. Cannot delete categories that have associated templates.' 
+    description:
+      'Deletes a category. Cannot delete categories that have associated templates.',
   })
   @ApiParam({ name: 'id', description: 'Category UUID' })
   @ApiResponse({

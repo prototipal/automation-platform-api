@@ -50,7 +50,7 @@ export class ServicesRepository {
     model: string,
     version?: string,
   ): Promise<Service | null> {
-    const where: FindOptionsWhere<Service> = { 
+    const where: FindOptionsWhere<Service> = {
       model: model as any,
       is_active: true, // Only consider active services
     };
@@ -83,7 +83,7 @@ export class ServicesRepository {
 
   async findByModel(model: string): Promise<Service[]> {
     return await this.serviceRepository.find({
-      where: { 
+      where: {
         model: model as any,
         is_active: true, // Only return active services
       },

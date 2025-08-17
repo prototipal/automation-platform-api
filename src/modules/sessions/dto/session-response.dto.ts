@@ -65,7 +65,7 @@ export class SessionResponseDto {
 
   @ApiProperty({
     description: 'Total credits spent in this session',
-    example: 12.50,
+    example: 12.5,
     required: false,
   })
   @Expose()

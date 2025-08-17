@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'csv-parse/sync';
 
 import { Template } from './entities';
-import { CreateTemplateDto, UpdateTemplateDto, QueryTemplateDto, TemplateResponseDto } from './dto';
+import {
+  CreateTemplateDto,
+  UpdateTemplateDto,
+  QueryTemplateDto,
+  TemplateResponseDto,
+} from './dto';
 import { TemplatesRepository, PaginatedResult } from './templates.repository';
 import { CategoriesService } from '@/modules/categories';
 
@@ -24,90 +34,121 @@ export class TemplatesService {
     private readonly categoriesService: CategoriesService,
   ) {}
 
-  async create(createTemplateDto: CreateTemplateDto): Promise<TemplateResponseDto> {
+  async create(
+    createTemplateDto: CreateTemplateDto,
+  ): Promise<TemplateResponseDto> {
     try {
       const template = await this.templatesRepository.create(createTemplateDto);
       return plainToInstance(TemplateResponseDto, template);
     } catch (error) {
-      this.logger.error(`Failed to create template: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to create template: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('Failed to create template');
     }
   }
 
-  async findAll(queryDto: QueryTemplateDto): Promise<PaginatedResult<TemplateResponseDto>> {
+  async findAll(
+    queryDto: QueryTemplateDto,
+  ): Promise<PaginatedResult<TemplateResponseDto>> {
     const result = await this.templatesRepository.findAll(queryDto);
-    
+
     return {
       ...result,
-      data: result.data.map(template => plainToInstance(TemplateResponseDto, template)),
+      data: result.data.map((template) =>
+        plainToInstance(TemplateResponseDto, template),
+      ),
     };
   }
 
   async findOne(id: string): Promise<TemplateResponseDto> {
     const template = await this.templatesRepository.findById(id);
-    
+
     if (!template) {
       throw new NotFoundException(`Template with ID ${id} not found`);
     }
-    
+
     return plainToInstance(TemplateResponseDto, template);
   }
 
-  async update(id: string, updateTemplateDto: UpdateTemplateDto): Promise<TemplateResponseDto> {
+  async update(
+    id: string,
+    updateTemplateDto: UpdateTemplateDto,
+  ): Promise<TemplateResponseDto> {
     const existingTemplate = await this.templatesRepository.findById(id);
-    
+
     if (!existingTemplate) {
       throw new NotFoundException(`Template with ID ${id} not found`);
     }
 
     try {
-      const updatedTemplate = await this.templatesRepository.update(id, updateTemplateDto);
+      const updatedTemplate = await this.templatesRepository.update(
+        id,
+        updateTemplateDto,
+      );
       return plainToInstance(TemplateResponseDto, updatedTemplate);
     } catch (error) {
-      this.logger.error(`Failed to update template ${id}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to update template ${id}: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('Failed to update template');
     }
   }
 
   async remove(id: string): Promise<void> {
     const template = await this.templatesRepository.findById(id);
-    
+
     if (!template) {
       throw new NotFoundException(`Template with ID ${id} not found`);
     }
 
     const deleted = await this.templatesRepository.remove(id);
-    
+
     if (!deleted) {
       throw new BadRequestException('Failed to delete template');
     }
   }
 
-  async getStats(): Promise<{ total: number; byType: Record<string, number>; byCategory: Record<string, number> }> {
+  async getStats(): Promise<{
+    total: number;
+    byType: Record<string, number>;
+    byCategory: Record<string, number>;
+  }> {
     const total = await this.templatesRepository.count();
-    
-    const allTemplates = await this.templatesRepository.findAll({ 
-      page: 1, 
-      limit: total || 1 
+
+    const allTemplates = await this.templatesRepository.findAll({
+      page: 1,
+      limit: total || 1,
     });
-    
-    const byType = allTemplates.data.reduce((acc, template) => {
-      acc[template.type] = (acc[template.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const byCategory = allTemplates.data.reduce((acc, template) => {
-      const categoryName = template.category?.name || 'Unknown';
-      acc[categoryName] = (acc[categoryName] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
+
+    const byType = allTemplates.data.reduce(
+      (acc, template) => {
+        acc[template.type] = (acc[template.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const byCategory = allTemplates.data.reduce(
+      (acc, template) => {
+        const categoryName = template.category?.name || 'Unknown';
+        acc[categoryName] = (acc[categoryName] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
     return { total, byType, byCategory };
   }
 
-  async importFromCsv(filePath: string, forceType: 'photo' | 'video' = 'photo'): Promise<ImportResult> {
+  async importFromCsv(
+    filePath: string,
+    forceType: 'photo' | 'video' = 'photo',
+  ): Promise<ImportResult> {
     this.logger.log(`Starting CSV import from: ${filePath}`);
-    
+
     const result: ImportResult = {
       imported: 0,
       errors: [],
@@ -135,7 +176,7 @@ export class TemplatesService {
       for (const [index, record] of records.entries()) {
         try {
           const csvRecord = record as Record<string, string>;
-          
+
           const categoryName = csvRecord['Category Name']?.trim() || '';
           const categoryLink = csvRecord['Category Link']?.trim() || undefined;
           const imageUrl = csvRecord['Image URL']?.trim() || '';
@@ -171,9 +212,9 @@ export class TemplatesService {
 
           // Find or create category
           const category = await this.categoriesService.findOrCreate(
-            categoryName, 
-            categoryLink, 
-            forceType
+            categoryName,
+            categoryLink,
+            forceType,
           );
 
           // Create template DTO with category_id
@@ -194,7 +235,7 @@ export class TemplatesService {
       // Bulk insert templates
       if (templatesToCreate.length > 0) {
         this.logger.log(`Inserting ${templatesToCreate.length} templates...`);
-        
+
         // Insert in batches to avoid memory issues
         const batchSize = 100;
         for (let i = 0; i < templatesToCreate.length; i += batchSize) {
@@ -204,9 +245,10 @@ export class TemplatesService {
         }
       }
 
-      this.logger.log(`Import completed: ${result.imported} imported, ${result.skipped} skipped, ${result.errors.length} errors`);
+      this.logger.log(
+        `Import completed: ${result.imported} imported, ${result.skipped} skipped, ${result.errors.length} errors`,
+      );
       return result;
-
     } catch (error) {
       this.logger.error(`CSV import failed: ${error.message}`, error.stack);
       result.errors.push(`Import failed: ${error.message}`);

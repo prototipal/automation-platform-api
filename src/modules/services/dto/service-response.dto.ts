@@ -1,6 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { ServiceType, ServiceModel, TextToImageModelVersion, TextToVideoModelVersion, ModelVersion } from '../enums';
+import {
+  ServiceType,
+  ServiceModel,
+  TextToImageModelVersion,
+  TextToVideoModelVersion,
+  ModelVersion,
+} from '../enums';
 import type { ServiceFields } from '../entities';
 import type { ServicePricing } from '../entities/service.entity';
 
@@ -37,7 +43,10 @@ export class ServiceResponseDto {
 
   @ApiPropertyOptional({
     description: 'Specific model version',
-    enum: [...Object.values(TextToImageModelVersion), ...Object.values(TextToVideoModelVersion)],
+    enum: [
+      ...Object.values(TextToImageModelVersion),
+      ...Object.values(TextToVideoModelVersion),
+    ],
     example: TextToVideoModelVersion.VEO_3,
   })
   @Expose()

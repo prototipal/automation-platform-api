@@ -119,7 +119,9 @@ export class GenerationWithServiceResponseDto {
 
   @ApiProperty({
     description: 'Supabase file URLs for generated content',
-    example: ['https://supabase.com/storage/v1/object/public/generations/abc123.jpg'],
+    example: [
+      'https://supabase.com/storage/v1/object/public/generations/abc123.jpg',
+    ],
   })
   @Expose()
   supabase_urls?: string[];

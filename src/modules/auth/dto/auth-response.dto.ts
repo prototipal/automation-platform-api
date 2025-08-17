@@ -11,7 +11,7 @@ export class AuthUserDto {
 
   @ApiProperty({
     description: 'Current credit balance',
-    example: 25.50,
+    example: 25.5,
   })
   @Expose()
   balance: number;
@@ -41,14 +41,14 @@ export class CreditDeductionResponseDto {
 
   @ApiProperty({
     description: 'Remaining balance after deduction',
-    example: 24.00,
+    example: 24.0,
   })
   @Expose()
   remaining_balance: number;
 
   @ApiProperty({
     description: 'Amount deducted',
-    example: 1.50,
+    example: 1.5,
   })
   @Expose()
   deducted_amount: number;

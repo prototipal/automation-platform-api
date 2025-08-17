@@ -43,9 +43,9 @@ export class SessionsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new session',
-    description: 'Create a new session for organizing generations' 
+    description: 'Create a new session for organizing generations',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -63,16 +63,16 @@ export class SessionsController {
   async createSession(
     @Body() createSessionDto: CreateSessionDto,
     @AuthUser() authUser: AuthUserDto,
-   
   ): Promise<SessionResponseDto> {
-    console.log("auth-user",authUser)
+    console.log('auth-user', authUser);
     return await this.sessionsService.create(createSessionDto, authUser);
   }
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get user sessions',
-    description: 'Retrieve user\'s sessions with optional filtering, pagination, and statistics' 
+    description:
+      "Retrieve user's sessions with optional filtering, pagination, and statistics",
   })
   @ApiQuery({
     name: 'is_active',
@@ -147,13 +147,18 @@ export class SessionsController {
     @Query('include_stats') includeStats: boolean = false,
     @AuthUser() authUser: AuthUserDto,
   ): Promise<PaginatedSessionResponse> {
-    return await this.sessionsService.getUserSessions(queryDto, authUser, includeStats);
+    return await this.sessionsService.getUserSessions(
+      queryDto,
+      authUser,
+      includeStats,
+    );
   }
 
   @Get('stats')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get user session statistics',
-    description: 'Retrieve comprehensive statistics about user\'s sessions and generations' 
+    description:
+      "Retrieve comprehensive statistics about user's sessions and generations",
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -179,9 +184,10 @@ export class SessionsController {
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get session by ID',
-    description: 'Retrieve a specific session with optional generation statistics' 
+    description:
+      'Retrieve a specific session with optional generation statistics',
   })
   @ApiParam({
     name: 'id',
@@ -216,13 +222,17 @@ export class SessionsController {
     @Query('include_stats') includeStats: boolean = true,
     @AuthUser() authUser: AuthUserDto,
   ): Promise<SessionResponseDto> {
-    return await this.sessionsService.getSessionById(sessionId, authUser, includeStats);
+    return await this.sessionsService.getSessionById(
+      sessionId,
+      authUser,
+      includeStats,
+    );
   }
 
   @Put(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update session',
-    description: 'Update session name, description, or status' 
+    description: 'Update session name, description, or status',
   })
   @ApiParam({
     name: 'id',
@@ -251,14 +261,18 @@ export class SessionsController {
     @Body() updateSessionDto: UpdateSessionDto,
     @AuthUser() authUser: AuthUserDto,
   ): Promise<SessionResponseDto> {
-    return await this.sessionsService.update(sessionId, updateSessionDto, authUser);
+    return await this.sessionsService.update(
+      sessionId,
+      updateSessionDto,
+      authUser,
+    );
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Deactivate session',
-    description: 'Soft delete a session by setting is_active to false' 
+    description: 'Soft delete a session by setting is_active to false',
   })
   @ApiParam({
     name: 'id',
@@ -286,5 +300,40 @@ export class SessionsController {
     @AuthUser() authUser: AuthUserDto,
   ): Promise<void> {
     return await this.sessionsService.deactivate(sessionId, authUser);
+  }
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Permanently delete session',
+    description:
+      'Hard delete a session by permanently removing it from the database. Associated generations will be unlinked but preserved.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Session ID',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Session permanently deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Session not found or access denied',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid session ID',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid or missing API key',
+  })
+  async deleteSession(
+    @Param('id', ParseIntPipe) sessionId: number,
+    @AuthUser() authUser: AuthUserDto,
+  ): Promise<void> {
+    return await this.sessionsService.delete(sessionId, authUser);
   }
 }

@@ -11,8 +11,9 @@ export class TemplatesCsvImportSeed {
   public async run(dataSource: DataSource): Promise<void> {
     logger.log('Starting templates CSV import seed...');
 
-    const csvFilePath = '/Users/mustafakendiguzel/Downloads/latest - Sheet1 (1).csv';
-    
+    const csvFilePath =
+      '/Users/mustafakendiguzel/Downloads/latest - Sheet1 (1).csv';
+
     try {
       // Check if file exists
       if (!fs.existsSync(csvFilePath)) {
@@ -31,7 +32,7 @@ export class TemplatesCsvImportSeed {
       logger.log(`Found ${records.length} records in CSV file`);
 
       const templateRepository = dataSource.getRepository(Template);
-      
+
       // Clear existing templates
       logger.log('Clearing existing templates...');
       await templateRepository.query('TRUNCATE TABLE templates');
@@ -43,7 +44,7 @@ export class TemplatesCsvImportSeed {
       for (const [index, record] of records.entries()) {
         try {
           const csvRecord = record as Record<string, string>;
-          
+
           // Map CSV columns to template data
           const templateData = {
             category_name: csvRecord['Category Name']?.trim() || '',
@@ -91,27 +92,29 @@ export class TemplatesCsvImportSeed {
       // Bulk insert templates
       if (templatesToCreate.length > 0) {
         logger.log(`Inserting ${templatesToCreate.length} templates...`);
-        
+
         // Insert in batches to avoid memory issues
         const batchSize = 100;
         let imported = 0;
-        
+
         for (let i = 0; i < templatesToCreate.length; i += batchSize) {
           const batch = templatesToCreate.slice(i, i + batchSize);
           const templates = templateRepository.create(batch);
           await templateRepository.save(templates);
           imported += batch.length;
-          logger.log(`Imported batch ${Math.floor(i / batchSize) + 1}: ${batch.length} templates`);
+          logger.log(
+            `Imported batch ${Math.floor(i / batchSize) + 1}: ${batch.length} templates`,
+          );
         }
 
         logger.log(`Import completed successfully!`);
         logger.log(`- Total imported: ${imported}`);
         logger.log(`- Skipped: ${skipped}`);
         logger.log(`- Errors: ${errors.length}`);
-        
+
         if (errors.length > 0) {
           logger.warn('Errors encountered:');
-          errors.slice(0, 10).forEach(error => logger.warn(`  ${error}`));
+          errors.slice(0, 10).forEach((error) => logger.warn(`  ${error}`));
           if (errors.length > 10) {
             logger.warn(`  ... and ${errors.length - 10} more errors`);
           }
@@ -119,7 +122,6 @@ export class TemplatesCsvImportSeed {
       } else {
         logger.warn('No valid templates to import');
       }
-
     } catch (error) {
       logger.error(`CSV import failed: ${error.message}`, error.stack);
       throw error;

@@ -7,7 +7,11 @@ import {
 
 import { GenerationsController } from '../generations.controller';
 import { GenerationsService } from '../generations.service';
-import { ServiceModel, TextToVideoModelVersion, TextToImageModelVersion } from '@/modules/services/enums';
+import {
+  ServiceModel,
+  TextToVideoModelVersion,
+  TextToImageModelVersion,
+} from '@/modules/services/enums';
 import { CreateGenerationDto, GenerationResponseDto } from '../dto';
 
 describe('GenerationsController', () => {
@@ -76,10 +80,12 @@ describe('GenerationsController', () => {
       const validationError = new BadRequestException(
         "Validation failed: prompt: Field 'prompt' is required",
       );
-      
+
       mockGenerationsService.create.mockRejectedValue(validationError);
 
-      await expect(controller.create(validRequest)).rejects.toThrow(BadRequestException);
+      await expect(controller.create(validRequest)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(controller.create(validRequest)).rejects.toThrow(
         "Validation failed: prompt: Field 'prompt' is required",
       );
@@ -90,10 +96,12 @@ describe('GenerationsController', () => {
       const notFoundError = new NotFoundException(
         "No service configuration found for model 'kwaigi' with version 'kling-v2.1'",
       );
-      
+
       mockGenerationsService.create.mockRejectedValue(notFoundError);
 
-      await expect(controller.create(validRequest)).rejects.toThrow(NotFoundException);
+      await expect(controller.create(validRequest)).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(controller.create(validRequest)).rejects.toThrow(
         "No service configuration found for model 'kwaigi' with version 'kling-v2.1'",
       );
@@ -104,10 +112,12 @@ describe('GenerationsController', () => {
       const apiError = new InternalServerErrorException(
         'Failed to communicate with Replicate API',
       );
-      
+
       mockGenerationsService.create.mockRejectedValue(apiError);
 
-      await expect(controller.create(validRequest)).rejects.toThrow(InternalServerErrorException);
+      await expect(controller.create(validRequest)).rejects.toThrow(
+        InternalServerErrorException,
+      );
       await expect(controller.create(validRequest)).rejects.toThrow(
         'Failed to communicate with Replicate API',
       );
@@ -167,10 +177,12 @@ describe('GenerationsController', () => {
 
     it('should propagate unexpected errors', async () => {
       const unexpectedError = new Error('Unexpected system error');
-      
+
       mockGenerationsService.create.mockRejectedValue(unexpectedError);
 
-      await expect(controller.create(validRequest)).rejects.toThrow('Unexpected system error');
+      await expect(controller.create(validRequest)).rejects.toThrow(
+        'Unexpected system error',
+      );
       expect(service.create).toHaveBeenCalledWith(validRequest);
     });
 

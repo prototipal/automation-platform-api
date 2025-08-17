@@ -7,7 +7,9 @@ export class AddIsActiveToServices1754513200000 implements MigrationInterface {
     // Add is_active column to services table with default value true (only if it doesn't exist)
     const hasColumn = await queryRunner.hasColumn('services', 'is_active');
     if (!hasColumn) {
-      await queryRunner.query(`ALTER TABLE "services" ADD "is_active" boolean NOT NULL DEFAULT true`);
+      await queryRunner.query(
+        `ALTER TABLE "services" ADD "is_active" boolean NOT NULL DEFAULT true`,
+      );
     }
   }
 

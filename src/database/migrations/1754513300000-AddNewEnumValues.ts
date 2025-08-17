@@ -12,7 +12,9 @@ export class AddNewEnumValues1754513300000 implements MigrationInterface {
     `);
 
     if (modelEnumValues.length === 0) {
-      await queryRunner.query(`ALTER TYPE "services_model_enum" ADD VALUE 'black-forest-labs'`);
+      await queryRunner.query(
+        `ALTER TYPE "services_model_enum" ADD VALUE 'black-forest-labs'`,
+      );
     }
 
     const versionEnumValues = await queryRunner.query(`
@@ -22,13 +24,17 @@ export class AddNewEnumValues1754513300000 implements MigrationInterface {
     `);
 
     if (versionEnumValues.length === 0) {
-      await queryRunner.query(`ALTER TYPE "services_model_version_enum" ADD VALUE 'flux-kontext-max'`);
+      await queryRunner.query(
+        `ALTER TYPE "services_model_version_enum" ADD VALUE 'flux-kontext-max'`,
+      );
     }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Note: PostgreSQL does not support removing enum values
     // This would require recreating the enum type which is complex
-    console.log('Removing enum values is not supported in PostgreSQL without recreating the type');
+    console.log(
+      'Removing enum values is not supported in PostgreSQL without recreating the type',
+    );
   }
 }

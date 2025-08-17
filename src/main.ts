@@ -19,7 +19,10 @@ async function bootstrap() {
     // Global configuration
     const globalPrefix = configService.get<string>('app.globalPrefix', 'api');
     const port = configService.get<number>('app.port', 3007);
-    const environment = configService.get<string>('app.environment', 'development');
+    const environment = configService.get<string>(
+      'app.environment',
+      'development',
+    );
 
     // Global exception filters
     app.useGlobalFilters(
@@ -48,44 +51,56 @@ async function bootstrap() {
         .setTitle('Automation Platform API')
         .setDescription(
           'A comprehensive REST API for managing AI automation services and workflows. ' +
-          'This platform provides endpoints for configuring various AI models, managing service providers, ' +
-          'and handling automated workflows for image-to-video generation and text-to-image services.'
+            'This platform provides endpoints for configuring various AI models, managing service providers, ' +
+            'and handling automated workflows for image-to-video generation and text-to-image services.',
         )
         .setVersion('1.0.0')
         .addTag('Services', 'AI service configuration and management endpoints')
         .addTag('Health', 'Application health monitoring endpoints')
-        .addBearerAuth({
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'API Key',
-          name: 'API Key',
-          description: 'Enter your API key',
-          in: 'header',
-        }, 'ApiKey')
-        .addBearerAuth({
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          name: 'Supabase Token',
-          description: 'Enter your Supabase JWT token',
-          in: 'header',
-        }, 'SupabaseToken')
-        .addApiKey({
-          type: 'apiKey',
-          name: 'X-API-Key',
-          in: 'header',
-          description: 'API key sent via X-API-Key header',
-        }, 'ApiKeyHeader')
-        .addApiKey({
-          type: 'apiKey',
-          name: 'X-Supabase-Token',
-          in: 'header',
-          description: 'Supabase token sent via X-Supabase-Token header',
-        }, 'SupabaseTokenHeader')
+        .addBearerAuth(
+          {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'API Key',
+            name: 'API Key',
+            description: 'Enter your API key',
+            in: 'header',
+          },
+          'ApiKey',
+        )
+        .addBearerAuth(
+          {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            name: 'Supabase Token',
+            description: 'Enter your Supabase JWT token',
+            in: 'header',
+          },
+          'SupabaseToken',
+        )
+        .addApiKey(
+          {
+            type: 'apiKey',
+            name: 'X-API-Key',
+            in: 'header',
+            description: 'API key sent via X-API-Key header',
+          },
+          'ApiKeyHeader',
+        )
+        .addApiKey(
+          {
+            type: 'apiKey',
+            name: 'X-Supabase-Token',
+            in: 'header',
+            description: 'Supabase token sent via X-Supabase-Token header',
+          },
+          'SupabaseTokenHeader',
+        )
         .setContact(
           'API Support',
           'https://github.com/your-repo/automation-platform-api',
-          'support@example.com'
+          'support@example.com',
         )
         .setLicense('MIT', 'https://opensource.org/licenses/MIT')
         .addServer(`http://localhost:${port}`, 'Development Server')
@@ -116,7 +131,7 @@ async function bootstrap() {
       });
 
       logger.log(
-        `Swagger documentation available at: http://localhost:${port}/${globalPrefix}/docs`
+        `Swagger documentation available at: http://localhost:${port}/${globalPrefix}/docs`,
       );
     }
 

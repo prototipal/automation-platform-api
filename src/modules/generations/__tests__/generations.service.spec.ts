@@ -11,7 +11,10 @@ import { of, throwError } from 'rxjs';
 
 import { GenerationsService } from '../generations.service';
 import { ServicesService } from '@/modules/services/services.service';
-import { ServiceModel, TextToVideoModelVersion } from '@/modules/services/enums';
+import {
+  ServiceModel,
+  TextToVideoModelVersion,
+} from '@/modules/services/enums';
 import { CreateGenerationDto } from '../dto';
 import { ReplicateResponse } from '../interfaces';
 
@@ -108,7 +111,11 @@ describe('GenerationsService', () => {
       };
 
       expect(() => {
-        new GenerationsService(mockConfigServiceEmpty as any, httpService, servicesService);
+        new GenerationsService(
+          mockConfigServiceEmpty as any,
+          httpService,
+          servicesService,
+        );
       }).toThrow(InternalServerErrorException);
     });
   });
@@ -139,15 +146,17 @@ describe('GenerationsService', () => {
       expect(result).toBeDefined();
       expect(result.id).toBe(mockReplicateResponse.id);
       expect(result.status).toBe(mockReplicateResponse.status);
-      expect(servicesService.findByModel).toHaveBeenCalledWith(ServiceModel.KWAIGI);
+      expect(servicesService.findByModel).toHaveBeenCalledWith(
+        ServiceModel.KWAIGI,
+      );
       expect(httpService.post).toHaveBeenCalledWith(
         'https://api.replicate.com/v1/models/kwaivgi/kling-v2.1/predictions',
         { input: validRequest.input },
         {
           headers: {
-            'Authorization': 'Bearer test-replicate-token',
+            Authorization: 'Bearer test-replicate-token',
             'Content-Type': 'application/json',
-            'Prefer': 'wait',
+            Prefer: 'wait',
           },
           timeout: 60000,
         },
@@ -157,7 +166,9 @@ describe('GenerationsService', () => {
     it('should throw NotFoundException when service configuration is not found', async () => {
       mockServicesService.findByModel.mockResolvedValue([]);
 
-      await expect(service.create(validRequest)).rejects.toThrow(NotFoundException);
+      await expect(service.create(validRequest)).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.create(validRequest)).rejects.toThrow(
         "No service configuration found for model 'kwaigi' with version 'kling-v2.1'",
       );
@@ -173,7 +184,9 @@ describe('GenerationsService', () => {
         },
       };
 
-      await expect(service.create(invalidRequest)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidRequest)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(invalidRequest)).rejects.toThrow(
         "Validation failed: prompt: Field 'prompt' is required",
       );
@@ -189,7 +202,9 @@ describe('GenerationsService', () => {
         },
       };
 
-      await expect(service.create(invalidRequest)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidRequest)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(invalidRequest)).rejects.toThrow(
         "Validation failed: prompt: Field 'prompt' must be a string",
       );
@@ -209,7 +224,9 @@ describe('GenerationsService', () => {
         },
       };
 
-      mockServicesService.findByModel.mockResolvedValue([serviceConfigWithEnum]);
+      mockServicesService.findByModel.mockResolvedValue([
+        serviceConfigWithEnum,
+      ]);
 
       const invalidRequest: CreateGenerationDto = {
         model: ServiceModel.KWAIGI,
@@ -220,7 +237,9 @@ describe('GenerationsService', () => {
         },
       };
 
-      await expect(service.create(invalidRequest)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidRequest)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(invalidRequest)).rejects.toThrow(
         "Validation failed: duration: Field 'duration' must be one of: 5, 10",
       );
@@ -236,7 +255,9 @@ describe('GenerationsService', () => {
         },
       };
 
-      await expect(service.create(invalidRequest)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidRequest)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(invalidRequest)).rejects.toThrow(
         "Validation failed: unknown_field: Unknown field 'unknown_field' is not allowed",
       );
@@ -256,9 +277,13 @@ describe('GenerationsService', () => {
         model: ServiceModel.WAN_VIDEO,
       };
 
-      mockServicesService.findByModel.mockResolvedValue([serviceConfigUnsupported]);
+      mockServicesService.findByModel.mockResolvedValue([
+        serviceConfigUnsupported,
+      ]);
 
-      await expect(service.create(invalidRequest)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidRequest)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(invalidRequest)).rejects.toThrow(
         "Model 'wan-video' is not supported for Replicate API integration",
       );
@@ -278,8 +303,12 @@ describe('GenerationsService', () => {
 
       mockHttpService.post.mockReturnValue(throwError(() => axiosError));
 
-      await expect(service.create(validRequest)).rejects.toThrow(BadRequestException);
-      await expect(service.create(validRequest)).rejects.toThrow('Invalid input parameters');
+      await expect(service.create(validRequest)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.create(validRequest)).rejects.toThrow(
+        'Invalid input parameters',
+      );
     });
 
     it('should handle Replicate API 401 error', async () => {
@@ -296,7 +325,9 @@ describe('GenerationsService', () => {
 
       mockHttpService.post.mockReturnValue(throwError(() => axiosError));
 
-      await expect(service.create(validRequest)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.create(validRequest)).rejects.toThrow(
+        InternalServerErrorException,
+      );
       await expect(service.create(validRequest)).rejects.toThrow(
         'Unauthorized: Invalid Replicate API token',
       );
@@ -316,7 +347,9 @@ describe('GenerationsService', () => {
 
       mockHttpService.post.mockReturnValue(throwError(() => axiosError));
 
-      await expect(service.create(validRequest)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.create(validRequest)).rejects.toThrow(
+        InternalServerErrorException,
+      );
       await expect(service.create(validRequest)).rejects.toThrow(
         'Rate limit exceeded for Replicate API',
       );
@@ -326,7 +359,9 @@ describe('GenerationsService', () => {
       const networkError = new Error('Network timeout');
       mockHttpService.post.mockReturnValue(throwError(() => networkError));
 
-      await expect(service.create(validRequest)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.create(validRequest)).rejects.toThrow(
+        InternalServerErrorException,
+      );
       await expect(service.create(validRequest)).rejects.toThrow(
         'Failed to communicate with Replicate API',
       );
