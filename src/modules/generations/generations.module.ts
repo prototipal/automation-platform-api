@@ -7,6 +7,7 @@ import { ServicesModule } from '@/modules/services';
 import { AuthModule } from '@/modules/auth';
 import { StorageModule } from '@/modules/storage';
 import { SessionsModule } from '@/modules/sessions';
+import { PackagesModule } from '@/modules/packages';
 import { GenerationsController } from './generations.controller';
 import { GenerationsService } from './generations.service';
 import { GenerationsRepository } from './generations.repository';
@@ -23,6 +24,7 @@ import { Generation } from './entities';
     ServicesModule,
     AuthModule,
     StorageModule,
+    PackagesModule,
     forwardRef(() => SessionsModule),
   ],
   controllers: [GenerationsController],

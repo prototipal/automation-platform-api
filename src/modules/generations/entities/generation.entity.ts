@@ -9,13 +9,13 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Service } from '@/modules/services/entities';
+import { Service } from '../../services/entities';
 import {
   ServiceModel,
   ModelVersion,
   TextToImageModelVersion,
   TextToVideoModelVersion,
-} from '@/modules/services/enums';
+} from '../../services/enums';
 
 @Entity('generations')
 @Index('idx_generation_user_id', ['user_id'])

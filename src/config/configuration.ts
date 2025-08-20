@@ -40,6 +40,11 @@ export const configModuleOptions: ConfigModuleOptions = {
     SUPABASE_SERVICE_ROLE_KEY: Joi.string().required(),
     SUPABASE_BUCKET_NAME: Joi.string().default('generations'),
     SUPABASE_MAX_FILE_SIZE_MB: Joi.number().min(1).max(100).default(10),
+
+    // Stripe configuration validation
+    STRIPE_SECRET_KEY: Joi.string().required(),
+    STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
+    STRIPE_WEBHOOK_SECRET: Joi.string().required(),
   }),
   validationOptions: {
     allowUnknown: true,

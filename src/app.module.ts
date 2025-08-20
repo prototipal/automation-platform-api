@@ -11,6 +11,8 @@ import { CategoriesModule } from '@/modules/categories';
 import { AuthModule } from '@/modules/auth';
 import { SessionsModule } from '@/modules/sessions';
 import { StorageModule } from '@/modules/storage';
+import { PackagesModule } from '@/modules/packages';
+import { SubscriptionsModule } from '@/modules/subscriptions';
 import { configModuleOptions } from './config';
 
 @Module({
@@ -25,6 +27,8 @@ import { configModuleOptions } from './config';
     GenerationsModule,
     CategoriesModule,
     TemplatesModule,
+    PackagesModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -23,6 +23,7 @@ import { ServiceFields } from '@/modules/services/entities';
 import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
 import { StorageService } from '@/modules/storage';
 import { SessionsService } from '@/modules/sessions';
+import { PackagesService } from '@/modules/packages';
 import { Generation } from './entities';
 import { GenerationsRepository } from './generations.repository';
 import {
@@ -89,6 +90,7 @@ export class GenerationsService {
     private readonly pricingCalculationService: PricingCalculationService,
     private readonly storageService: StorageService,
     private readonly sessionsService: SessionsService,
+    private readonly packagesService: PackagesService,
   ) {
     this.replicateApiToken =
       this.configService.get<string>('REPLICATE_API_TOKEN') || '';
@@ -186,7 +188,29 @@ export class GenerationsService {
       `Required credits for generation: ${totalRequiredCredits} (${baseCreditCost} x ${imageCount}) for user: ${authUser.user_id}`,
     );
 
-    // Step 3: Check sufficient credits
+    // Step 3: Check package limits (credits and generation count)
+    const packageLimits = await this.packagesService.checkPackageLimits(authUser.user_id);
+    
+    if (!packageLimits.canGenerate) {
+      this.logger.warn(
+        `Package limits exceeded for user ${authUser.user_id}: ${packageLimits.reason}`,
+      );
+      throw new BadRequestException(
+        `Generation not allowed: ${packageLimits.reason}. Credits remaining: ${packageLimits.creditsRemaining}, Generations remaining: ${packageLimits.generationsRemaining === -1 ? 'unlimited' : packageLimits.generationsRemaining}`,
+      );
+    }
+
+    // Step 4: Check sufficient credits in package allowance
+    if (packageLimits.creditsRemaining < totalRequiredCredits) {
+      this.logger.warn(
+        `Insufficient package credits for user ${authUser.user_id}. Required: ${totalRequiredCredits}, Available in package: ${packageLimits.creditsRemaining}`,
+      );
+      throw new BadRequestException(
+        `Insufficient package credits. Required: ${totalRequiredCredits}, Available in current package: ${packageLimits.creditsRemaining}`,
+      );
+    }
+
+    // Step 5: Check sufficient credits in user balance (fallback)
     const hasSufficientCredits = await this.authService.checkSufficientCredits(
       authUser.user_id,
       totalRequiredCredits,
@@ -194,10 +218,10 @@ export class GenerationsService {
 
     if (!hasSufficientCredits) {
       this.logger.warn(
-        `Insufficient credits for user ${authUser.user_id}. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`,
+        `Insufficient account credits for user ${authUser.user_id}. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`,
       );
       throw new BadRequestException(
-        `Insufficient credits. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`,
+        `Insufficient account credits. Required: ${totalRequiredCredits}, Available: ${authUser.balance}`,
       );
     }
 
@@ -899,6 +923,20 @@ export class GenerationsService {
       });
 
       this.logger.log(`Generation saved with ID: ${savedGeneration.id}`);
+      
+      // Update package usage counters
+      try {
+        await this.packagesService.updateUsageCounters(
+          userId,
+          creditsUsed,
+          1 // One generation
+        );
+        this.logger.log(`Package usage updated for user ${userId}: +${creditsUsed} credits, +1 generation`);
+      } catch (error) {
+        this.logger.error(`Failed to update package usage for user ${userId}:`, error);
+        // Don't throw error here as the generation was already successful
+      }
+      
       return savedGeneration;
     } catch (error) {
       this.logger.error('Failed to save generation:', error);
