@@ -13,6 +13,7 @@ import { SessionsModule } from '@/modules/sessions';
 import { StorageModule } from '@/modules/storage';
 import { PackagesModule } from '@/modules/packages';
 import { SubscriptionsModule } from '@/modules/subscriptions';
+import { CreditsModule } from '@/modules/credits';
 import { configModuleOptions } from './config';
 
 @Module({
@@ -29,6 +30,7 @@ import { configModuleOptions } from './config';
     TemplatesModule,
     PackagesModule,
     SubscriptionsModule,
+    CreditsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

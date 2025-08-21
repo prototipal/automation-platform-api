@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { CreditType } from '@/modules/credits/enums';
 
 export class AuthUserDto {
   @ApiProperty({
@@ -52,4 +53,26 @@ export class CreditDeductionResponseDto {
   })
   @Expose()
   deducted_amount: number;
+
+  @ApiPropertyOptional({
+    description: 'Type of credits that were used',
+    example: CreditType.API,
+    enum: CreditType,
+  })
+  @Expose()
+  credit_type_used?: CreditType;
+
+  @ApiPropertyOptional({
+    description: 'Remaining playground credits',
+    example: 500,
+  })
+  @Expose()
+  remaining_playground_credits?: number;
+
+  @ApiPropertyOptional({
+    description: 'Remaining API credits',
+    example: 300,
+  })
+  @Expose()
+  remaining_api_credits?: number;
 }

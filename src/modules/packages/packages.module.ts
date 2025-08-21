@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
@@ -13,7 +13,7 @@ import { AuthModule } from '@/modules/auth';
   imports: [
     TypeOrmModule.forFeature([Package, UserPackage]),
     EventEmitterModule.forRoot(),
-    AuthModule,
+    forwardRef(() => AuthModule),
   ],
   controllers: [PackagesController],
   providers: [

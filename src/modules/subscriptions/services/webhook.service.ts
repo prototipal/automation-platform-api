@@ -293,6 +293,8 @@ export class WebhookService {
       subscriptionId: invoice.subscription,
       invoiceId: invoice.id,
       amountPaid: invoice.amount_paid,
+      packageName: userPackage.package.name,
+      monthlyCredits: userPackage.package.monthly_credits || 0,
     });
 
     this.logger.log(`Payment succeeded for subscription: ${invoice.subscription}, amount: ${invoice.amount_paid}`);

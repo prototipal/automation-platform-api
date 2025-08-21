@@ -3,9 +3,11 @@ import {
   IsNotEmpty,
   IsOptional,
   IsNumber,
+  IsEnum,
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CreditType } from '@/modules/credits/enums';
 
 export class ApiKeyAuthRequestDto {
   @ApiProperty({
@@ -33,6 +35,15 @@ export class CreditDeductionDto {
   @IsNumber()
   @Min(0.01)
   amount: number;
+
+  @ApiPropertyOptional({
+    description: 'Type of credits to deduct (playground or api)',
+    example: CreditType.API,
+    enum: CreditType,
+  })
+  @IsOptional()
+  @IsEnum(CreditType)
+  credit_type?: CreditType;
 
   @ApiPropertyOptional({
     description: 'Description of the transaction',
