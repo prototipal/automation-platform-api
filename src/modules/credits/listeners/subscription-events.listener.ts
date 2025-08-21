@@ -125,10 +125,10 @@ export class SubscriptionEventsListener {
     monthlyCredits: number;
   }): Promise<void> {
     try {
-      this.logger.log(
-        `Handling payment succeeded event for user ${payload.userId}, ` +
-        `package ${payload.packageId}, amount $${payload.amountPaid / 100}`
-      );
+      this.logger.log(`🎉 PAYMENT SUCCEEDED EVENT RECEIVED for user ${payload.userId}`);
+      this.logger.log(`📦 Package: ${payload.packageName} (ID: ${payload.packageId})`);
+      this.logger.log(`💰 Amount: $${payload.amountPaid / 100}, Credits: ${payload.monthlyCredits}`);
+      this.logger.log(`🔍 Full payload: ${JSON.stringify(payload, null, 2)}`);
 
       // Get current date for period calculation
       const now = new Date();

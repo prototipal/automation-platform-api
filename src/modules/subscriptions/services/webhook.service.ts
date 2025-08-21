@@ -293,7 +293,7 @@ export class WebhookService {
     });
 
     // Emit event for other services to react
-    this.eventEmitter.emit('payment.succeeded', {
+    const eventPayload = {
       userId: userPackage.user_id,
       packageId: userPackage.package_id,
       subscriptionId: invoice.subscription,
@@ -301,7 +301,10 @@ export class WebhookService {
       amountPaid: invoice.amount_paid,
       packageName: userPackage.package.name,
       monthlyCredits: userPackage.package.monthly_credits || 0,
-    });
+    };
+
+    this.logger.log(`Emitting payment.succeeded event:`, JSON.stringify(eventPayload, null, 2));
+    this.eventEmitter.emit('payment.succeeded', eventPayload);
 
     this.logger.log(`Payment succeeded for subscription: ${invoice.subscription}, amount: ${invoice.amount_paid}`);
   }

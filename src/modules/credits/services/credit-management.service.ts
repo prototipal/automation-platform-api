@@ -183,6 +183,10 @@ export class CreditManagementService {
     periodEnd: Date
   ): Promise<void> {
     try {
+      this.logger.log(`🔄 STARTING SUBSCRIPTION PERIOD for user ${userId}`);
+      this.logger.log(`📦 Package: ${packageName} (${packageId}), Credits: ${monthlyCredits}`);
+      this.logger.log(`📅 Period: ${periodStart.toISOString()} → ${periodEnd.toISOString()}`);
+
       // Reset playground credits to package allocation
       await this.resetPlaygroundCredits({
         user_id: userId,
