@@ -13,7 +13,9 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   try {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, {
+      rawBody: true, // Enable raw body for Stripe webhooks
+    });
     const configService = app.get(ConfigService);
 
     // Global configuration
