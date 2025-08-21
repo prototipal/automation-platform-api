@@ -146,6 +146,13 @@ export class StripeService {
           package_id: request.packageId.toString(),
           billing_interval: request.billingInterval,
         },
+        subscription_data: {
+          metadata: {
+            user_id: userId,
+            package_id: request.packageId.toString(),
+            billing_interval: request.billingInterval,
+          },
+        },
         allow_promotion_codes: true,
         billing_address_collection: 'required',
         customer_update: {

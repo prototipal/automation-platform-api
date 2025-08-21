@@ -56,11 +56,18 @@ export class WebhookService {
 
         // Invoice events
         case 'invoice.payment_succeeded':
+        case 'invoice.paid':
           await this.handleInvoicePaymentSucceeded(event.data.object as InvoiceEventData);
           break;
 
         case 'invoice.payment_failed':
           await this.handleInvoicePaymentFailed(event.data.object as InvoiceEventData);
+          break;
+
+        case 'invoice.created':
+        case 'invoice.finalized':
+          // These events don't require special handling in our current flow
+          this.logger.debug(`Invoice event processed: ${event.type}`);
           break;
 
         // Customer events
