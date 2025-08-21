@@ -19,12 +19,33 @@ export class SubscriptionEventsListener {
     packageId: number;
     subscriptionId: string;
     status: string;
+    packageName: string;
+    monthlyCredits: number;
+    hasTrialPeriod: boolean;
   }): Promise<void> {
     try {
       this.logger.log(`Handling subscription created event for user ${payload.userId}, package ${payload.packageId}`);
 
-      // The credit setup will be handled by the payment.succeeded event
-      // which fires after the subscription is created and the first payment is processed
+      // If there's no trial period, set up credits immediately
+      // If there's a trial period, credits will be set up when the first payment succeeds
+      if (!payload.hasTrialPeriod && payload.status === 'active') {
+        const now = new Date();
+        const nextMonth = new Date(now);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+        await this.creditManagementService.handleSubscriptionPeriodStart(
+          payload.userId,
+          payload.packageId,
+          payload.packageName,
+          payload.monthlyCredits,
+          now,
+          nextMonth
+        );
+
+        this.logger.log(`Initial credits set up for user ${payload.userId}: ${payload.monthlyCredits} playground credits`);
+      } else {
+        this.logger.log(`Credits will be set up later for user ${payload.userId} (trial period: ${payload.hasTrialPeriod}, status: ${payload.status})`);
+      }
       
       this.logger.log(`Subscription created event processed for user ${payload.userId}`);
 

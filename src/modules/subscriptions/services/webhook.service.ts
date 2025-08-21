@@ -121,6 +121,9 @@ export class WebhookService {
         subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined
       );
 
+      // Get package details for credit management
+      const packageDetails = await this.packagesService.findPackageById(parseInt(packageId));
+
       await queryRunner.commitTransaction();
 
       // Emit event for other services to react
@@ -129,6 +132,9 @@ export class WebhookService {
         packageId: parseInt(packageId),
         subscriptionId: subscription.id,
         status,
+        packageName: packageDetails?.name || 'Unknown Package',
+        monthlyCredits: packageDetails?.monthly_credits || 0,
+        hasTrialPeriod: !!subscription.trial_end,
       });
 
       this.logger.log(`Subscription created: ${subscription.id} for user: ${userId}`);
