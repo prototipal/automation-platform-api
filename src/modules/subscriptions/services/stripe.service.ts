@@ -309,10 +309,23 @@ export class StripeService {
    */
   async getUpcomingInvoice(stripeSubscriptionId: string): Promise<Stripe.Invoice> {
     try {
-      // Using dynamic access for compatibility across Stripe versions
-      return await (this.stripe.invoices as any).retrieveUpcoming({
-        subscription: stripeSubscriptionId,
+      // Get subscription details first to get customer info
+      const subscription = await this.stripe.subscriptions.retrieve(stripeSubscriptionId, {
+        expand: ['latest_invoice'],
       });
+
+      if (!subscription.customer) {
+        throw new Error('No customer found for subscription');
+      }
+
+      // Create a preview invoice for the upcoming billing period
+      const invoice = await this.stripe.invoices.create({
+        customer: subscription.customer as string,
+        subscription: stripeSubscriptionId,
+        auto_advance: false, // Don't auto-finalize
+      });
+
+      return invoice;
     } catch (error) {
       this.logger.error(`Failed to retrieve upcoming invoice for subscription ${stripeSubscriptionId}:`, error);
       throw new BadRequestException('Failed to retrieve upcoming invoice');

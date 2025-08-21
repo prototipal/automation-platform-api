@@ -131,7 +131,7 @@ export class UserPackagesRepository extends Repository<UserPackage> {
    * Update usage counters for current billing period
    */
   async updateUsageCounters(
-    userPackageId: number,
+    userPackageId: string,
     creditsUsed: number,
     generationsCount: number = 1
   ): Promise<void> {
@@ -148,7 +148,7 @@ export class UserPackagesRepository extends Repository<UserPackage> {
   /**
    * Reset usage counters for new billing period
    */
-  async resetUsageCounters(userPackageId: number): Promise<void> {
+  async resetUsageCounters(userPackageId: string): Promise<void> {
     await this.update(userPackageId, {
       credits_used_current_period: 0,
       generations_current_period: 0,

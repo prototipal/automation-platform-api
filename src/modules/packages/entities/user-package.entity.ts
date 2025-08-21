@@ -20,10 +20,10 @@ import { SubscriptionStatus, BillingInterval } from '../enums';
 export class UserPackage {
   @ApiProperty({
     description: 'Unique identifier for the user package relationship',
-    example: 1,
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ApiProperty({
     description: 'ID of the user who owns this subscription',
