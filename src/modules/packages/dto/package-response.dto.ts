@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Transform } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { PackageType, BillingInterval } from '@/modules/packages/enums';
 
 export class PackageResponseDto {
@@ -209,6 +209,7 @@ export class UserPackageResponseDto {
     type: PackageResponseDto,
   })
   @Expose()
+  @Type(() => PackageResponseDto)
   package: PackageResponseDto;
 
   @ApiProperty({
