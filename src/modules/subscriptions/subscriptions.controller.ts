@@ -118,9 +118,12 @@ export class SubscriptionsController {
   @HybridAuth()
   async createPortalSession(
     @AuthUser() user: AuthUserDto,
-    @Body() body: { returnUrl: string },
+    @Body() body?: { returnUrl?: string },
   ) {
     this.logger.log(`Creating portal session for user: ${user.user_id}`);
+
+    // Use a default return URL if not provided
+    const returnUrl = body?.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`;
 
     // Get user's current subscription to find customer ID
     const userPackage = await this.packagesService.getUserCurrentPackage(user.user_id);
@@ -131,7 +134,7 @@ export class SubscriptionsController {
 
     const session = await this.stripeService.createPortalSession(
       userPackage.stripe_customer_id,
-      body.returnUrl,
+      returnUrl,
     );
 
     return { url: session.url };
