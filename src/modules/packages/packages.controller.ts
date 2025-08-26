@@ -144,6 +144,7 @@ export class PackagesController {
         reason: { type: 'string', description: 'Reason if cannot generate', nullable: true },
         creditsRemaining: { type: 'number', description: 'Credits remaining in current period' },
         generationsRemaining: { type: 'number', description: 'Generations remaining in current period (-1 if unlimited)' },
+        packageCredits: { type: 'number', description: 'Total monthly credits included in user\'s package' },
       },
     },
   })

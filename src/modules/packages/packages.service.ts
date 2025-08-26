@@ -352,6 +352,7 @@ export class PackagesService {
     reason?: string;
     creditsRemaining: number;
     generationsRemaining: number;
+    packageCredits: number;
   }> {
     const userPackage = await this.userPackagesRepository.findActiveUserPackage(userId);
     
@@ -361,6 +362,7 @@ export class PackagesService {
         reason: 'No active subscription found',
         creditsRemaining: 0,
         generationsRemaining: 0,
+        packageCredits: 0,
       };
     }
 
@@ -391,6 +393,7 @@ export class PackagesService {
       reason,
       creditsRemaining,
       generationsRemaining: generationsRemaining === Infinity ? -1 : generationsRemaining,
+      packageCredits: userPackage.package.monthly_credits,
     };
   }
 }
