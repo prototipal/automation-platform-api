@@ -383,16 +383,27 @@ export class GenerationsService {
       estimateDto.model_version,
     );
 
-    // Multiply by image count for text-to-image models
+    // Apply image count for text-to-image models by recalculating properly
     if (isTextToImage && imageCount > 1) {
-      basePriceEstimation.estimated_credits =
-        basePriceEstimation.estimated_credits * imageCount;
-      basePriceEstimation.breakdown.estimated_credits_rounded =
-        basePriceEstimation.breakdown.estimated_credits_rounded * imageCount;
-      basePriceEstimation.breakdown.estimated_credits_raw =
-        basePriceEstimation.breakdown.estimated_credits_raw * imageCount;
-      basePriceEstimation.breakdown.total_cost_usd =
-        basePriceEstimation.breakdown.total_cost_usd * imageCount;
+      // Get the base USD cost for single image
+      const singleImageCost = basePriceEstimation.breakdown.replicate_cost_usd;
+      
+      // Calculate total replicate cost for multiple images
+      const totalReplicateCost = singleImageCost * imageCount;
+      
+      // Calculate total cost with profit margin
+      const totalCostUsd = totalReplicateCost * basePriceEstimation.breakdown.profit_margin;
+      
+      // Convert to credits and round at the end
+      const creditsRaw = totalCostUsd / basePriceEstimation.breakdown.credit_value_usd;
+      const creditsRounded = this.roundToHalf(creditsRaw);
+
+      // Update the breakdown with correct values
+      basePriceEstimation.breakdown.replicate_cost_usd = totalReplicateCost;
+      basePriceEstimation.breakdown.total_cost_usd = totalCostUsd;
+      basePriceEstimation.breakdown.estimated_credits_raw = creditsRaw;
+      basePriceEstimation.breakdown.estimated_credits_rounded = creditsRounded;
+      basePriceEstimation.estimated_credits = creditsRounded;
     }
 
     this.logger.log(
@@ -449,16 +460,25 @@ export class GenerationsService {
 
           // Apply image count multiplier for text-to-image models
           if (isTextToImage && currentImageCount > 1) {
-            basePriceEstimation.estimated_credits =
-              basePriceEstimation.estimated_credits * currentImageCount;
-            basePriceEstimation.breakdown.estimated_credits_rounded =
-              basePriceEstimation.breakdown.estimated_credits_rounded *
-              currentImageCount;
-            basePriceEstimation.breakdown.estimated_credits_raw =
-              basePriceEstimation.breakdown.estimated_credits_raw *
-              currentImageCount;
-            basePriceEstimation.breakdown.total_cost_usd =
-              basePriceEstimation.breakdown.total_cost_usd * currentImageCount;
+            // Get the base USD cost for single image
+            const singleImageCost = basePriceEstimation.breakdown.replicate_cost_usd;
+            
+            // Calculate total replicate cost for multiple images
+            const totalReplicateCost = singleImageCost * currentImageCount;
+            
+            // Calculate total cost with profit margin
+            const totalCostUsd = totalReplicateCost * basePriceEstimation.breakdown.profit_margin;
+            
+            // Convert to credits and round at the end
+            const creditsRaw = totalCostUsd / basePriceEstimation.breakdown.credit_value_usd;
+            const creditsRounded = this.roundToHalf(creditsRaw);
+
+            // Update the breakdown with correct values
+            basePriceEstimation.breakdown.replicate_cost_usd = totalReplicateCost;
+            basePriceEstimation.breakdown.total_cost_usd = totalCostUsd;
+            basePriceEstimation.breakdown.estimated_credits_raw = creditsRaw;
+            basePriceEstimation.breakdown.estimated_credits_rounded = creditsRounded;
+            basePriceEstimation.estimated_credits = creditsRounded;
           }
 
           // Create service price entry with proper display name fallback
@@ -1345,6 +1365,14 @@ export class GenerationsService {
         'Failed to soft delete generation',
       );
     }
+  }
+
+  /**
+   * Round to nearest 0.5 (half) value
+   * Examples: 2.14 -> 2.5, 2.34 -> 2.5, 2.60 -> 3.0, 2.75 -> 3.0
+   */
+  private roundToHalf(value: number): number {
+    return Math.ceil(value * 2) / 2;
   }
 
   /**

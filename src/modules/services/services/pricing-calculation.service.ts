@@ -233,7 +233,7 @@ export class PricingCalculationService {
       const replicateCostUsd = pricingResult.totalPrice;
       const totalCostUsd = replicateCostUsd * this.profitMargin;
       const estimatedCreditsRaw = totalCostUsd / this.creditValueUsd;
-      const estimatedCreditsRounded = Math.ceil(estimatedCreditsRaw); // Always round up
+      const estimatedCreditsRounded = this.roundToHalf(estimatedCreditsRaw);
 
       this.logger.log(
         `Credit calculation - Replicate: $${replicateCostUsd}, ` +
@@ -298,6 +298,14 @@ export class PricingCalculationService {
     const defaultPriceUsd = this.getDefaultPrice(rule);
     const totalCostUsd = defaultPriceUsd * this.profitMargin;
     const creditsRaw = totalCostUsd / this.creditValueUsd;
-    return Math.ceil(creditsRaw); // Always round up
+    return this.roundToHalf(creditsRaw);
+  }
+
+  /**
+   * Round to nearest 0.5 (half) value
+   * Examples: 2.14 -> 2.5, 2.34 -> 2.5, 2.60 -> 3.0, 2.75 -> 3.0
+   */
+  private roundToHalf(value: number): number {
+    return Math.ceil(value * 2) / 2;
   }
 }
