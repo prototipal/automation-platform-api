@@ -38,7 +38,7 @@ import { HybridAuthGuard } from '@/modules/auth/guards';
 import { AuthUser, HybridAuth } from '@/modules/auth/decorators';
 import { AuthUserDto } from '@/modules/auth/dto';
 import { UserPackageResponseDto } from '@/modules/packages/dto';
-import { PackagesService } from '@/modules/packages';
+import { PackagesService, UserPackagesRepository } from '@/modules/packages';
 
 @ApiTags('Subscriptions')
 @Controller('subscriptions')
@@ -49,6 +49,7 @@ export class SubscriptionsController {
     private readonly stripeService: StripeService,
     private readonly webhookService: WebhookService,
     private readonly packagesService: PackagesService,
+    private readonly userPackagesRepository: UserPackagesRepository,
   ) {}
 
   @Post('checkout')
@@ -170,6 +171,7 @@ export class SubscriptionsController {
     @Body() cancelSubscriptionDto: CancelSubscriptionDto,
   ): Promise<SubscriptionActionResponseDto> {
     this.logger.log(`Cancelling subscription for user: ${user.user_id}`);
+    this.logger.log(`Request body: ${JSON.stringify(cancelSubscriptionDto)}`);
 
     // Get user's current subscription
     const userPackage = await this.packagesService.getUserCurrentPackage(
@@ -187,6 +189,21 @@ export class SubscriptionsController {
       userPackage.stripe_subscription_id,
       cancelSubscriptionDto.cancelImmediately,
     );
+
+    this.logger.log(`cancelImmediately value: ${cancelSubscriptionDto.cancelImmediately}`);
+    this.logger.log(`cancelImmediately type: ${typeof cancelSubscriptionDto.cancelImmediately}`);
+
+    // Immediately update the database to reflect the cancellation status
+    // This ensures the UI shows the correct status without waiting for webhooks
+    if (!cancelSubscriptionDto.cancelImmediately) {
+      this.logger.log('Updating cancel_at_period_end to true');
+      await this.userPackagesRepository.update(userPackage.id, {
+        cancel_at_period_end: true,
+      });
+      this.logger.log(`Updated cancel_at_period_end flag for user package: ${userPackage.id}`);
+    } else {
+      this.logger.log('Skipping cancel_at_period_end update because cancelImmediately is true');
+    }
 
     const effectiveDate = cancelSubscriptionDto.cancelImmediately
       ? new Date()
@@ -241,12 +258,22 @@ export class SubscriptionsController {
       userPackage.stripe_subscription_id,
     );
 
+
+
+    // Immediately update the database to clear the cancellation flag
+    // This ensures the UI shows the correct status without waiting for webhooks
+    await this.userPackagesRepository.update(userPackage.id, {
+      cancel_at_period_end: false,
+    });
+    this.logger.log(`Cleared cancel_at_period_end flag for user package: ${userPackage.id}`);
+
     return {
       success: true,
       message: 'Subscription resumed successfully',
       status: stripeSubscription.status,
     };
   }
+
 
   @Get('upcoming-invoice')
   @ApiOperation({
