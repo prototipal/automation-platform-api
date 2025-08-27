@@ -87,6 +87,17 @@ async function bootstrap() {
           },
           'SupabaseToken',
         )
+        .addBearerAuth(
+          {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'Static Token',
+            name: 'Static Token',
+            description: 'Enter your static API token',
+            in: 'header',
+          },
+          'StaticToken',
+        )
         .addApiKey(
           {
             type: 'apiKey',

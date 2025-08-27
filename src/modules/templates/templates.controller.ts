@@ -12,6 +12,9 @@ import {
   ValidationPipe,
   UsePipes,
   Logger,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,7 +23,10 @@ import {
   ApiParam,
   ApiQuery,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
 
 import { TemplatesService } from './templates.service';
 import {
@@ -28,6 +34,8 @@ import {
   UpdateTemplateDto,
   QueryTemplateDto,
   TemplateResponseDto,
+  CsvImportRequestDto,
+  CsvImportResponseDto,
 } from './dto';
 import { StaticTokenAuth } from '@/modules/auth';
 
@@ -187,6 +195,79 @@ export class TemplatesController {
       body.filePath,
       body.forceType || 'photo',
     );
+  }
+
+  @Post('import-csv-upload')
+  @StaticTokenAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: 'Import templates from uploaded CSV file',
+    description: `Upload a CSV file with columns: name, prompt, new_image.
+    All entries will have type 'photo' and be associated with the specified main category.
+    Creates categories as needed and avoids duplicates.`,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'CSV file to upload',
+        },
+        type: {
+          type: 'string',
+          enum: ['photo', 'video'],
+          default: 'photo',
+          description: 'Type for all imported templates',
+        },
+        mainCategoryName: {
+          type: 'string',
+          default: 'Prototipal Halo',
+          description: 'Main category name to use for all categories',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'CSV import completed successfully',
+    type: CsvImportResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid file or import parameters',
+  })
+  async importFromCsvUpload(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: CsvImportRequestDto,
+  ): Promise<CsvImportResponseDto> {
+    this.logger.log(
+      `Starting CSV import from uploaded file: ${file?.originalname}`,
+    );
+
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
+      throw new BadRequestException(
+        'Invalid file type. Please upload a CSV file.',
+      );
+    }
+
+    try {
+      const csvContent = file.buffer.toString('utf-8');
+      return await this.templatesService.importFromCsvFile(csvContent, {
+        type: body.type,
+        mainCategoryName: body.mainCategoryName,
+      });
+    } catch (error) {
+      this.logger.error(`CSV upload import failed: ${error.message}`);
+      throw new BadRequestException(`Import failed: ${error.message}`);
+    }
   }
 
   @Delete('clear')

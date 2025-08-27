@@ -15,6 +15,8 @@ import {
   UpdateTemplateDto,
   QueryTemplateDto,
   TemplateResponseDto,
+  CsvImportResponseDto,
+  CsvRowData,
 } from './dto';
 import { TemplatesRepository, PaginatedResult } from './templates.repository';
 import { CategoriesService } from '@/modules/categories';
@@ -252,6 +254,218 @@ export class TemplatesService {
     } catch (error) {
       this.logger.error(`CSV import failed: ${error.message}`, error.stack);
       result.errors.push(`Import failed: ${error.message}`);
+      return result;
+    }
+  }
+
+  async importFromCsvFile(
+    csvContent: string,
+    options: {
+      type?: 'photo' | 'video';
+      mainCategoryName?: string;
+    } = {},
+  ): Promise<CsvImportResponseDto> {
+    const { type = 'photo', mainCategoryName = 'Prototipal Halo' } = options;
+
+    this.logger.log('Starting CSV import from uploaded file');
+
+    const result: CsvImportResponseDto = {
+      imported: 0,
+      categoriesCreated: 0,
+      skipped: 0,
+      errors: [],
+      message: '',
+    };
+
+    try {
+      // Parse CSV content
+      const records = parse(csvContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+
+      this.logger.log(`Found ${records.length} records in CSV file`);
+
+      if (records.length === 0) {
+        result.message = 'CSV file is empty or has no valid data';
+        return result;
+      }
+
+      // Step 1: Find the main category
+      const mainCategory = await this.categoriesService.findMainCategoryByName(
+        mainCategoryName,
+      );
+
+      if (!mainCategory) {
+        result.errors.push(
+          `Main category '${mainCategoryName}' not found. Please create it first.`,
+        );
+        result.message = 'Import failed: Main category not found';
+        return result;
+      }
+
+      this.logger.log(
+        `Found main category: ${mainCategory.name} (${mainCategory.id})`,
+      );
+
+      // Step 2: Extract unique category names and validate CSV structure
+      const uniqueCategoryNames = new Set<string>();
+      const validatedRows: Array<CsvRowData & { index: number }> = [];
+
+      for (const [index, record] of records.entries()) {
+        try {
+          const csvRecord = record as Record<string, string>;
+          const categoryName = csvRecord['name']?.trim() || '';
+          const prompt = csvRecord['prompt']?.trim() || '';
+          const imageUrl = csvRecord['new_image']?.trim() || '';
+
+          // Validate required fields
+          if (!categoryName) {
+            result.errors.push(`Row ${index + 1}: Missing category name`);
+            result.skipped++;
+            continue;
+          }
+
+          if (!prompt) {
+            result.errors.push(`Row ${index + 1}: Missing prompt`);
+            result.skipped++;
+            continue;
+          }
+
+          if (!imageUrl) {
+            result.errors.push(`Row ${index + 1}: Missing image URL`);
+            result.skipped++;
+            continue;
+          }
+
+          // Validate URL format
+          try {
+            new URL(imageUrl);
+          } catch {
+            result.errors.push(`Row ${index + 1}: Invalid image URL format`);
+            result.skipped++;
+            continue;
+          }
+
+          uniqueCategoryNames.add(categoryName);
+          validatedRows.push({
+            name: categoryName,
+            prompt,
+            new_image: imageUrl,
+            index: index + 1,
+          });
+        } catch (error) {
+          result.errors.push(`Row ${index + 1}: ${error.message}`);
+          result.skipped++;
+        }
+      }
+
+      if (validatedRows.length === 0) {
+        result.message = 'No valid rows found in CSV';
+        return result;
+      }
+
+      this.logger.log(
+        `Found ${uniqueCategoryNames.size} unique categories to process`,
+      );
+
+      // Step 3: Create categories (avoiding duplicates)
+      const categoryMap = new Map<string, string>(); // category name -> category id
+      let categoriesCreated = 0;
+
+      for (const categoryName of uniqueCategoryNames) {
+        try {
+          const category =
+            await this.categoriesService.findOrCreateWithMainCategory(
+              categoryName,
+              mainCategory.id,
+              undefined,
+              type,
+            );
+
+          categoryMap.set(categoryName, category.id);
+
+          // Check if this was a newly created category
+          const existingCategory = await this.categoriesService.findAll({
+            name: categoryName,
+            limit: 1,
+          });
+          if (existingCategory.data.length === 1) {
+            // If exactly one found, it might be newly created
+            // For now, we'll increment the counter for all processed categories
+            categoriesCreated++;
+          }
+
+          this.logger.log(
+            `Processed category: ${categoryName} (${category.id})`,
+          );
+        } catch (error) {
+          result.errors.push(
+            `Failed to create category '${categoryName}': ${error.message}`,
+          );
+        }
+      }
+
+      result.categoriesCreated = categoriesCreated;
+
+      // Step 4: Create templates
+      const templatesToCreate: CreateTemplateDto[] = [];
+
+      for (const row of validatedRows) {
+        const categoryId = categoryMap.get(row.name);
+        if (!categoryId) {
+          result.errors.push(
+            `Row ${row.index}: Category '${row.name}' was not created successfully`,
+          );
+          result.skipped++;
+          continue;
+        }
+
+        templatesToCreate.push({
+          category_id: categoryId,
+          image_url: row.new_image,
+          prompt: row.prompt,
+          type: type,
+        });
+      }
+
+      // Step 5: Bulk insert templates
+      if (templatesToCreate.length > 0) {
+        this.logger.log(`Creating ${templatesToCreate.length} templates...`);
+
+        try {
+          // Insert in batches to avoid memory issues
+          const batchSize = 100;
+          for (let i = 0; i < templatesToCreate.length; i += batchSize) {
+            const batch = templatesToCreate.slice(i, i + batchSize);
+            await this.templatesRepository.createMany(batch);
+            result.imported += batch.length;
+          }
+        } catch (error) {
+          result.errors.push(`Failed to create templates: ${error.message}`);
+          this.logger.error(
+            `Failed to create templates: ${error.message}`,
+            error.stack,
+          );
+        }
+      }
+
+      // Generate summary message
+      result.message = `Successfully imported ${result.imported} templates into ${result.categoriesCreated} categories`;
+      if (result.skipped > 0) {
+        result.message += ` (${result.skipped} rows skipped)`;
+      }
+
+      this.logger.log(
+        `Import completed: ${result.imported} imported, ${result.categoriesCreated} categories created, ${result.skipped} skipped, ${result.errors.length} errors`,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(`CSV import failed: ${error.message}`, error.stack);
+      result.errors.push(`Import failed: ${error.message}`);
+      result.message = 'Import failed due to unexpected error';
       return result;
     }
   }

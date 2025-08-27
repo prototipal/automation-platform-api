@@ -293,6 +293,32 @@ export class CategoriesRepository {
     };
   }
 
+  async findMainCategoryByName(name: string): Promise<MainCategory | null> {
+    return await this.mainCategoryRepository.findOne({
+      where: { name },
+    });
+  }
+
+  async findOrCreateWithMainCategory(
+    name: string,
+    mainCategoryId: string,
+    link?: string,
+    type: 'photo' | 'video' = 'photo',
+  ): Promise<Category> {
+    let category = await this.findByName(name);
+
+    if (!category) {
+      category = await this.create({
+        name,
+        link,
+        type,
+        mainCategoryId,
+      });
+    }
+
+    return category;
+  }
+
   async findSubCategoriesPaginated(
     queryDto: QueryCategoryDto,
   ): Promise<

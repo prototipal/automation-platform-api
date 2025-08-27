@@ -263,6 +263,25 @@ export class CategoriesService {
     };
   }
 
+  async findMainCategoryByName(name: string): Promise<MainCategory | null> {
+    return await this.categoriesRepository.findMainCategoryByName(name);
+  }
+
+  async findOrCreateWithMainCategory(
+    name: string,
+    mainCategoryId: string,
+    link?: string,
+    type: 'photo' | 'video' = 'photo',
+  ): Promise<CategoryResponseDto> {
+    const category = await this.categoriesRepository.findOrCreateWithMainCategory(
+      name,
+      mainCategoryId,
+      link,
+      type,
+    );
+    return plainToInstance(CategoryResponseDto, category);
+  }
+
   async findOneMainCategory(
     id: string,
     includeTemplateCount: boolean = true,

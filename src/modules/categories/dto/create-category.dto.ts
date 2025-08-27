@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCategoryDto {
@@ -26,4 +26,12 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsEnum(['photo', 'video'])
   type?: 'photo' | 'video';
+
+  @ApiPropertyOptional({
+    description: 'Main category ID',
+    example: 'uuid-here',
+  })
+  @IsOptional()
+  @IsUUID()
+  mainCategoryId?: string;
 }
