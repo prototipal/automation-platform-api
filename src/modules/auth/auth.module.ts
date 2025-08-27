@@ -1,7 +1,11 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { AuthService, SupabaseAuthService, EnhancedAuthService } from '@/modules/auth/services';
+import {
+  AuthService,
+  SupabaseAuthService,
+  EnhancedAuthService,
+} from '@/modules/auth/services';
 import { CreditsModule } from '@/modules/credits';
 import {
   ApiKeyAuthGuard,

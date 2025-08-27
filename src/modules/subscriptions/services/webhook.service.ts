@@ -5,11 +5,11 @@ import { DataSource } from 'typeorm';
 import { StripeService } from './stripe.service';
 import { PackagesService, UserPackagesRepository } from '@/modules/packages';
 import { SubscriptionStatus, BillingInterval } from '@/modules/packages/enums';
-import { 
-  StripeWebhookEvent, 
-  SubscriptionEventData, 
-  CustomerEventData, 
-  InvoiceEventData 
+import {
+  StripeWebhookEvent,
+  SubscriptionEventData,
+  CustomerEventData,
+  InvoiceEventData,
 } from '@/modules/subscriptions/interfaces';
 
 @Injectable()
@@ -34,15 +34,21 @@ export class WebhookService {
       switch (event.type) {
         // Subscription events
         case 'customer.subscription.created':
-          await this.handleSubscriptionCreated(event.data.object as SubscriptionEventData);
+          await this.handleSubscriptionCreated(
+            event.data.object as SubscriptionEventData,
+          );
           break;
 
         case 'customer.subscription.updated':
-          await this.handleSubscriptionUpdated(event.data.object as SubscriptionEventData);
+          await this.handleSubscriptionUpdated(
+            event.data.object as SubscriptionEventData,
+          );
           break;
 
         case 'customer.subscription.deleted':
-          await this.handleSubscriptionDeleted(event.data.object as SubscriptionEventData);
+          await this.handleSubscriptionDeleted(
+            event.data.object as SubscriptionEventData,
+          );
           break;
 
         // Checkout session events
@@ -57,11 +63,15 @@ export class WebhookService {
         // Invoice events
         case 'invoice.payment_succeeded':
         case 'invoice.paid':
-          await this.handleInvoicePaymentSucceeded(event.data.object as InvoiceEventData);
+          await this.handleInvoicePaymentSucceeded(
+            event.data.object as InvoiceEventData,
+          );
           break;
 
         case 'invoice.payment_failed':
-          await this.handleInvoicePaymentFailed(event.data.object as InvoiceEventData);
+          await this.handleInvoicePaymentFailed(
+            event.data.object as InvoiceEventData,
+          );
           break;
 
         case 'invoice.created':
@@ -73,18 +83,22 @@ export class WebhookService {
         // Customer events
         case 'customer.created':
         case 'customer.updated':
-          await this.handleCustomerUpdated(event.data.object as CustomerEventData);
+          await this.handleCustomerUpdated(
+            event.data.object as CustomerEventData,
+          );
           break;
 
         default:
           this.logger.debug(`Unhandled webhook event type: ${event.type}`);
       }
 
-      this.logger.log(`Successfully processed webhook event: ${event.type} (${event.id})`);
+      this.logger.log(
+        `Successfully processed webhook event: ${event.type} (${event.id})`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to process webhook event ${event.type} (${event.id}):`,
-        error
+        error,
       );
       throw error;
     }
@@ -93,7 +107,9 @@ export class WebhookService {
   /**
    * Handle subscription created event
    */
-  private async handleSubscriptionCreated(subscription: SubscriptionEventData): Promise<void> {
+  private async handleSubscriptionCreated(
+    subscription: SubscriptionEventData,
+  ): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -103,12 +119,17 @@ export class WebhookService {
       const packageId = subscription.metadata?.package_id;
 
       if (!userId || !packageId) {
-        this.logger.warn(`Missing metadata in subscription ${subscription.id}: userId=${userId}, packageId=${packageId}`);
+        this.logger.warn(
+          `Missing metadata in subscription ${subscription.id}: userId=${userId}, packageId=${packageId}`,
+        );
         return;
       }
 
-      const billingInterval = this.stripeService.getBillingInterval(subscription);
-      const status = this.stripeService.mapSubscriptionStatus(subscription.status);
+      const billingInterval =
+        this.stripeService.getBillingInterval(subscription);
+      const status = this.stripeService.mapSubscriptionStatus(
+        subscription.status,
+      );
 
       // Create user package subscription
       await this.packagesService.assignPackageToUser(
@@ -117,12 +138,18 @@ export class WebhookService {
         subscription.id,
         subscription.customer,
         billingInterval,
-        subscription.trial_start ? new Date(subscription.trial_start * 1000) : undefined,
-        subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined
+        subscription.trial_start
+          ? new Date(subscription.trial_start * 1000)
+          : undefined,
+        subscription.trial_end
+          ? new Date(subscription.trial_end * 1000)
+          : undefined,
       );
 
       // Get package details for credit management
-      const packageDetails = await this.packagesService.findPackageById(parseInt(packageId));
+      const packageDetails = await this.packagesService.findPackageById(
+        parseInt(packageId),
+      );
 
       await queryRunner.commitTransaction();
 
@@ -137,7 +164,9 @@ export class WebhookService {
         hasTrialPeriod: !!subscription.trial_end,
       });
 
-      this.logger.log(`Subscription created: ${subscription.id} for user: ${userId}`);
+      this.logger.log(
+        `Subscription created: ${subscription.id} for user: ${userId}`,
+      );
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`Failed to handle subscription created event:`, error);
@@ -150,22 +179,35 @@ export class WebhookService {
   /**
    * Handle subscription updated event
    */
-  private async handleSubscriptionUpdated(subscription: SubscriptionEventData): Promise<void> {
-    const userPackage = await this.userPackagesRepository.findByStripeSubscriptionId(subscription.id);
-    
+  private async handleSubscriptionUpdated(
+    subscription: SubscriptionEventData,
+  ): Promise<void> {
+    const userPackage =
+      await this.userPackagesRepository.findByStripeSubscriptionId(
+        subscription.id,
+      );
+
     if (!userPackage) {
-      this.logger.warn(`UserPackage not found for subscription: ${subscription.id}`);
+      this.logger.warn(
+        `UserPackage not found for subscription: ${subscription.id}`,
+      );
       return;
     }
 
-    const status = this.stripeService.mapSubscriptionStatus(subscription.status);
+    const status = this.stripeService.mapSubscriptionStatus(
+      subscription.status,
+    );
     const billingInterval = this.stripeService.getBillingInterval(subscription);
 
     const updateData: Partial<any> = {
       status,
       billing_interval: billingInterval,
-      current_period_start: new Date((subscription as any).current_period_start * 1000),
-      current_period_end: new Date((subscription as any).current_period_end * 1000),
+      current_period_start: new Date(
+        (subscription as any).current_period_start * 1000,
+      ),
+      current_period_end: new Date(
+        (subscription as any).current_period_end * 1000,
+      ),
       cancel_at_period_end: subscription.cancel_at_period_end,
     };
 
@@ -192,17 +234,26 @@ export class WebhookService {
       previousStatus: userPackage.status,
     });
 
-    this.logger.log(`Subscription updated: ${subscription.id}, status: ${status}`);
+    this.logger.log(
+      `Subscription updated: ${subscription.id}, status: ${status}`,
+    );
   }
 
   /**
    * Handle subscription deleted event
    */
-  private async handleSubscriptionDeleted(subscription: SubscriptionEventData): Promise<void> {
-    const userPackage = await this.userPackagesRepository.findByStripeSubscriptionId(subscription.id);
-    
+  private async handleSubscriptionDeleted(
+    subscription: SubscriptionEventData,
+  ): Promise<void> {
+    const userPackage =
+      await this.userPackagesRepository.findByStripeSubscriptionId(
+        subscription.id,
+      );
+
     if (!userPackage) {
-      this.logger.warn(`UserPackage not found for subscription: ${subscription.id}`);
+      this.logger.warn(
+        `UserPackage not found for subscription: ${subscription.id}`,
+      );
       return;
     }
 
@@ -219,7 +270,9 @@ export class WebhookService {
       subscriptionId: subscription.id,
     });
 
-    this.logger.log(`Subscription cancelled: ${subscription.id} for user: ${userPackage.user_id}`);
+    this.logger.log(
+      `Subscription cancelled: ${subscription.id} for user: ${userPackage.user_id}`,
+    );
   }
 
   /**
@@ -234,7 +287,9 @@ export class WebhookService {
     const subscriptionId = session.subscription;
 
     if (!userId || !subscriptionId) {
-      this.logger.warn(`Missing data in checkout session ${session.id}: userId=${userId}, subscriptionId=${subscriptionId}`);
+      this.logger.warn(
+        `Missing data in checkout session ${session.id}: userId=${userId}, subscriptionId=${subscriptionId}`,
+      );
       return;
     }
 
@@ -246,7 +301,9 @@ export class WebhookService {
       customerId: session.customer,
     });
 
-    this.logger.log(`Checkout session completed: ${session.id} for user: ${userId}`);
+    this.logger.log(
+      `Checkout session completed: ${session.id} for user: ${userId}`,
+    );
   }
 
   /**
@@ -269,15 +326,22 @@ export class WebhookService {
   /**
    * Handle invoice payment succeeded event
    */
-  private async handleInvoicePaymentSucceeded(invoice: InvoiceEventData): Promise<void> {
+  private async handleInvoicePaymentSucceeded(
+    invoice: InvoiceEventData,
+  ): Promise<void> {
     if (!invoice.subscription) {
       return; // Only handle subscription invoices
     }
 
-    const userPackage = await this.userPackagesRepository.findByStripeSubscriptionId(invoice.subscription);
-    
+    const userPackage =
+      await this.userPackagesRepository.findByStripeSubscriptionId(
+        invoice.subscription,
+      );
+
     if (!userPackage) {
-      this.logger.warn(`UserPackage not found for subscription: ${invoice.subscription}`);
+      this.logger.warn(
+        `UserPackage not found for subscription: ${invoice.subscription}`,
+      );
       return;
     }
 
@@ -285,10 +349,16 @@ export class WebhookService {
     await this.userPackagesRepository.resetUsageCounters(userPackage.id);
 
     // Update billing period dates
-    const subscription = await this.stripeService.getSubscription(invoice.subscription);
+    const subscription = await this.stripeService.getSubscription(
+      invoice.subscription,
+    );
     await this.userPackagesRepository.update(userPackage.id, {
-      current_period_start: new Date((subscription as any).current_period_start * 1000),
-      current_period_end: new Date((subscription as any).current_period_end * 1000),
+      current_period_start: new Date(
+        (subscription as any).current_period_start * 1000,
+      ),
+      current_period_end: new Date(
+        (subscription as any).current_period_end * 1000,
+      ),
       status: this.stripeService.mapSubscriptionStatus(subscription.status),
     });
 
@@ -303,24 +373,36 @@ export class WebhookService {
       monthlyCredits: userPackage.package.monthly_credits || 0,
     };
 
-    this.logger.log(`Emitting payment.succeeded event:`, JSON.stringify(eventPayload, null, 2));
+    this.logger.log(
+      `Emitting payment.succeeded event:`,
+      JSON.stringify(eventPayload, null, 2),
+    );
     this.eventEmitter.emit('payment.succeeded', eventPayload);
 
-    this.logger.log(`Payment succeeded for subscription: ${invoice.subscription}, amount: ${invoice.amount_paid}`);
+    this.logger.log(
+      `Payment succeeded for subscription: ${invoice.subscription}, amount: ${invoice.amount_paid}`,
+    );
   }
 
   /**
    * Handle invoice payment failed event
    */
-  private async handleInvoicePaymentFailed(invoice: InvoiceEventData): Promise<void> {
+  private async handleInvoicePaymentFailed(
+    invoice: InvoiceEventData,
+  ): Promise<void> {
     if (!invoice.subscription) {
       return; // Only handle subscription invoices
     }
 
-    const userPackage = await this.userPackagesRepository.findByStripeSubscriptionId(invoice.subscription);
-    
+    const userPackage =
+      await this.userPackagesRepository.findByStripeSubscriptionId(
+        invoice.subscription,
+      );
+
     if (!userPackage) {
-      this.logger.warn(`UserPackage not found for subscription: ${invoice.subscription}`);
+      this.logger.warn(
+        `UserPackage not found for subscription: ${invoice.subscription}`,
+      );
       return;
     }
 
@@ -338,13 +420,17 @@ export class WebhookService {
       amountDue: invoice.amount_due,
     });
 
-    this.logger.log(`Payment failed for subscription: ${invoice.subscription}, amount due: ${invoice.amount_due}`);
+    this.logger.log(
+      `Payment failed for subscription: ${invoice.subscription}, amount due: ${invoice.amount_due}`,
+    );
   }
 
   /**
    * Handle customer updated event
    */
-  private async handleCustomerUpdated(customer: CustomerEventData): Promise<void> {
+  private async handleCustomerUpdated(
+    customer: CustomerEventData,
+  ): Promise<void> {
     const userId = customer.metadata?.user_id;
 
     if (userId) {

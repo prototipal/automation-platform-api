@@ -21,14 +21,14 @@ export class PackagesRepository extends Repository<Package> {
     }
 
     if (query.is_active !== undefined) {
-      queryBuilder.andWhere('package.is_active = :is_active', { 
-        is_active: query.is_active 
+      queryBuilder.andWhere('package.is_active = :is_active', {
+        is_active: query.is_active,
       });
     }
 
     if (query.is_default !== undefined) {
-      queryBuilder.andWhere('package.is_default = :is_default', { 
-        is_default: query.is_default 
+      queryBuilder.andWhere('package.is_default = :is_default', {
+        is_default: query.is_default,
       });
     }
 
@@ -91,7 +91,9 @@ export class UserPackagesRepository extends Repository<UserPackage> {
   /**
    * Find user package by Stripe subscription ID
    */
-  async findByStripeSubscriptionId(stripeSubscriptionId: string): Promise<UserPackage | null> {
+  async findByStripeSubscriptionId(
+    stripeSubscriptionId: string,
+  ): Promise<UserPackage | null> {
     return this.findOne({
       where: { stripe_subscription_id: stripeSubscriptionId },
       relations: ['package'],
@@ -123,7 +125,7 @@ export class UserPackagesRepository extends Repository<UserPackage> {
         is_active: false,
         status: SubscriptionStatus.CANCELLED,
         cancelled_at: new Date(),
-      }
+      },
     );
   }
 
@@ -133,13 +135,15 @@ export class UserPackagesRepository extends Repository<UserPackage> {
   async updateUsageCounters(
     userPackageId: string,
     creditsUsed: number,
-    generationsCount: number = 1
+    generationsCount: number = 1,
   ): Promise<void> {
     await this.createQueryBuilder()
       .update(UserPackage)
       .set({
-        credits_used_current_period: () => `credits_used_current_period + ${creditsUsed}`,
-        generations_current_period: () => `generations_current_period + ${generationsCount}`,
+        credits_used_current_period: () =>
+          `credits_used_current_period + ${creditsUsed}`,
+        generations_current_period: () =>
+          `generations_current_period + ${generationsCount}`,
       })
       .where('id = :id', { id: userPackageId })
       .execute();
@@ -161,7 +165,9 @@ export class UserPackagesRepository extends Repository<UserPackage> {
   async findSubscriptionsForBillingReset(): Promise<UserPackage[]> {
     return this.createQueryBuilder('userPackage')
       .leftJoinAndSelect('userPackage.package', 'package')
-      .where('userPackage.status = :status', { status: SubscriptionStatus.ACTIVE })
+      .where('userPackage.status = :status', {
+        status: SubscriptionStatus.ACTIVE,
+      })
       .andWhere('userPackage.is_active = :isActive', { isActive: true })
       .andWhere('userPackage.current_period_end < :now', { now: new Date() })
       .getMany();

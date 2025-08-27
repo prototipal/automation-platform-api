@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 
@@ -32,7 +37,11 @@ export class StripeService {
   /**
    * Create Stripe customer for user
    */
-  async createCustomer(userId: string, email?: string, name?: string): Promise<Stripe.Customer> {
+  async createCustomer(
+    userId: string,
+    email?: string,
+    name?: string,
+  ): Promise<Stripe.Customer> {
     try {
       const customer = await this.stripe.customers.create({
         email,
@@ -42,10 +51,15 @@ export class StripeService {
         },
       });
 
-      this.logger.log(`Stripe customer created: ${customer.id} for user: ${userId}`);
+      this.logger.log(
+        `Stripe customer created: ${customer.id} for user: ${userId}`,
+      );
       return customer;
     } catch (error) {
-      this.logger.error(`Failed to create Stripe customer for user ${userId}:`, error);
+      this.logger.error(
+        `Failed to create Stripe customer for user ${userId}:`,
+        error,
+      );
       throw new BadRequestException('Failed to create customer');
     }
   }
@@ -57,16 +71,20 @@ export class StripeService {
     userId: string,
     email?: string,
     name?: string,
-    existingCustomerId?: string
+    existingCustomerId?: string,
   ): Promise<Stripe.Customer> {
     if (existingCustomerId) {
       try {
-        const customer = await this.stripe.customers.retrieve(existingCustomerId);
+        const customer =
+          await this.stripe.customers.retrieve(existingCustomerId);
         if (!customer.deleted) {
           return customer as Stripe.Customer;
         }
       } catch (error) {
-        this.logger.warn(`Failed to retrieve existing customer ${existingCustomerId}:`, error);
+        this.logger.warn(
+          `Failed to retrieve existing customer ${existingCustomerId}:`,
+          error,
+        );
       }
     }
 
@@ -77,11 +95,13 @@ export class StripeService {
     });
 
     const existingCustomer = existingCustomers.data.find(
-      customer => customer.metadata?.user_id === userId
+      (customer) => customer.metadata?.user_id === userId,
     );
 
     if (existingCustomer) {
-      this.logger.log(`Found existing Stripe customer: ${existingCustomer.id} for user: ${userId}`);
+      this.logger.log(
+        `Found existing Stripe customer: ${existingCustomer.id} for user: ${userId}`,
+      );
       return existingCustomer;
     }
 
@@ -95,12 +115,14 @@ export class StripeService {
     userId: string,
     request: CreateCheckoutSessionRequest,
     userEmail?: string,
-    userName?: string
+    userName?: string,
   ): Promise<CheckoutSessionResponse> {
     try {
       // Get package details
-      const package_ = await this.packagesService.findPackageById(request.packageId);
-      
+      const package_ = await this.packagesService.findPackageById(
+        request.packageId,
+      );
+
       // Determine the correct price ID based on billing interval
       let priceId: string;
       if (request.billingInterval === BillingInterval.YEAR) {
@@ -111,7 +133,7 @@ export class StripeService {
 
       if (!priceId) {
         throw new BadRequestException(
-          `No Stripe price ID configured for ${request.billingInterval} billing of package ${package_.name}`
+          `No Stripe price ID configured for ${request.billingInterval} billing of package ${package_.name}`,
         );
       }
 
@@ -120,13 +142,16 @@ export class StripeService {
         userId,
         userEmail,
         userName,
-        request.customerId
+        request.customerId,
       );
 
       // Secure URL handling - use environment defaults if not provided
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const successUrl = request.successUrl || `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = request.cancelUrl || `${baseUrl}/subscription/cancelled`;
+      const successUrl =
+        request.successUrl ||
+        `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl =
+        request.cancelUrl || `${baseUrl}/subscription/cancelled`;
 
       // Create checkout session
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
@@ -164,21 +189,23 @@ export class StripeService {
         },
       };
 
-
       const session = await this.stripe.checkout.sessions.create(sessionParams);
 
       this.logger.log(
-        `Checkout session created: ${session.id} for user: ${userId}, package: ${package_.name}`
+        `Checkout session created: ${session.id} for user: ${userId}, package: ${package_.name}`,
       );
 
       return {
         sessionId: session.id,
-        url: session.url!,
+        url: session.url,
         customerId: customer.id,
       };
     } catch (error) {
       this.logger.error(`Failed to create checkout session:`, error);
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create checkout session');
@@ -190,22 +217,33 @@ export class StripeService {
    */
   async cancelSubscription(
     stripeSubscriptionId: string,
-    cancelImmediately: boolean = false
+    cancelImmediately: boolean = false,
   ): Promise<Stripe.Subscription> {
     try {
       if (cancelImmediately) {
-        const subscription = await this.stripe.subscriptions.cancel(stripeSubscriptionId);
-        this.logger.log(`Subscription cancelled immediately: ${stripeSubscriptionId}`);
+        const subscription =
+          await this.stripe.subscriptions.cancel(stripeSubscriptionId);
+        this.logger.log(
+          `Subscription cancelled immediately: ${stripeSubscriptionId}`,
+        );
         return subscription;
       } else {
-        const subscription = await this.stripe.subscriptions.update(stripeSubscriptionId, {
-          cancel_at_period_end: true,
-        });
-        this.logger.log(`Subscription marked for cancellation at period end: ${stripeSubscriptionId}`);
+        const subscription = await this.stripe.subscriptions.update(
+          stripeSubscriptionId,
+          {
+            cancel_at_period_end: true,
+          },
+        );
+        this.logger.log(
+          `Subscription marked for cancellation at period end: ${stripeSubscriptionId}`,
+        );
         return subscription;
       }
     } catch (error) {
-      this.logger.error(`Failed to cancel subscription ${stripeSubscriptionId}:`, error);
+      this.logger.error(
+        `Failed to cancel subscription ${stripeSubscriptionId}:`,
+        error,
+      );
       throw new BadRequestException('Failed to cancel subscription');
     }
   }
@@ -213,16 +251,24 @@ export class StripeService {
   /**
    * Resume subscription (remove cancellation)
    */
-  async resumeSubscription(stripeSubscriptionId: string): Promise<Stripe.Subscription> {
+  async resumeSubscription(
+    stripeSubscriptionId: string,
+  ): Promise<Stripe.Subscription> {
     try {
-      const subscription = await this.stripe.subscriptions.update(stripeSubscriptionId, {
-        cancel_at_period_end: false,
-      });
-      
+      const subscription = await this.stripe.subscriptions.update(
+        stripeSubscriptionId,
+        {
+          cancel_at_period_end: false,
+        },
+      );
+
       this.logger.log(`Subscription resumed: ${stripeSubscriptionId}`);
       return subscription;
     } catch (error) {
-      this.logger.error(`Failed to resume subscription ${stripeSubscriptionId}:`, error);
+      this.logger.error(
+        `Failed to resume subscription ${stripeSubscriptionId}:`,
+        error,
+      );
       throw new BadRequestException('Failed to resume subscription');
     }
   }
@@ -230,13 +276,18 @@ export class StripeService {
   /**
    * Retrieve subscription details
    */
-  async getSubscription(stripeSubscriptionId: string): Promise<Stripe.Subscription> {
+  async getSubscription(
+    stripeSubscriptionId: string,
+  ): Promise<Stripe.Subscription> {
     try {
       return await this.stripe.subscriptions.retrieve(stripeSubscriptionId, {
         expand: ['latest_invoice', 'customer'],
       });
     } catch (error) {
-      this.logger.error(`Failed to retrieve subscription ${stripeSubscriptionId}:`, error);
+      this.logger.error(
+        `Failed to retrieve subscription ${stripeSubscriptionId}:`,
+        error,
+      );
       throw new NotFoundException('Subscription not found');
     }
   }
@@ -246,7 +297,7 @@ export class StripeService {
    */
   async createPortalSession(
     stripeCustomerId: string,
-    returnUrl: string
+    returnUrl: string,
   ): Promise<Stripe.BillingPortal.Session> {
     try {
       const session = await this.stripe.billingPortal.sessions.create({
@@ -254,10 +305,15 @@ export class StripeService {
         return_url: returnUrl,
       });
 
-      this.logger.log(`Portal session created for customer: ${stripeCustomerId}`);
+      this.logger.log(
+        `Portal session created for customer: ${stripeCustomerId}`,
+      );
       return session;
     } catch (error) {
-      this.logger.error(`Failed to create portal session for customer ${stripeCustomerId}:`, error);
+      this.logger.error(
+        `Failed to create portal session for customer ${stripeCustomerId}:`,
+        error,
+      );
       throw new BadRequestException('Failed to create portal session');
     }
   }
@@ -266,13 +322,19 @@ export class StripeService {
    * Construct webhook event from raw body and signature
    */
   constructWebhookEvent(rawBody: Buffer, signature: string): Stripe.Event {
-    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
     if (!webhookSecret) {
       throw new Error('STRIPE_WEBHOOK_SECRET is required');
     }
 
     try {
-      return this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      return this.stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        webhookSecret,
+      );
     } catch (error) {
       this.logger.error('Failed to construct webhook event:', error);
       throw new BadRequestException('Invalid webhook signature');
@@ -284,13 +346,13 @@ export class StripeService {
    */
   mapSubscriptionStatus(stripeStatus: string): SubscriptionStatus {
     const statusMap: Record<string, SubscriptionStatus> = {
-      'active': SubscriptionStatus.ACTIVE,
-      'trialing': SubscriptionStatus.TRIALING,
-      'past_due': SubscriptionStatus.PAST_DUE,
-      'canceled': SubscriptionStatus.CANCELLED,
-      'unpaid': SubscriptionStatus.UNPAID,
-      'incomplete': SubscriptionStatus.INACTIVE,
-      'incomplete_expired': SubscriptionStatus.CANCELLED,
+      active: SubscriptionStatus.ACTIVE,
+      trialing: SubscriptionStatus.TRIALING,
+      past_due: SubscriptionStatus.PAST_DUE,
+      canceled: SubscriptionStatus.CANCELLED,
+      unpaid: SubscriptionStatus.UNPAID,
+      incomplete: SubscriptionStatus.INACTIVE,
+      incomplete_expired: SubscriptionStatus.CANCELLED,
     };
 
     return statusMap[stripeStatus] || SubscriptionStatus.INACTIVE;
@@ -307,12 +369,17 @@ export class StripeService {
   /**
    * Get upcoming invoice for subscription
    */
-  async getUpcomingInvoice(stripeSubscriptionId: string): Promise<Stripe.Invoice> {
+  async getUpcomingInvoice(
+    stripeSubscriptionId: string,
+  ): Promise<Stripe.Invoice> {
     try {
       // Get subscription details first to get customer info
-      const subscription = await this.stripe.subscriptions.retrieve(stripeSubscriptionId, {
-        expand: ['latest_invoice'],
-      });
+      const subscription = await this.stripe.subscriptions.retrieve(
+        stripeSubscriptionId,
+        {
+          expand: ['latest_invoice'],
+        },
+      );
 
       if (!subscription.customer) {
         throw new Error('No customer found for subscription');
@@ -327,7 +394,10 @@ export class StripeService {
 
       return invoice;
     } catch (error) {
-      this.logger.error(`Failed to retrieve upcoming invoice for subscription ${stripeSubscriptionId}:`, error);
+      this.logger.error(
+        `Failed to retrieve upcoming invoice for subscription ${stripeSubscriptionId}:`,
+        error,
+      );
       throw new BadRequestException('Failed to retrieve upcoming invoice');
     }
   }

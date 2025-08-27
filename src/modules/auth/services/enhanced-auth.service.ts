@@ -76,7 +76,9 @@ export class EnhancedAuthService {
     }
 
     // Get user credit balance using new credit system
-    const creditBalance = await this.creditManagementService.getCreditBalance(apiKey.user_id);
+    const creditBalance = await this.creditManagementService.getCreditBalance(
+      apiKey.user_id,
+    );
     const totalBalance = creditBalance?.total_available_credits || 0;
 
     this.logger.log(
@@ -100,9 +102,9 @@ export class EnhancedAuthService {
     creditType?: CreditType,
   ): Promise<boolean> {
     return this.creditManagementService.hasSufficientCredits(
-      userId, 
-      requiredAmount, 
-      creditType
+      userId,
+      requiredAmount,
+      creditType,
     );
   }
 
@@ -120,7 +122,7 @@ export class EnhancedAuthService {
       const result = await this.creditManagementService.deductCredits({
         user_id,
         amount,
-        credit_type: credit_type as CreditType,
+        credit_type: credit_type,
         description,
         metadata: {
           source: 'api_usage',
@@ -135,11 +137,12 @@ export class EnhancedAuthService {
         throw new InsufficientCreditsException();
       }
 
-      const totalRemainingBalance = result.remaining_playground_credits + result.remaining_api_credits;
+      const totalRemainingBalance =
+        result.remaining_playground_credits + result.remaining_api_credits;
 
       this.logger.log(
         `Successfully deducted ${amount} credits from user ${user_id}. ` +
-        `Remaining: playground=${result.remaining_playground_credits}, api=${result.remaining_api_credits}`
+          `Remaining: playground=${result.remaining_playground_credits}, api=${result.remaining_api_credits}`,
       );
 
       return plainToInstance(CreditDeductionResponseDto, {
@@ -150,7 +153,6 @@ export class EnhancedAuthService {
         remaining_playground_credits: result.remaining_playground_credits,
         remaining_api_credits: result.remaining_api_credits,
       });
-
     } catch (error) {
       this.logger.error(`Failed to deduct credits for user ${user_id}:`, error);
 
@@ -168,7 +170,8 @@ export class EnhancedAuthService {
    * Gets current user credits balance (legacy method for backward compatibility)
    */
   async getUserBalance(userId: string): Promise<number> {
-    const creditBalance = await this.creditManagementService.getCreditBalance(userId);
+    const creditBalance =
+      await this.creditManagementService.getCreditBalance(userId);
     return creditBalance?.total_available_credits || 0;
   }
 
@@ -204,14 +207,14 @@ export class EnhancedAuthService {
    * Create credit record for new user
    */
   async createUserCredits(
-    userId: string, 
-    initialPlaygroundCredits = 0, 
-    initialApiCredits = 0
+    userId: string,
+    initialPlaygroundCredits = 0,
+    initialApiCredits = 0,
   ): Promise<void> {
     await this.creditManagementService.createUserCredits(
-      userId, 
-      initialPlaygroundCredits, 
-      initialApiCredits
+      userId,
+      initialPlaygroundCredits,
+      initialApiCredits,
     );
   }
 
@@ -223,12 +226,15 @@ export class EnhancedAuthService {
   }
 
   // Legacy methods for backward compatibility
-  
+
   /**
    * Legacy method - uses new credit system under the hood
    * @deprecated Use checkSufficientCredits with creditType parameter instead
    */
-  async checkSufficientApiCredits(userId: string, requiredAmount: number): Promise<boolean> {
+  async checkSufficientApiCredits(
+    userId: string,
+    requiredAmount: number,
+  ): Promise<boolean> {
     return this.checkSufficientCredits(userId, requiredAmount, CreditType.API);
   }
 
@@ -236,7 +242,14 @@ export class EnhancedAuthService {
    * Legacy method - uses new credit system under the hood
    * @deprecated Use checkSufficientCredits with creditType parameter instead
    */
-  async checkSufficientPlaygroundCredits(userId: string, requiredAmount: number): Promise<boolean> {
-    return this.checkSufficientCredits(userId, requiredAmount, CreditType.PLAYGROUND);
+  async checkSufficientPlaygroundCredits(
+    userId: string,
+    requiredAmount: number,
+  ): Promise<boolean> {
+    return this.checkSufficientCredits(
+      userId,
+      requiredAmount,
+      CreditType.PLAYGROUND,
+    );
   }
 }

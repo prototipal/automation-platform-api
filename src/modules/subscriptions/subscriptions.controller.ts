@@ -23,7 +23,10 @@ import {
 } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
-import { StripeService, WebhookService } from '@/modules/subscriptions/services';
+import {
+  StripeService,
+  WebhookService,
+} from '@/modules/subscriptions/services';
 import {
   CreateCheckoutSessionDto,
   CheckoutSessionResponseDto,
@@ -93,7 +96,8 @@ export class SubscriptionsController {
   @Post('portal')
   @ApiOperation({
     summary: 'Create customer portal session',
-    description: 'Create a Stripe customer portal session for subscription management',
+    description:
+      'Create a Stripe customer portal session for subscription management',
   })
   @ApiResponse({
     status: 201,
@@ -123,11 +127,15 @@ export class SubscriptionsController {
     this.logger.log(`Creating portal session for user: ${user.user_id}`);
 
     // Use a default return URL if not provided
-    const returnUrl = body?.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`;
+    const returnUrl =
+      body?.returnUrl ||
+      `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`;
 
     // Get user's current subscription to find customer ID
-    const userPackage = await this.packagesService.getUserCurrentPackage(user.user_id);
-    
+    const userPackage = await this.packagesService.getUserCurrentPackage(
+      user.user_id,
+    );
+
     if (!userPackage || !userPackage.stripe_customer_id) {
       return { error: 'No active subscription found' };
     }
@@ -143,7 +151,7 @@ export class SubscriptionsController {
   @Patch('cancel')
   @ApiOperation({
     summary: 'Cancel subscription',
-    description: 'Cancel the current user\'s active subscription',
+    description: "Cancel the current user's active subscription",
   })
   @ApiResponse({
     status: 200,
@@ -164,8 +172,10 @@ export class SubscriptionsController {
     this.logger.log(`Cancelling subscription for user: ${user.user_id}`);
 
     // Get user's current subscription
-    const userPackage = await this.packagesService.getUserCurrentPackage(user.user_id);
-    
+    const userPackage = await this.packagesService.getUserCurrentPackage(
+      user.user_id,
+    );
+
     if (!userPackage || !userPackage.stripe_subscription_id) {
       return {
         success: false,
@@ -178,13 +188,13 @@ export class SubscriptionsController {
       cancelSubscriptionDto.cancelImmediately,
     );
 
-    const effectiveDate = cancelSubscriptionDto.cancelImmediately 
+    const effectiveDate = cancelSubscriptionDto.cancelImmediately
       ? new Date()
       : new Date((stripeSubscription as any).current_period_end * 1000);
 
     return {
       success: true,
-      message: cancelSubscriptionDto.cancelImmediately 
+      message: cancelSubscriptionDto.cancelImmediately
         ? 'Subscription cancelled immediately'
         : 'Subscription will be cancelled at the end of the current billing period',
       status: stripeSubscription.status,
@@ -216,8 +226,10 @@ export class SubscriptionsController {
     this.logger.log(`Resuming subscription for user: ${user.user_id}`);
 
     // Get user's current subscription
-    const userPackage = await this.packagesService.getUserCurrentPackage(user.user_id);
-    
+    const userPackage = await this.packagesService.getUserCurrentPackage(
+      user.user_id,
+    );
+
     if (!userPackage || !userPackage.stripe_subscription_id) {
       return {
         success: false,
@@ -239,7 +251,7 @@ export class SubscriptionsController {
   @Get('upcoming-invoice')
   @ApiOperation({
     summary: 'Get upcoming invoice',
-    description: 'Get the upcoming invoice for the user\'s subscription',
+    description: "Get the upcoming invoice for the user's subscription",
   })
   @ApiResponse({
     status: 200,
@@ -248,11 +260,20 @@ export class SubscriptionsController {
       type: 'object',
       properties: {
         amount_due: { type: 'number', description: 'Amount due in cents' },
-        amount_paid: { type: 'number', description: 'Amount already paid in cents' },
+        amount_paid: {
+          type: 'number',
+          description: 'Amount already paid in cents',
+        },
         currency: { type: 'string', description: 'Currency code' },
         created: { type: 'number', description: 'Creation timestamp' },
-        period_start: { type: 'number', description: 'Billing period start timestamp' },
-        period_end: { type: 'number', description: 'Billing period end timestamp' },
+        period_start: {
+          type: 'number',
+          description: 'Billing period start timestamp',
+        },
+        period_end: {
+          type: 'number',
+          description: 'Billing period end timestamp',
+        },
       },
     },
   })
@@ -267,8 +288,10 @@ export class SubscriptionsController {
     this.logger.log(`Getting upcoming invoice for user: ${user.user_id}`);
 
     // Get user's current subscription
-    const userPackage = await this.packagesService.getUserCurrentPackage(user.user_id);
-    
+    const userPackage = await this.packagesService.getUserCurrentPackage(
+      user.user_id,
+    );
+
     if (!userPackage || !userPackage.stripe_subscription_id) {
       return { error: 'No active subscription found' };
     }
@@ -284,7 +307,7 @@ export class SubscriptionsController {
       created: invoice.created,
       period_start: invoice.period_start,
       period_end: invoice.period_end,
-      lines: invoice.lines.data.map(line => ({
+      lines: invoice.lines.data.map((line) => ({
         description: line.description,
         amount: line.amount,
         quantity: line.quantity,
@@ -305,11 +328,12 @@ export class SubscriptionsController {
     @Res() response: Response,
   ): Promise<void> {
     try {
-      const event = this.stripeService.constructWebhookEvent(rawBody, signature);
-      
-      this.logger.log(
-        `Received Stripe webhook: ${event.type} (${event.id})`
+      const event = this.stripeService.constructWebhookEvent(
+        rawBody,
+        signature,
       );
+
+      this.logger.log(`Received Stripe webhook: ${event.type} (${event.id})`);
 
       // Process the webhook event asynchronously
       await this.webhookService.processWebhookEvent({
@@ -322,7 +346,9 @@ export class SubscriptionsController {
       response.status(200).json({ received: true });
     } catch (error) {
       this.logger.error('Webhook signature verification failed:', error);
-      response.status(400).json({ error: 'Webhook signature verification failed' });
+      response
+        .status(400)
+        .json({ error: 'Webhook signature verification failed' });
     }
   }
 }

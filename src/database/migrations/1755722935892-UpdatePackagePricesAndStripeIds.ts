@@ -1,10 +1,11 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdatePackagePricesAndStripeIds1755722935892 implements MigrationInterface {
-
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Update Basic Plan (type: 'basic')
-        await queryRunner.query(`
+export class UpdatePackagePricesAndStripeIds1755722935892
+  implements MigrationInterface
+{
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Update Basic Plan (type: 'basic')
+    await queryRunner.query(`
             UPDATE packages 
             SET 
                 monthly_price_cents = 900,
@@ -14,8 +15,8 @@ export class UpdatePackagePricesAndStripeIds1755722935892 implements MigrationIn
             WHERE type = 'basic'
         `);
 
-        // Update Pro Plan (type: 'pro') 
-        await queryRunner.query(`
+    // Update Pro Plan (type: 'pro')
+    await queryRunner.query(`
             UPDATE packages 
             SET 
                 monthly_price_cents = 1900,
@@ -25,8 +26,8 @@ export class UpdatePackagePricesAndStripeIds1755722935892 implements MigrationIn
             WHERE type = 'pro'
         `);
 
-        // Update Ultimate Plan (type: 'ultimate')
-        await queryRunner.query(`
+    // Update Ultimate Plan (type: 'ultimate')
+    await queryRunner.query(`
             UPDATE packages 
             SET 
                 monthly_price_cents = 4900,
@@ -36,12 +37,12 @@ export class UpdatePackagePricesAndStripeIds1755722935892 implements MigrationIn
             WHERE type = 'ultimate'
         `);
 
-        // Free plan remains unchanged (no Stripe price IDs needed)
-    }
+    // Free plan remains unchanged (no Stripe price IDs needed)
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        // Revert to original prices and remove Stripe price IDs
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // Revert to original prices and remove Stripe price IDs
+    await queryRunner.query(`
             UPDATE packages 
             SET 
                 monthly_price_cents = 999,
@@ -51,7 +52,7 @@ export class UpdatePackagePricesAndStripeIds1755722935892 implements MigrationIn
             WHERE type = 'basic'
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             UPDATE packages 
             SET 
                 monthly_price_cents = 2999,
@@ -61,7 +62,7 @@ export class UpdatePackagePricesAndStripeIds1755722935892 implements MigrationIn
             WHERE type = 'pro'
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             UPDATE packages 
             SET 
                 monthly_price_cents = 9999,
@@ -70,6 +71,5 @@ export class UpdatePackagePricesAndStripeIds1755722935892 implements MigrationIn
                 stripe_yearly_price_id = NULL
             WHERE type = 'ultimate'
         `);
-    }
-
+  }
 }

@@ -190,8 +190,10 @@ export class GenerationsService {
     );
 
     // Step 3: Check package limits (credits and generation count)
-    const packageLimits = await this.packagesService.checkPackageLimits(authUser.user_id);
-    
+    const packageLimits = await this.packagesService.checkPackageLimits(
+      authUser.user_id,
+    );
+
     if (!packageLimits.canGenerate) {
       this.logger.warn(
         `Package limits exceeded for user ${authUser.user_id}: ${packageLimits.reason}`,
@@ -723,7 +725,9 @@ export class GenerationsService {
             // Validate array items type if specified
             const itemsType = (fieldConfig as any).items;
             if (itemsType === 'string') {
-              const invalidItems = fieldValue.filter(item => typeof item !== 'string');
+              const invalidItems = fieldValue.filter(
+                (item) => typeof item !== 'string',
+              );
               if (invalidItems.length > 0) {
                 validationErrors.push({
                   field: fieldName,
@@ -925,6 +929,13 @@ export class GenerationsService {
       // Calculate processing time
       const processingTimeSeconds = (Date.now() - startTime) / 1000;
 
+      // Remove base64 image data from output_data to avoid storing large data in DB
+      const cleanedOutputData =
+        this.cleanOutputDataForStorage(replicateResponse);
+      
+      // Remove base64 image data from input_parameters to avoid storing large data in DB
+      const cleanedInputParameters = this.cleanInputParametersForStorage(createGenerationDto.input);
+
       // Create generation record using repository
       const savedGeneration = await this.generationsRepository.create({
         user_id: userId,
@@ -932,8 +943,8 @@ export class GenerationsService {
         replicate_id: replicateResponse.id,
         model: createGenerationDto.model,
         model_version: createGenerationDto.model_version,
-        input_parameters: createGenerationDto.input,
-        output_data: replicateResponse,
+        input_parameters: cleanedInputParameters,
+        output_data: cleanedOutputData,
         status: this.mapReplicateStatus(replicateResponse.status),
         credits_used: creditsUsed,
         error_message: replicateResponse.error || undefined,
@@ -947,20 +958,25 @@ export class GenerationsService {
       });
 
       this.logger.log(`Generation saved with ID: ${savedGeneration.id}`);
-      
+
       // Update package usage counters
       try {
         await this.packagesService.updateUsageCounters(
           userId,
           creditsUsed,
-          1 // One generation
+          1, // One generation
         );
-        this.logger.log(`Package usage updated for user ${userId}: +${creditsUsed} credits, +1 generation`);
+        this.logger.log(
+          `Package usage updated for user ${userId}: +${creditsUsed} credits, +1 generation`,
+        );
       } catch (error) {
-        this.logger.error(`Failed to update package usage for user ${userId}:`, error);
+        this.logger.error(
+          `Failed to update package usage for user ${userId}:`,
+          error,
+        );
         // Don't throw error here as the generation was already successful
       }
-      
+
       return savedGeneration;
     } catch (error) {
       this.logger.error('Failed to save generation:', error);
@@ -996,6 +1012,78 @@ export class GenerationsService {
 
     // Only return media file URLs, not API URLs
     return urls.filter((url) => url && url.length > 0);
+  }
+
+  /**
+   * Clean input parameters for storage by removing base64 image data
+   * We only keep non-base64 parameters to avoid storing large data in DB
+   */
+  private cleanInputParametersForStorage(
+    inputParameters: Record<string, any>,
+  ): Record<string, any> {
+    const cleanedInput: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(inputParameters)) {
+      if (typeof value === 'string' && value.startsWith('data:')) {
+        // Skip base64 image data
+        cleanedInput[key] = '[BASE64_IMAGE_REMOVED]';
+      } else if (Array.isArray(value)) {
+        // Handle arrays - filter out base64 strings
+        cleanedInput[key] = value.map((item) => {
+          if (typeof item === 'string' && item.startsWith('data:')) {
+            return '[BASE64_IMAGE_REMOVED]';
+          }
+          return item;
+        });
+      } else {
+        // Keep all other parameter types
+        cleanedInput[key] = value;
+      }
+    }
+
+    return cleanedInput;
+  }
+
+  /**
+   * Clean output data for storage by removing base64 image data
+   * We only keep URLs and metadata, not the actual base64 image data
+   */
+  private cleanOutputDataForStorage(
+    replicateResponse: ReplicateResponse,
+  ): Record<string, any> {
+    if (!replicateResponse.output) {
+      return { ...replicateResponse, output: null };
+    }
+
+    let cleanedOutput: any = null;
+
+    if (Array.isArray(replicateResponse.output)) {
+      // Filter out base64 strings, keep only URLs
+      cleanedOutput = replicateResponse.output.filter((item: any) => {
+        if (typeof item === 'string') {
+          // Keep URLs, remove base64 data
+          return (
+            !item.startsWith('data:') &&
+            (item.startsWith('http://') || item.startsWith('https://'))
+          );
+        }
+        return true; // Keep non-string items
+      });
+    } else if (typeof replicateResponse.output === 'string') {
+      // If it's a single string, only keep if it's not base64
+      const outputString = replicateResponse.output as string;
+      cleanedOutput = outputString.startsWith('data:')
+        ? null
+        : replicateResponse.output;
+    } else {
+      // Keep other types of output (objects, etc.)
+      cleanedOutput = replicateResponse.output;
+    }
+
+    return {
+      ...replicateResponse,
+      output: cleanedOutput,
+    };
   }
 
   /**
@@ -1081,11 +1169,8 @@ export class GenerationsService {
     }
 
     const query: QueryGenerationDto = queryDto || new QueryGenerationDto();
-    const { generations, total } = await this.generationsRepository.findBySession(
-      sessionId,
-      userId,
-      query,
-    );
+    const { generations, total } =
+      await this.generationsRepository.findBySession(sessionId, userId, query);
 
     // Fetch service information for each generation
     const transformedGenerations = await Promise.all(
@@ -1243,9 +1328,7 @@ export class GenerationsService {
       );
 
       if (success) {
-        this.logger.log(
-          `Generation ${generationId} soft deleted successfully`,
-        );
+        this.logger.log(`Generation ${generationId} soft deleted successfully`);
       } else {
         this.logger.warn(
           `Generation ${generationId} not found or already deleted`,
@@ -1258,7 +1341,9 @@ export class GenerationsService {
         `Failed to soft delete generation ${generationId}:`,
         error,
       );
-      throw new InternalServerErrorException('Failed to soft delete generation');
+      throw new InternalServerErrorException(
+        'Failed to soft delete generation',
+      );
     }
   }
 

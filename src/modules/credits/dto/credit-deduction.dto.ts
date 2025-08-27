@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsEnum, IsString, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  IsString,
+  Min,
+} from 'class-validator';
 import { CreditType } from '@/modules/credits/enums';
 
 export class CreditDeductionRequestDto {
@@ -14,7 +21,8 @@ export class CreditDeductionRequestDto {
   amount: number;
 
   @ApiProperty({
-    description: 'Type of credits to deduct (if not specified, playground credits are tried first)',
+    description:
+      'Type of credits to deduct (if not specified, playground credits are tried first)',
     example: CreditType.PLAYGROUND,
     enum: CreditType,
     required: false,

@@ -1,1 +1,5 @@
-export { PackageType, SubscriptionStatus, BillingInterval } from './package-type.enum';
+export {
+  PackageType,
+  SubscriptionStatus,
+  BillingInterval,
+} from './package-type.enum';

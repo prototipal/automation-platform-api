@@ -16,7 +16,11 @@ import { SubscriptionStatus, BillingInterval } from '../enums';
 @Index('idx_user_package_user_id', ['user_id'])
 @Index('idx_user_package_status', ['status'])
 @Index('idx_user_package_stripe_subscription', ['stripe_subscription_id'])
-@Index('idx_user_package_active_subscription', ['user_id', 'status', 'is_active'])
+@Index('idx_user_package_active_subscription', [
+  'user_id',
+  'status',
+  'is_active',
+])
 export class UserPackage {
   @ApiProperty({
     description: 'Unique identifier for the user package relationship',
@@ -58,7 +62,11 @@ export class UserPackage {
     example: SubscriptionStatus.ACTIVE,
     enum: SubscriptionStatus,
   })
-  @Column({ type: 'enum', enum: SubscriptionStatus, default: SubscriptionStatus.ACTIVE })
+  @Column({
+    type: 'enum',
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.ACTIVE,
+  })
   status: SubscriptionStatus;
 
   @ApiProperty({
@@ -147,11 +155,12 @@ export class UserPackage {
   updated_at: Date;
 
   @ApiProperty({
-    description: 'Additional metadata for tracking subscription events and history',
-    example: { 
+    description:
+      'Additional metadata for tracking subscription events and history',
+    example: {
       payment_method: 'card',
       last_payment_date: '2025-01-15T10:30:00.000Z',
-      next_billing_date: '2025-02-15T10:30:00.000Z'
+      next_billing_date: '2025-02-15T10:30:00.000Z',
     },
   })
   @Column({ type: 'jsonb', nullable: true })

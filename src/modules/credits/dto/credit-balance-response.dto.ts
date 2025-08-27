@@ -3,7 +3,8 @@ import { CreditBalance } from '@/modules/credits/interfaces';
 
 export class CreditBalanceResponseDto implements CreditBalance {
   @ApiProperty({
-    description: 'Total playground credits allocated for current subscription period',
+    description:
+      'Total playground credits allocated for current subscription period',
     example: 1000,
   })
   playground_credits: number;
@@ -15,7 +16,8 @@ export class CreditBalanceResponseDto implements CreditBalance {
   api_credits: number;
 
   @ApiProperty({
-    description: 'Available playground credits (total - used in current period)',
+    description:
+      'Available playground credits (total - used in current period)',
     example: 750,
   })
   available_playground_credits: number;

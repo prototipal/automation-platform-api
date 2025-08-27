@@ -6,17 +6,12 @@ import { CreditManagementService } from '@/modules/credits/services';
 import { SubscriptionEventsListener } from '@/modules/credits/listeners';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([UserCredit]),
-  ],
+  imports: [TypeOrmModule.forFeature([UserCredit])],
   providers: [
     UserCreditsRepository,
     CreditManagementService,
     SubscriptionEventsListener,
   ],
-  exports: [
-    UserCreditsRepository,
-    CreditManagementService,
-  ],
+  exports: [UserCreditsRepository, CreditManagementService],
 })
 export class CreditsModule {}

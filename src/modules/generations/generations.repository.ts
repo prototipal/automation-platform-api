@@ -166,7 +166,10 @@ export class GenerationsRepository {
   /**
    * Soft delete all generations for a session
    */
-  async softDeleteBySession(sessionId: number, userId: string): Promise<number> {
+  async softDeleteBySession(
+    sessionId: number,
+    userId: string,
+  ): Promise<number> {
     const result = await this.generationRepository.update(
       { session_id: sessionId, user_id: userId },
       { is_active: false },
@@ -202,7 +205,10 @@ export class GenerationsRepository {
   /**
    * Hard delete all generations for a session
    */
-  async hardDeleteBySession(sessionId: number, userId: string): Promise<number> {
+  async hardDeleteBySession(
+    sessionId: number,
+    userId: string,
+  ): Promise<number> {
     const result = await this.generationRepository.delete({
       session_id: sessionId,
       user_id: userId,

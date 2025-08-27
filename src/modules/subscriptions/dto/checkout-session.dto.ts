@@ -1,14 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { 
-  IsNotEmpty, 
-  IsString, 
-  IsNumber, 
-  IsEnum, 
-  IsUrl, 
-  IsOptional, 
-  IsInt, 
-  Min, 
-  Max 
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsUrl,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import { BillingInterval } from '@/modules/packages/enums';
 
@@ -55,7 +55,8 @@ export class CheckoutSessionResponseDto {
 
   @ApiProperty({
     description: 'Stripe checkout URL',
-    example: 'https://checkout.stripe.com/c/pay/cs_test_1234567890#fidkdWxOYHw...',
+    example:
+      'https://checkout.stripe.com/c/pay/cs_test_1234567890#fidkdWxOYHw...',
   })
   url: string;
 

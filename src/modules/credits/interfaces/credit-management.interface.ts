@@ -1,4 +1,8 @@
-import { CreditType, CreditOperation, CreditSource } from '@/modules/credits/enums';
+import {
+  CreditType,
+  CreditOperation,
+  CreditSource,
+} from '@/modules/credits/enums';
 
 export interface CreditBalance {
   playground_credits: number;

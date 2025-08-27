@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdatePackageCreditsAndPrices1756223341000 implements MigrationInterface {
+export class UpdatePackageCreditsAndPrices1756223341000
+  implements MigrationInterface
+{
   name = 'UpdatePackageCreditsAndPrices1756223341000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -26,7 +28,7 @@ export class UpdatePackageCreditsAndPrices1756223341000 implements MigrationInte
       WHERE type = 'basic'
     `);
 
-    // Update Pro Plan: 400 credits, $19/month, $190/year  
+    // Update Pro Plan: 400 credits, $19/month, $190/year
     await queryRunner.query(`
       UPDATE packages 
       SET 

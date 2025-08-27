@@ -27,14 +27,16 @@ export class UserCredit {
   user_id: string;
 
   @ApiProperty({
-    description: 'Playground credits for frontend usage (resets with subscription cycle)',
+    description:
+      'Playground credits for frontend usage (resets with subscription cycle)',
     example: 500,
   })
   @Column({ type: 'int', nullable: false, default: 0 })
   playground_credits: number;
 
   @ApiProperty({
-    description: 'API credits for API usage (persistent across subscription cycles)',
+    description:
+      'API credits for API usage (persistent across subscription cycles)',
     example: 1000,
   })
   @Column({ type: 'int', nullable: false, default: 0 })
@@ -62,7 +64,8 @@ export class UserCredit {
   playground_credits_last_reset?: Date;
 
   @ApiProperty({
-    description: 'When playground credits will next reset (based on subscription cycle)',
+    description:
+      'When playground credits will next reset (based on subscription cycle)',
     example: '2025-02-01T00:00:00.000Z',
   })
   @Column({ type: 'timestamp with time zone', nullable: true })
@@ -110,11 +113,15 @@ export class UserCredit {
 
   // Computed properties for backward compatibility
   @ApiProperty({
-    description: 'Total available playground credits (playground_credits - playground_credits_used_current_period)',
+    description:
+      'Total available playground credits (playground_credits - playground_credits_used_current_period)',
     example: 450,
   })
   get available_playground_credits(): number {
-    return Math.max(0, this.playground_credits - this.playground_credits_used_current_period);
+    return Math.max(
+      0,
+      this.playground_credits - this.playground_credits_used_current_period,
+    );
   }
 
   @ApiProperty({

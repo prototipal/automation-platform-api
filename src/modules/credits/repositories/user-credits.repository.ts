@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, Repository, QueryRunner } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { UserCredit } from '@/modules/credits/entities';
-import { 
-  CreditBalance, 
-  CreditDeductionRequest, 
-  CreditRefillRequest, 
-  CreditResetRequest 
+import {
+  CreditBalance,
+  CreditDeductionRequest,
+  CreditRefillRequest,
+  CreditResetRequest,
 } from '@/modules/credits/interfaces';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class UserCreditsRepository extends Repository<UserCredit> {
    */
   async getCreditBalance(userId: string): Promise<CreditBalance | null> {
     const userCredit = await this.findByUserId(userId);
-    
+
     if (!userCredit) {
       return null;
     }
@@ -40,7 +40,8 @@ export class UserCreditsRepository extends Repository<UserCredit> {
       available_playground_credits: userCredit.available_playground_credits,
       available_api_credits: userCredit.available_api_credits,
       total_available_credits: userCredit.total_available_credits,
-      playground_credits_used_current_period: userCredit.playground_credits_used_current_period,
+      playground_credits_used_current_period:
+        userCredit.playground_credits_used_current_period,
       api_credits_used_total: userCredit.api_credits_used_total,
     };
   }
@@ -49,9 +50,9 @@ export class UserCreditsRepository extends Repository<UserCredit> {
    * Create initial credit record for new user
    */
   async createUserCredits(
-    userId: string, 
-    initialPlaygroundCredits = 0, 
-    initialApiCredits = 0
+    userId: string,
+    initialPlaygroundCredits = 0,
+    initialApiCredits = 0,
   ): Promise<UserCredit> {
     const userCredit = this.create({
       user_id: userId,
@@ -76,7 +77,7 @@ export class UserCreditsRepository extends Repository<UserCredit> {
    */
   async deductCreditsAtomic(
     request: CreditDeductionRequest,
-    queryRunner?: QueryRunner
+    queryRunner?: QueryRunner,
   ): Promise<{ success: boolean; error?: string; updatedCredit?: UserCredit }> {
     const runner = queryRunner || this.dataSource.createQueryRunner();
     const shouldManageTransaction = !queryRunner;
@@ -90,7 +91,9 @@ export class UserCreditsRepository extends Repository<UserCredit> {
       // Lock the user credit record
       const userCredit = await runner.manager
         .createQueryBuilder(UserCredit, 'uc')
-        .where('uc.user_id = :userId AND uc.is_active = true', { userId: request.user_id })
+        .where('uc.user_id = :userId AND uc.is_active = true', {
+          userId: request.user_id,
+        })
         .setLock('pessimistic_write')
         .getOne();
 
@@ -123,9 +126,9 @@ export class UserCreditsRepository extends Repository<UserCredit> {
         } else if (userCredit.api_credits >= amount) {
           useApiCredits = true;
         } else {
-          return { 
-            success: false, 
-            error: `Insufficient credits. Available: ${userCredit.total_available_credits}, Required: ${amount}` 
+          return {
+            success: false,
+            error: `Insufficient credits. Available: ${userCredit.total_available_credits}, Required: ${amount}`,
           };
         }
       }
@@ -160,7 +163,6 @@ export class UserCreditsRepository extends Repository<UserCredit> {
       }
 
       return { success: true, updatedCredit };
-
     } catch (error) {
       if (shouldManageTransaction) {
         await runner.rollbackTransaction();
@@ -178,7 +180,7 @@ export class UserCreditsRepository extends Repository<UserCredit> {
    */
   async refillCredits(request: CreditRefillRequest): Promise<UserCredit> {
     const userCredit = await this.findByUserId(request.user_id);
-    
+
     if (!userCredit) {
       throw new Error('User credits not found');
     }
@@ -212,15 +214,17 @@ export class UserCreditsRepository extends Repository<UserCredit> {
   /**
    * Reset playground credits and optionally usage counters
    */
-  async resetPlaygroundCredits(request: CreditResetRequest): Promise<UserCredit> {
+  async resetPlaygroundCredits(
+    request: CreditResetRequest,
+  ): Promise<UserCredit> {
     const userCredit = await this.findByUserId(request.user_id);
-    
+
     if (!userCredit) {
       throw new Error('User credits not found');
     }
 
     userCredit.playground_credits = request.playground_credits;
-    
+
     if (request.reset_usage_counters) {
       userCredit.playground_credits_used_current_period = 0;
     }
@@ -248,13 +252,16 @@ export class UserCreditsRepository extends Repository<UserCredit> {
   /**
    * Set next reset date for playground credits
    */
-  async setPlaygroundCreditsNextReset(userId: string, nextResetDate: Date): Promise<void> {
+  async setPlaygroundCreditsNextReset(
+    userId: string,
+    nextResetDate: Date,
+  ): Promise<void> {
     await this.update(
       { user_id: userId, is_active: true },
-      { 
+      {
         playground_credits_next_reset: nextResetDate,
         updated_at: new Date(),
-      }
+      },
     );
   }
 
@@ -280,9 +287,14 @@ export class UserCreditsRepository extends Repository<UserCredit> {
   /**
    * Check if user has sufficient credits (either type)
    */
-  async hasSufficientCredits(userId: string, requiredAmount: number): Promise<boolean> {
+  async hasSufficientCredits(
+    userId: string,
+    requiredAmount: number,
+  ): Promise<boolean> {
     const userCredit = await this.findByUserId(userId);
-    return userCredit ? userCredit.total_available_credits >= requiredAmount : false;
+    return userCredit
+      ? userCredit.total_available_credits >= requiredAmount
+      : false;
   }
 
   /**
@@ -290,7 +302,7 @@ export class UserCreditsRepository extends Repository<UserCredit> {
    */
   async migrateExistingBalance(userId: string): Promise<UserCredit | null> {
     const userCredit = await this.findByUserId(userId);
-    
+
     if (!userCredit) {
       return null;
     }
@@ -306,7 +318,7 @@ export class UserCreditsRepository extends Repository<UserCredit> {
     userCredit.api_credits = 0;
     userCredit.playground_credits_used_current_period = 0;
     userCredit.api_credits_used_total = 0;
-    
+
     // Update metadata to track migration
     const currentMetadata = userCredit.metadata || {};
     userCredit.metadata = {

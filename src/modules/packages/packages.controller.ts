@@ -40,9 +40,10 @@ export class PackagesController {
   constructor(private readonly packagesService: PackagesService) {}
 
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new package',
-    description: 'Create a new subscription package with pricing and features. Admin access required.'
+    description:
+      'Create a new subscription package with pricing and features. Admin access required.',
   })
   @ApiResponse({
     status: 201,
@@ -56,14 +57,16 @@ export class PackagesController {
   @ApiBearerAuth('ApiKey')
   @ApiBearerAuth('SupabaseToken')
   @HybridAuth()
-  async createPackage(@Body() createPackageDto: CreatePackageDto): Promise<PackageResponseDto> {
+  async createPackage(
+    @Body() createPackageDto: CreatePackageDto,
+  ): Promise<PackageResponseDto> {
     return this.packagesService.createPackage(createPackageDto);
   }
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all packages',
-    description: 'Retrieve all subscription packages with optional filtering'
+    description: 'Retrieve all subscription packages with optional filtering',
   })
   @ApiResponse({
     status: 200,
@@ -73,14 +76,16 @@ export class PackagesController {
   @ApiQuery({ name: 'type', required: false, enum: PackageType })
   @ApiQuery({ name: 'is_active', required: false, type: Boolean })
   @ApiQuery({ name: 'is_default', required: false, type: Boolean })
-  async findAllPackages(@Query() query: QueryPackageDto): Promise<PackageResponseDto[]> {
+  async findAllPackages(
+    @Query() query: QueryPackageDto,
+  ): Promise<PackageResponseDto[]> {
     return this.packagesService.findAllPackages(query);
   }
 
   @Get('active')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all active packages',
-    description: 'Retrieve only active packages available for subscription'
+    description: 'Retrieve only active packages available for subscription',
   })
   @ApiResponse({
     status: 200,
@@ -92,9 +97,9 @@ export class PackagesController {
   }
 
   @Get('my-subscription')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get current user subscription',
-    description: 'Get the current user\'s active package subscription'
+    description: "Get the current user's active package subscription",
   })
   @ApiResponse({
     status: 200,
@@ -108,14 +113,16 @@ export class PackagesController {
   @ApiBearerAuth('ApiKey')
   @ApiBearerAuth('SupabaseToken')
   @HybridAuth()
-  async getCurrentUserPackage(@AuthUser() user: AuthUserDto): Promise<UserPackageResponseDto | null> {
+  async getCurrentUserPackage(
+    @AuthUser() user: AuthUserDto,
+  ): Promise<UserPackageResponseDto | null> {
     return this.packagesService.getUserCurrentPackage(user.user_id);
   }
 
   @Get('my-history')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get user subscription history',
-    description: 'Get the current user\'s complete package subscription history'
+    description: "Get the current user's complete package subscription history",
   })
   @ApiResponse({
     status: 200,
@@ -125,14 +132,17 @@ export class PackagesController {
   @ApiBearerAuth('ApiKey')
   @ApiBearerAuth('SupabaseToken')
   @HybridAuth()
-  async getUserPackageHistory(@AuthUser() user: AuthUserDto): Promise<UserPackageResponseDto[]> {
+  async getUserPackageHistory(
+    @AuthUser() user: AuthUserDto,
+  ): Promise<UserPackageResponseDto[]> {
     return this.packagesService.getUserPackageHistory(user.user_id);
   }
 
   @Get('my-limits')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Check current user package limits',
-    description: 'Check if the current user can generate content based on their package limits'
+    description:
+      'Check if the current user can generate content based on their package limits',
   })
   @ApiResponse({
     status: 200,
@@ -140,11 +150,28 @@ export class PackagesController {
     schema: {
       type: 'object',
       properties: {
-        canGenerate: { type: 'boolean', description: 'Whether user can generate content' },
-        reason: { type: 'string', description: 'Reason if cannot generate', nullable: true },
-        creditsRemaining: { type: 'number', description: 'Credits remaining in current period' },
-        generationsRemaining: { type: 'number', description: 'Generations remaining in current period (-1 if unlimited)' },
-        packageCredits: { type: 'number', description: 'Total monthly credits included in user\'s package' },
+        canGenerate: {
+          type: 'boolean',
+          description: 'Whether user can generate content',
+        },
+        reason: {
+          type: 'string',
+          description: 'Reason if cannot generate',
+          nullable: true,
+        },
+        creditsRemaining: {
+          type: 'number',
+          description: 'Credits remaining in current period',
+        },
+        generationsRemaining: {
+          type: 'number',
+          description:
+            'Generations remaining in current period (-1 if unlimited)',
+        },
+        packageCredits: {
+          type: 'number',
+          description: "Total monthly credits included in user's package",
+        },
       },
     },
   })
@@ -156,9 +183,9 @@ export class PackagesController {
   }
 
   @Get('type/:type')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get package by type',
-    description: 'Retrieve a specific package by its type'
+    description: 'Retrieve a specific package by its type',
   })
   @ApiParam({ name: 'type', enum: PackageType, description: 'Package type' })
   @ApiResponse({
@@ -170,14 +197,16 @@ export class PackagesController {
     status: 404,
     description: 'Package not found',
   })
-  async findPackageByType(@Param('type') type: PackageType): Promise<PackageResponseDto> {
+  async findPackageByType(
+    @Param('type') type: PackageType,
+  ): Promise<PackageResponseDto> {
     return this.packagesService.findPackageByType(type);
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get package by ID',
-    description: 'Retrieve a specific package by its ID'
+    description: 'Retrieve a specific package by its ID',
   })
   @ApiParam({ name: 'id', type: 'number', description: 'Package ID' })
   @ApiResponse({
@@ -189,14 +218,16 @@ export class PackagesController {
     status: 404,
     description: 'Package not found',
   })
-  async findPackageById(@Param('id', ParseIntPipe) id: number): Promise<PackageResponseDto> {
+  async findPackageById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<PackageResponseDto> {
     return this.packagesService.findPackageById(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update package',
-    description: 'Update an existing package. Admin access required.'
+    description: 'Update an existing package. Admin access required.',
   })
   @ApiParam({ name: 'id', type: 'number', description: 'Package ID' })
   @ApiResponse({
@@ -224,9 +255,10 @@ export class PackagesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete package',
-    description: 'Soft delete a package (sets is_active to false). Admin access required.'
+    description:
+      'Soft delete a package (sets is_active to false). Admin access required.',
   })
   @ApiParam({ name: 'id', type: 'number', description: 'Package ID' })
   @ApiResponse({
