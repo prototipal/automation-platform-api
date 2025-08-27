@@ -387,15 +387,17 @@ export class GenerationsService {
     if (isTextToImage && imageCount > 1) {
       // Get the base USD cost for single image
       const singleImageCost = basePriceEstimation.breakdown.replicate_cost_usd;
-      
+
       // Calculate total replicate cost for multiple images
       const totalReplicateCost = singleImageCost * imageCount;
-      
+
       // Calculate total cost with profit margin
-      const totalCostUsd = totalReplicateCost * basePriceEstimation.breakdown.profit_margin;
-      
+      const totalCostUsd =
+        totalReplicateCost * basePriceEstimation.breakdown.profit_margin;
+
       // Convert to credits and round at the end
-      const creditsRaw = totalCostUsd / basePriceEstimation.breakdown.credit_value_usd;
+      const creditsRaw =
+        totalCostUsd / basePriceEstimation.breakdown.credit_value_usd;
       const creditsRounded = this.roundToHalf(creditsRaw);
 
       // Update the breakdown with correct values
@@ -428,8 +430,6 @@ export class GenerationsService {
     try {
       // Get all available services
       const allServices = await this.servicesService.findAllServices();
-
-      const imageCount = estimateDto.image_count || 2;
       const servicePrices: ServicePriceDto[] = [];
 
       // Process each service
@@ -448,38 +448,14 @@ export class GenerationsService {
             service.model,
             service.model_version,
           );
-          const currentImageCount = isTextToImage ? imageCount : 1;
 
-          // Calculate base price estimation
+          // Calculate base price estimation (for 1 image/video)
           const basePriceEstimation = await this.calculatePriceEstimation(
             service,
             estimateDto.input,
             service.model,
             service.model_version,
           );
-
-          // Apply image count multiplier for text-to-image models
-          if (isTextToImage && currentImageCount > 1) {
-            // Get the base USD cost for single image
-            const singleImageCost = basePriceEstimation.breakdown.replicate_cost_usd;
-            
-            // Calculate total replicate cost for multiple images
-            const totalReplicateCost = singleImageCost * currentImageCount;
-            
-            // Calculate total cost with profit margin
-            const totalCostUsd = totalReplicateCost * basePriceEstimation.breakdown.profit_margin;
-            
-            // Convert to credits and round at the end
-            const creditsRaw = totalCostUsd / basePriceEstimation.breakdown.credit_value_usd;
-            const creditsRounded = this.roundToHalf(creditsRaw);
-
-            // Update the breakdown with correct values
-            basePriceEstimation.breakdown.replicate_cost_usd = totalReplicateCost;
-            basePriceEstimation.breakdown.total_cost_usd = totalCostUsd;
-            basePriceEstimation.breakdown.estimated_credits_raw = creditsRaw;
-            basePriceEstimation.breakdown.estimated_credits_rounded = creditsRounded;
-            basePriceEstimation.estimated_credits = creditsRounded;
-          }
 
           // Create service price entry with proper display name fallback
           const displayName =
@@ -491,10 +467,41 @@ export class GenerationsService {
             model_version: service.model_version,
             display_name: displayName,
             service_type: isTextToImage ? 'image' : 'video',
-            estimated_credits: basePriceEstimation.estimated_credits,
-            breakdown: basePriceEstimation.breakdown,
-            service_details: basePriceEstimation.service_details,
+            base_pricing: basePriceEstimation,
           };
+
+          // For text-to-image models, calculate pricing for different image counts
+          if (isTextToImage) {
+            const imageCounts = [1, 2, 4];
+            const imageCountPricing: any[] = [];
+
+            // Get base costs from the single image calculation
+            const singleImageReplicateCost =
+              basePriceEstimation.breakdown.replicate_cost_usd;
+            const profitMargin = basePriceEstimation.breakdown.profit_margin;
+            const creditValueUsd =
+              basePriceEstimation.breakdown.credit_value_usd;
+
+            for (const imageCount of imageCounts) {
+              // Calculate total replicate cost for multiple images
+              const totalReplicateCost = singleImageReplicateCost * imageCount;
+
+              // Calculate total cost with profit margin
+              const totalCostUsd = totalReplicateCost * profitMargin;
+
+              // Convert to credits and round
+              const creditsRaw = totalCostUsd / creditValueUsd;
+              const creditsRounded = this.roundToHalf(creditsRaw);
+
+              imageCountPricing.push({
+                image_count: imageCount,
+                estimated_credits: creditsRounded,
+                total_cost_usd: totalCostUsd,
+              });
+            }
+
+            servicePrice.image_count_pricing = imageCountPricing;
+          }
 
           servicePrices.push(servicePrice);
         } catch (error) {
@@ -508,7 +515,6 @@ export class GenerationsService {
       const response: AllPricesResponseDto = {
         services: servicePrices,
         input_used: estimateDto.input,
-        image_count: imageCount,
         total_services: servicePrices.length,
       };
 
@@ -952,9 +958,11 @@ export class GenerationsService {
       // Remove base64 image data from output_data to avoid storing large data in DB
       const cleanedOutputData =
         this.cleanOutputDataForStorage(replicateResponse);
-      
+
       // Remove base64 image data from input_parameters to avoid storing large data in DB
-      const cleanedInputParameters = this.cleanInputParametersForStorage(createGenerationDto.input);
+      const cleanedInputParameters = this.cleanInputParametersForStorage(
+        createGenerationDto.input,
+      );
 
       // Create generation record using repository
       const savedGeneration = await this.generationsRepository.create({

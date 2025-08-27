@@ -293,9 +293,8 @@ export class TemplatesService {
       }
 
       // Step 1: Find the main category
-      const mainCategory = await this.categoriesService.findMainCategoryByName(
-        mainCategoryName,
-      );
+      const mainCategory =
+        await this.categoriesService.findMainCategoryByName(mainCategoryName);
 
       if (!mainCategory) {
         result.errors.push(

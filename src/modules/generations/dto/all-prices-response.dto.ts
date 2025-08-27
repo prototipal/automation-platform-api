@@ -2,7 +2,30 @@ import { Expose, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { PriceEstimationResponseDto } from './price-estimation-response.dto';
 
-export class ServicePriceDto extends PriceEstimationResponseDto {
+export class ImageCountPricingDto {
+  @ApiProperty({
+    description: 'Number of images',
+    example: 1,
+  })
+  @Expose()
+  image_count: number;
+
+  @ApiProperty({
+    description: 'Estimated credits required for this image count',
+    example: 3,
+  })
+  @Expose()
+  estimated_credits: number;
+
+  @ApiProperty({
+    description: 'Total cost in USD for this image count',
+    example: 0.12,
+  })
+  @Expose()
+  total_cost_usd: number;
+}
+
+export class ServicePriceDto {
   @ApiProperty({
     description: 'Service model name',
     example: 'IDEOGRAM_AI',
@@ -30,6 +53,24 @@ export class ServicePriceDto extends PriceEstimationResponseDto {
   })
   @Expose()
   service_type: string;
+
+  @ApiProperty({
+    description: 'Base pricing information (for 1 image or video)',
+    type: PriceEstimationResponseDto,
+  })
+  @Expose()
+  @Type(() => PriceEstimationResponseDto)
+  base_pricing: PriceEstimationResponseDto;
+
+  @ApiProperty({
+    description:
+      'Pricing for different image counts (only for text-to-image models)',
+    type: [ImageCountPricingDto],
+    required: false,
+  })
+  @Expose()
+  @Type(() => ImageCountPricingDto)
+  image_count_pricing?: ImageCountPricingDto[];
 }
 
 export class AllPricesResponseDto {
@@ -48,13 +89,6 @@ export class AllPricesResponseDto {
   })
   @Expose()
   input_used: Record<string, any>;
-
-  @ApiProperty({
-    description: 'Image count used for text-to-image services',
-    example: 2,
-  })
-  @Expose()
-  image_count: number;
 
   @ApiProperty({
     description: 'Total number of services',

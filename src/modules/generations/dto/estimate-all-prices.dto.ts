@@ -1,4 +1,4 @@
-import { IsObject, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import { IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class EstimateAllPricesDto {
@@ -14,19 +14,4 @@ export class EstimateAllPricesDto {
   })
   @IsObject()
   input: Record<string, any>;
-
-  @ApiProperty({
-    type: 'number',
-    description:
-      'Number of images to generate (only affects text-to-image models). Default is 2.',
-    example: 2,
-    required: false,
-    minimum: 2,
-    maximum: 4,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(2)
-  @Max(4)
-  image_count?: number = 2;
 }

@@ -87,12 +87,12 @@ export class CreateGenerationDto {
       'Number of images to generate (only for text-to-image models). Default is 2.',
     example: 2,
     required: false,
-    minimum: 2,
+    minimum: 1,
     maximum: 4,
   })
   @IsOptional()
   @IsNumber()
-  @Min(2)
+  @Min(1)
   @Max(4)
   image_count?: number = 2;
 }

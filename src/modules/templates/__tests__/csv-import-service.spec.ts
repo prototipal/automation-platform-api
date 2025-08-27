@@ -66,39 +66,55 @@ Abstract Art,Create an abstract composition with vibrant colors,https://example.
 Portrait Photo,Professional headshot with soft lighting,https://example.com/image2.jpg`;
 
     it('should successfully import valid CSV content', async () => {
-      mockCategoriesService.findMainCategoryByName.mockResolvedValue(mockMainCategory);
-      mockCategoriesService.findOrCreateWithMainCategory.mockResolvedValue(mockCategory);
+      mockCategoriesService.findMainCategoryByName.mockResolvedValue(
+        mockMainCategory,
+      );
+      mockCategoriesService.findOrCreateWithMainCategory.mockResolvedValue(
+        mockCategory,
+      );
       mockCategoriesService.findAll.mockResolvedValue({ data: [mockCategory] });
       mockTemplatesRepository.createMany.mockResolvedValue([]);
 
-      const result: CsvImportResponseDto = await service.importFromCsvFile(validCsvContent, {
-        type: 'photo',
-        mainCategoryName: 'Prototipal Halo',
-      });
+      const result: CsvImportResponseDto = await service.importFromCsvFile(
+        validCsvContent,
+        {
+          type: 'photo',
+          mainCategoryName: 'Prototipal Halo',
+        },
+      );
 
       expect(result.imported).toBe(2);
       expect(result.skipped).toBe(0);
       expect(result.errors).toHaveLength(0);
       expect(result.message).toContain('Successfully imported 2 templates');
-      expect(mockCategoriesService.findMainCategoryByName).toHaveBeenCalledWith('Prototipal Halo');
+      expect(mockCategoriesService.findMainCategoryByName).toHaveBeenCalledWith(
+        'Prototipal Halo',
+      );
       expect(mockTemplatesRepository.createMany).toHaveBeenCalled();
     });
 
     it('should handle missing main category', async () => {
       mockCategoriesService.findMainCategoryByName.mockResolvedValue(null);
 
-      const result: CsvImportResponseDto = await service.importFromCsvFile(validCsvContent, {
-        type: 'photo',
-        mainCategoryName: 'Non-existent Category',
-      });
+      const result: CsvImportResponseDto = await service.importFromCsvFile(
+        validCsvContent,
+        {
+          type: 'photo',
+          mainCategoryName: 'Non-existent Category',
+        },
+      );
 
       expect(result.imported).toBe(0);
-      expect(result.errors).toContain("Main category 'Non-existent Category' not found. Please create it first.");
+      expect(result.errors).toContain(
+        "Main category 'Non-existent Category' not found. Please create it first.",
+      );
       expect(result.message).toBe('Import failed: Main category not found');
     });
 
     it('should handle empty CSV content', async () => {
-      mockCategoriesService.findMainCategoryByName.mockResolvedValue(mockMainCategory);
+      mockCategoriesService.findMainCategoryByName.mockResolvedValue(
+        mockMainCategory,
+      );
 
       const result: CsvImportResponseDto = await service.importFromCsvFile('', {
         type: 'photo',
@@ -110,17 +126,22 @@ Portrait Photo,Professional headshot with soft lighting,https://example.com/imag
     });
 
     it('should validate required fields', async () => {
-      mockCategoriesService.findMainCategoryByName.mockResolvedValue(mockMainCategory);
+      mockCategoriesService.findMainCategoryByName.mockResolvedValue(
+        mockMainCategory,
+      );
 
       const invalidCsvContent = `name,prompt,new_image
 ,Missing category name,https://example.com/image1.jpg
 Abstract Art,,https://example.com/image2.jpg
 Portrait Photo,Valid prompt,`;
 
-      const result: CsvImportResponseDto = await service.importFromCsvFile(invalidCsvContent, {
-        type: 'photo',
-        mainCategoryName: 'Prototipal Halo',
-      });
+      const result: CsvImportResponseDto = await service.importFromCsvFile(
+        invalidCsvContent,
+        {
+          type: 'photo',
+          mainCategoryName: 'Prototipal Halo',
+        },
+      );
 
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(3);
@@ -130,16 +151,21 @@ Portrait Photo,Valid prompt,`;
     });
 
     it('should validate URL format', async () => {
-      mockCategoriesService.findMainCategoryByName.mockResolvedValue(mockMainCategory);
+      mockCategoriesService.findMainCategoryByName.mockResolvedValue(
+        mockMainCategory,
+      );
 
       const invalidUrlCsvContent = `name,prompt,new_image
 Abstract Art,Create abstract art,invalid-url
 Portrait Photo,Take a photo,not-a-url-either`;
 
-      const result: CsvImportResponseDto = await service.importFromCsvFile(invalidUrlCsvContent, {
-        type: 'photo',
-        mainCategoryName: 'Prototipal Halo',
-      });
+      const result: CsvImportResponseDto = await service.importFromCsvFile(
+        invalidUrlCsvContent,
+        {
+          type: 'photo',
+          mainCategoryName: 'Prototipal Halo',
+        },
+      );
 
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(2);
@@ -148,15 +174,20 @@ Portrait Photo,Take a photo,not-a-url-either`;
     });
 
     it('should handle category creation errors gracefully', async () => {
-      mockCategoriesService.findMainCategoryByName.mockResolvedValue(mockMainCategory);
+      mockCategoriesService.findMainCategoryByName.mockResolvedValue(
+        mockMainCategory,
+      );
       mockCategoriesService.findOrCreateWithMainCategory.mockRejectedValue(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
-      const result: CsvImportResponseDto = await service.importFromCsvFile(validCsvContent, {
-        type: 'photo',
-        mainCategoryName: 'Prototipal Halo',
-      });
+      const result: CsvImportResponseDto = await service.importFromCsvFile(
+        validCsvContent,
+        {
+          type: 'photo',
+          mainCategoryName: 'Prototipal Halo',
+        },
+      );
 
       expect(result.imported).toBe(0);
       expect(result.errors.length).toBeGreaterThan(0);
@@ -164,19 +195,28 @@ Portrait Photo,Take a photo,not-a-url-either`;
     });
 
     it('should use default options when not provided', async () => {
-      mockCategoriesService.findMainCategoryByName.mockResolvedValue(mockMainCategory);
-      mockCategoriesService.findOrCreateWithMainCategory.mockResolvedValue(mockCategory);
+      mockCategoriesService.findMainCategoryByName.mockResolvedValue(
+        mockMainCategory,
+      );
+      mockCategoriesService.findOrCreateWithMainCategory.mockResolvedValue(
+        mockCategory,
+      );
       mockCategoriesService.findAll.mockResolvedValue({ data: [mockCategory] });
       mockTemplatesRepository.createMany.mockResolvedValue([]);
 
-      const result: CsvImportResponseDto = await service.importFromCsvFile(validCsvContent);
+      const result: CsvImportResponseDto =
+        await service.importFromCsvFile(validCsvContent);
 
-      expect(mockCategoriesService.findMainCategoryByName).toHaveBeenCalledWith('Prototipal Halo');
-      expect(mockCategoriesService.findOrCreateWithMainCategory).toHaveBeenCalledWith(
+      expect(mockCategoriesService.findMainCategoryByName).toHaveBeenCalledWith(
+        'Prototipal Halo',
+      );
+      expect(
+        mockCategoriesService.findOrCreateWithMainCategory,
+      ).toHaveBeenCalledWith(
         expect.any(String),
         mockMainCategory.id,
         undefined,
-        'photo'
+        'photo',
       );
     });
   });

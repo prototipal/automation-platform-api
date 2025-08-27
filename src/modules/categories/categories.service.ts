@@ -273,12 +273,13 @@ export class CategoriesService {
     link?: string,
     type: 'photo' | 'video' = 'photo',
   ): Promise<CategoryResponseDto> {
-    const category = await this.categoriesRepository.findOrCreateWithMainCategory(
-      name,
-      mainCategoryId,
-      link,
-      type,
-    );
+    const category =
+      await this.categoriesRepository.findOrCreateWithMainCategory(
+        name,
+        mainCategoryId,
+        link,
+        type,
+      );
     return plainToInstance(CategoryResponseDto, category);
   }
 

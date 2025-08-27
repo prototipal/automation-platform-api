@@ -35,7 +35,9 @@ describe('CSV Import', () => {
     const mockFile = {
       originalname: 'test.csv',
       mimetype: 'text/csv',
-      buffer: Buffer.from('name,prompt,new_image\nCategory1,Test prompt,https://example.com/image.jpg'),
+      buffer: Buffer.from(
+        'name,prompt,new_image\nCategory1,Test prompt,https://example.com/image.jpg',
+      ),
     } as Express.Multer.File;
 
     const mockBody = {
@@ -67,8 +69,9 @@ describe('CSV Import', () => {
     });
 
     it('should throw BadRequestException when no file is uploaded', async () => {
-      await expect(controller.importFromCsvUpload(undefined as any, mockBody))
-        .rejects.toThrow(new BadRequestException('No file uploaded'));
+      await expect(
+        controller.importFromCsvUpload(undefined as any, mockBody),
+      ).rejects.toThrow(new BadRequestException('No file uploaded'));
     });
 
     it('should throw BadRequestException for invalid file type', async () => {
@@ -78,8 +81,11 @@ describe('CSV Import', () => {
         mimetype: 'text/plain',
       } as Express.Multer.File;
 
-      await expect(controller.importFromCsvUpload(invalidFile, mockBody))
-        .rejects.toThrow(new BadRequestException('Invalid file type. Please upload a CSV file.'));
+      await expect(
+        controller.importFromCsvUpload(invalidFile, mockBody),
+      ).rejects.toThrow(
+        new BadRequestException('Invalid file type. Please upload a CSV file.'),
+      );
     });
 
     it('should handle service errors gracefully', async () => {
@@ -87,8 +93,11 @@ describe('CSV Import', () => {
         new Error('Database connection failed'),
       );
 
-      await expect(controller.importFromCsvUpload(mockFile, mockBody))
-        .rejects.toThrow(new BadRequestException('Import failed: Database connection failed'));
+      await expect(
+        controller.importFromCsvUpload(mockFile, mockBody),
+      ).rejects.toThrow(
+        new BadRequestException('Import failed: Database connection failed'),
+      );
     });
   });
 
@@ -108,10 +117,12 @@ describe('CSV Import', () => {
         message: 'No valid rows found',
       });
 
-      await expect(controller.importFromCsvUpload(csvFile, {
-        type: 'photo',
-        mainCategoryName: 'Test Category',
-      })).resolves.toBeDefined();
+      await expect(
+        controller.importFromCsvUpload(csvFile, {
+          type: 'photo',
+          mainCategoryName: 'Test Category',
+        }),
+      ).resolves.toBeDefined();
     });
 
     it('should accept files with csv mimetype', async () => {
@@ -129,10 +140,12 @@ describe('CSV Import', () => {
         message: 'No valid rows found',
       });
 
-      await expect(controller.importFromCsvUpload(csvFile, {
-        type: 'photo',
-        mainCategoryName: 'Test Category',
-      })).resolves.toBeDefined();
+      await expect(
+        controller.importFromCsvUpload(csvFile, {
+          type: 'photo',
+          mainCategoryName: 'Test Category',
+        }),
+      ).resolves.toBeDefined();
     });
   });
 });

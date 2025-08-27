@@ -128,14 +128,12 @@ export class GenerationsController {
       - Applies image count multiplier for text-to-image models
       
       **Response includes:**
-      - List of all services with their price estimations
+      - List of all services with their base pricing information
       - Service details (model, version, type, display name)
+      - For text-to-image models: pricing for 1, 2, and 4 images
+      - For text-to-video models: single pricing (always 1 video)
       - Detailed cost breakdown for each service
-      - Input parameters and image count used for calculations
-      
-      **Image Count Logic:**
-      - Text-to-image models: Pricing multiplied by image_count (default: 2)
-      - Text-to-video models: Image count ignored (always 1)
+      - Input parameters used for calculations
       
       **Use Cases:**
       - Display pricing table in frontend
