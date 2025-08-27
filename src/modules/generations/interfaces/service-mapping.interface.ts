@@ -17,6 +17,7 @@ export interface ModelVersionMapping {
     [TextToVideoModelVersion.VEO_3]: string;
     [TextToVideoModelVersion.VEO_3_FAST]: string;
     [TextToImageModelVersion.IMAGEN_4_FAST]: string;
+    [TextToImageModelVersion.NANO_BANANA]: string;
   };
   [ServiceModel.KWAIGI]: {
     [TextToVideoModelVersion.KLING_V2_1]: string;

@@ -18,8 +18,9 @@ import { PricingRule } from '../interfaces/pricing.interface';
 export interface ServiceFields {
   [key: string]: {
     required: boolean;
-    type: 'string' | 'enum' | 'boolean';
+    type: 'string' | 'enum' | 'boolean' | 'array';
     values?: string[];
+    items?: string;
     default?: string | boolean;
     desc: string;
   };

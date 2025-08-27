@@ -58,6 +58,7 @@ export class GenerationsService {
       [TextToVideoModelVersion.VEO_3]: 'google-deepmind/veo-3',
       [TextToVideoModelVersion.VEO_3_FAST]: 'google-deepmind/veo-3-fast',
       [TextToImageModelVersion.IMAGEN_4_FAST]: 'google/imagen-4-fast',
+      [TextToImageModelVersion.NANO_BANANA]: 'google/nano-banana',
     },
     [ServiceModel.KWAIGI]: {
       [TextToVideoModelVersion.KLING_V2_1]: 'kwaivgi/kling-v2.1',
@@ -708,6 +709,29 @@ export class GenerationsService {
               message: `Field '${fieldName}' must be one of: ${allowedValues?.join(', ') || 'no values specified'}`,
               value: fieldValue,
             });
+          }
+          break;
+
+        case 'array':
+          if (!Array.isArray(fieldValue)) {
+            validationErrors.push({
+              field: fieldName,
+              message: `Field '${fieldName}' must be an array`,
+              value: fieldValue,
+            });
+          } else {
+            // Validate array items type if specified
+            const itemsType = (fieldConfig as any).items;
+            if (itemsType === 'string') {
+              const invalidItems = fieldValue.filter(item => typeof item !== 'string');
+              if (invalidItems.length > 0) {
+                validationErrors.push({
+                  field: fieldName,
+                  message: `All items in '${fieldName}' must be strings`,
+                  value: fieldValue,
+                });
+              }
+            }
           }
           break;
 

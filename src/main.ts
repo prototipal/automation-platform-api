@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
 import { AppModule } from './app.module';
 import {
   DatabaseConnectionException,
@@ -15,7 +16,12 @@ async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule, {
       rawBody: true, // Enable raw body for Stripe webhooks
+      bodyParser: true,
     });
+
+    // Configure JSON body parser with increased limits for base64 images
+    app.use('/api', express.json({ limit: '50mb' }));
+    app.use('/api', express.urlencoded({ limit: '50mb', extended: true }));
     const configService = app.get(ConfigService);
 
     // Global configuration

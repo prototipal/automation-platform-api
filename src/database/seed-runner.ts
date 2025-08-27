@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
 import { Service } from '@/modules/services/entities';
 import { Template } from '@/modules/templates/entities';
+import { Category } from '@/modules/categories/entities';
+import { MainCategory } from '@/modules/categories/entities/main-category.entity';
 import { ServicesSeed } from './seeds';
 import { TemplatesCsvImportSeed } from './seeds/templates-csv-import.seed';
 
@@ -17,7 +19,7 @@ const createDataSource = (): DataSource => {
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'password',
     database: process.env.DB_NAME || 'automation_platform',
-    entities: [Service, Template],
+    entities: [Service, Template, Category, MainCategory],
     synchronize: false,
     logging: process.env.NODE_ENV === 'development',
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,

@@ -58,6 +58,7 @@ export class ServicesSeed {
             ],
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/minimax-logo.png',
       },
       {
         from: 'replicate',
@@ -88,6 +89,7 @@ export class ServicesSeed {
             price: 3.2,
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/google-logo.png',
       },
       {
         from: 'replicate',
@@ -174,6 +176,7 @@ export class ServicesSeed {
             price: 0.5,
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/minimax-logo.png',
       },
       {
         from: 'replicate',
@@ -241,6 +244,7 @@ export class ServicesSeed {
             price: 0.03,
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/ideogram-logo.png',
       },
       {
         from: 'replicate',
@@ -266,6 +270,7 @@ export class ServicesSeed {
             price: 0.02,
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/google-logo.png',
       },
       {
         from: 'replicate',
@@ -297,6 +302,33 @@ export class ServicesSeed {
             price: 0.08,
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/flux.png',
+      },
+      {
+        from: 'replicate',
+        type: ServiceType.TEXT_TO_IMAGE,
+        model: ServiceModel.GOOGLE,
+        model_version: TextToImageModelVersion.NANO_BANANA,
+        fields: {
+          prompt: {
+            required: true,
+            type: 'string',
+            desc: 'Text description for image generation',
+          },
+          image_input: {
+            required: false,
+            type: 'array',
+            items: 'string',
+            desc: 'Optional input images',
+          },
+        },
+        pricing: {
+          rule: {
+            type: PricingType.FIXED,
+            price: 0.039,
+          },
+        },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/google-logo.png',
       },
     ];
 

@@ -3,6 +3,7 @@ export enum TextToImageModelVersion {
   IDEOGRAM_V3_TURBO = 'ideogram-v3-turbo',
   IMAGEN_4_FAST = 'imagen-4-fast',
   FLUX_KONTEXT_MAX = 'flux-kontext-max',
+  NANO_BANANA = 'nano-banana',
 }
 
 // Text-to-Video Model Versions
