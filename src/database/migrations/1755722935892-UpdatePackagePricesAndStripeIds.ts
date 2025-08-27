@@ -10,7 +10,7 @@ export class UpdatePackagePricesAndStripeIds1755722935892
             SET 
                 monthly_price_cents = 900,
                 yearly_price_cents = 9000,
-                stripe_monthly_price_id = 'price_1RxqXcCsj1z7vyBgUVHwDbfO',
+                stripe_monthly_price_id = 'price_1S0ncuCsj1z7vyBgC0WC9nQ8',
                 stripe_yearly_price_id = NULL
             WHERE type = 'basic'
         `);
@@ -21,7 +21,7 @@ export class UpdatePackagePricesAndStripeIds1755722935892
             SET 
                 monthly_price_cents = 1900,
                 yearly_price_cents = 19000,
-                stripe_monthly_price_id = 'price_1RxqZBCsj1z7vyBgPGAZdtWq',
+                stripe_monthly_price_id = 'price_1S0nh1Csj1z7vyBgHG7lqluv',
                 stripe_yearly_price_id = NULL
             WHERE type = 'pro'
         `);
@@ -32,7 +32,7 @@ export class UpdatePackagePricesAndStripeIds1755722935892
             SET 
                 monthly_price_cents = 4900,
                 yearly_price_cents = 49000,
-                stripe_monthly_price_id = 'price_1RxqaYCsj1z7vyBg2LAe77g7',
+                stripe_monthly_price_id = 'price_1S0nnaCsj1z7vyBg0P10pFDk',
                 stripe_yearly_price_id = NULL
             WHERE type = 'ultimate'
         `);
