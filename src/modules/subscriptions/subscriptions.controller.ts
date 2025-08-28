@@ -352,9 +352,14 @@ export class SubscriptionsController {
   async handleStripeWebhook(
     @RawBody() rawBody: Buffer,
     @Headers('stripe-signature') signature: string,
+    @Req() req: Request,
     @Res() response: Response,
   ): Promise<void> {
     try {
+      console.log('Headers:', req.headers);
+      console.log('Signature:', signature);
+      console.log('Raw body length:', req.rawBody?.length);
+      
       const event = this.stripeService.constructWebhookEvent(
         rawBody,
         signature,
