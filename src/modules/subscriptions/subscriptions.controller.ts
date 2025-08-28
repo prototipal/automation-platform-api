@@ -358,7 +358,8 @@ export class SubscriptionsController {
     try {
       console.log('Headers:', req.headers);
       console.log('Signature:', signature);
-      console.log('Raw body length:', req.rawBody?.length);
+      console.log('Raw body length:', rawBody?.length);
+      console.log('Raw body type:', typeof rawBody);
       
       const event = this.stripeService.constructWebhookEvent(
         rawBody,
