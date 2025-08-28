@@ -125,6 +125,21 @@ export class WebhookService {
         return;
       }
 
+      // Cancel any existing active subscriptions for this customer
+      if (subscription.customer) {
+        try {
+          await this.stripeService.cancelAllActiveSubscriptionsForCustomer(
+            subscription.customer as string,
+            subscription.id, // Exclude the new subscription
+          );
+        } catch (error) {
+          this.logger.warn(
+            `Failed to cancel existing subscriptions for customer ${subscription.customer}:`,
+            error,
+          );
+        }
+      }
+
       const billingInterval =
         this.stripeService.getBillingInterval(subscription);
       const status = this.stripeService.mapSubscriptionStatus(

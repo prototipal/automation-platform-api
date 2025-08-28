@@ -401,4 +401,64 @@ export class StripeService {
       throw new BadRequestException('Failed to retrieve upcoming invoice');
     }
   }
+
+  /**
+   * Find and cancel all active subscriptions for a customer
+   */
+  async cancelAllActiveSubscriptionsForCustomer(
+    customerId: string,
+    excludeSubscriptionId?: string,
+  ): Promise<Stripe.Subscription[]> {
+    try {
+      // Get all active subscriptions for the customer
+      const subscriptions = await this.stripe.subscriptions.list({
+        customer: customerId,
+        status: 'active',
+        limit: 100,
+      });
+
+      const cancelledSubscriptions: Stripe.Subscription[] = [];
+
+      for (const subscription of subscriptions.data) {
+        // Skip the subscription we want to exclude (new subscription)
+        if (excludeSubscriptionId && subscription.id === excludeSubscriptionId) {
+          continue;
+        }
+
+        try {
+          // Cancel subscription immediately
+          const fullyCancelled = await this.stripe.subscriptions.cancel(
+            subscription.id,
+          );
+
+          cancelledSubscriptions.push(fullyCancelled);
+          
+          this.logger.log(
+            `Cancelled existing subscription: ${subscription.id} for customer: ${customerId}`,
+          );
+        } catch (cancelError) {
+          this.logger.warn(
+            `Failed to cancel subscription ${subscription.id} for customer ${customerId}:`,
+            cancelError,
+          );
+        }
+      }
+
+      if (cancelledSubscriptions.length > 0) {
+        this.logger.log(
+          `Cancelled ${cancelledSubscriptions.length} existing subscriptions for customer: ${customerId}`,
+        );
+      }
+
+      return cancelledSubscriptions;
+    } catch (error) {
+      this.logger.error(
+        `Failed to find and cancel subscriptions for customer ${customerId}:`,
+        error,
+      );
+      throw new BadRequestException(
+        'Failed to cancel existing subscriptions',
+      );
+    }
+  }
 }
