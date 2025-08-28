@@ -19,6 +19,9 @@ async function bootstrap() {
       bodyParser: true,
     });
 
+    // Configure raw body middleware for Stripe webhooks first
+    app.use('/api/subscriptions/webhooks/stripe', express.raw({ type: 'application/json' }));
+    
     // Configure JSON body parser with increased limits for base64 images
     // Exclude webhook endpoints from JSON parsing to preserve raw body
     app.use('/api', (req, res, next) => {
