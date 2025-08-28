@@ -15,23 +15,22 @@ async function bootstrap() {
 
   try {
     const app = await NestFactory.create(AppModule, {
-      rawBody: true, // Enable raw body for Stripe webhooks
-      bodyParser: true,
+      bodyParser: false, // Disable default body parser to handle manually
     });
 
-    // Configure raw body middleware for Stripe webhooks first
+    // Configure raw body middleware for Stripe webhooks FIRST (before any JSON parsing)
     app.use('/api/subscriptions/webhooks/stripe', express.raw({ type: 'application/json' }));
     
     // Configure JSON body parser with increased limits for base64 images
-    // Exclude webhook endpoints from JSON parsing to preserve raw body
-    app.use('/api', (req, res, next) => {
+    // Apply to all routes EXCEPT webhook endpoints
+    app.use((req, res, next) => {
       if (req.path.includes('/webhooks/stripe')) {
         next();
       } else {
         express.json({ limit: '50mb' })(req, res, next);
       }
     });
-    app.use('/api', (req, res, next) => {
+    app.use((req, res, next) => {
       if (req.path.includes('/webhooks/stripe')) {
         next();
       } else {
