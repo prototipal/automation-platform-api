@@ -350,19 +350,26 @@ export class SubscriptionsController {
   @HttpCode(HttpStatus.OK)
   @ApiExcludeEndpoint()
   async handleStripeWebhook(
-    @RawBody() rawBody: Buffer,
     @Headers('stripe-signature') signature: string,
-    @Req() req: Request,
+    @Req() req: Request & { body: Buffer | string },
     @Res() response: Response,
   ): Promise<void> {
     try {
       console.log('Headers:', req.headers);
       console.log('Signature:', signature);
-      console.log('Raw body length:', rawBody?.length);
-      console.log('Raw body type:', typeof rawBody);
+      console.log('Request body length:', req.body?.length);
+      console.log('Request body type:', typeof req.body);
+      
+      // Get raw body from request
+      const rawBody = req.body;
+      
+      // Ensure we have a Buffer
+      const bodyBuffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody, 'utf8');
+      
+      console.log('Final buffer length:', bodyBuffer.length);
       
       const event = this.stripeService.constructWebhookEvent(
-        rawBody,
+        bodyBuffer,
         signature,
       );
 
