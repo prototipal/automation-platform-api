@@ -125,16 +125,26 @@ export class WebhookService {
         return;
       }
 
-      // Cancel any existing active subscriptions for this customer
+      // Cancel any existing active subscriptions for this customer (after creating new one)
       if (subscription.customer) {
         try {
-          await this.stripeService.cancelAllActiveSubscriptionsForCustomer(
-            subscription.customer as string,
-            subscription.id, // Exclude the new subscription
-          );
+          // Run this after the transaction commits to avoid blocking the new subscription
+          setImmediate(async () => {
+            try {
+              await this.stripeService.cancelAllActiveSubscriptionsForCustomer(
+                subscription.customer as string,
+                subscription.id, // Exclude the new subscription
+              );
+            } catch (error) {
+              this.logger.warn(
+                `Failed to cancel existing subscriptions for customer ${subscription.customer}:`,
+                error,
+              );
+            }
+          });
         } catch (error) {
           this.logger.warn(
-            `Failed to cancel existing subscriptions for customer ${subscription.customer}:`,
+            `Failed to schedule cancellation of existing subscriptions for customer ${subscription.customer}:`,
             error,
           );
         }
