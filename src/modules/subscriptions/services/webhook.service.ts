@@ -125,29 +125,25 @@ export class WebhookService {
         return;
       }
 
-      // Cancel any existing active subscriptions for this customer (after creating new one)
-      if (subscription.customer) {
-        try {
-          // Run this after the transaction commits to avoid blocking the new subscription
-          setImmediate(async () => {
-            try {
-              await this.stripeService.cancelAllActiveSubscriptionsForCustomer(
-                subscription.customer as string,
-                subscription.id, // Exclude the new subscription
-              );
-            } catch (error) {
-              this.logger.warn(
-                `Failed to cancel existing subscriptions for customer ${subscription.customer}:`,
-                error,
-              );
-            }
-          });
-        } catch (error) {
-          this.logger.warn(
-            `Failed to schedule cancellation of existing subscriptions for customer ${subscription.customer}:`,
-            error,
+      // Cancel existing active subscription from database if exists
+      try {
+        const existingActiveSubscription = await this.userPackagesRepository.findActiveUserPackage(userId);
+        if (existingActiveSubscription?.stripe_subscription_id && 
+            existingActiveSubscription.stripe_subscription_id !== subscription.id) {
+          // Cancel the old subscription in Stripe
+          await this.stripeService.cancelSubscription(
+            existingActiveSubscription.stripe_subscription_id,
+            true // Cancel immediately
+          );
+          this.logger.log(
+            `Cancelled existing subscription ${existingActiveSubscription.stripe_subscription_id} for user ${userId}`
           );
         }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to cancel existing subscription for user ${userId}:`,
+          error,
+        );
       }
 
       const billingInterval =
