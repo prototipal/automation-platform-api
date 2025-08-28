@@ -20,8 +20,21 @@ async function bootstrap() {
     });
 
     // Configure JSON body parser with increased limits for base64 images
-    app.use('/api', express.json({ limit: '50mb' }));
-    app.use('/api', express.urlencoded({ limit: '50mb', extended: true }));
+    // Exclude webhook endpoints from JSON parsing to preserve raw body
+    app.use('/api', (req, res, next) => {
+      if (req.path.includes('/webhooks/stripe')) {
+        next();
+      } else {
+        express.json({ limit: '50mb' })(req, res, next);
+      }
+    });
+    app.use('/api', (req, res, next) => {
+      if (req.path.includes('/webhooks/stripe')) {
+        next();
+      } else {
+        express.urlencoded({ limit: '50mb', extended: true })(req, res, next);
+      }
+    });
     const configService = app.get(ConfigService);
 
     // Global configuration
