@@ -5,6 +5,7 @@ import {
   AuthService,
   SupabaseAuthService,
   EnhancedAuthService,
+  UserInitializationService,
 } from '@/modules/auth/services';
 import { CreditsModule } from '@/modules/credits';
 import {
@@ -19,6 +20,7 @@ import {
     AuthService,
     SupabaseAuthService,
     EnhancedAuthService,
+    UserInitializationService,
     ApiKeyAuthGuard,
     HybridAuthGuard,
     StaticTokenAuthGuard,
@@ -27,6 +29,7 @@ import {
     AuthService,
     SupabaseAuthService,
     EnhancedAuthService,
+    UserInitializationService,
     ApiKeyAuthGuard,
     HybridAuthGuard,
     StaticTokenAuthGuard,

@@ -11,6 +11,7 @@ import {
   UserNotFoundException,
   InactiveUserException,
 } from '@/modules/auth/exceptions';
+import { UserInitializationService } from './user-initialization.service';
 
 @Injectable()
 export class SupabaseAuthService {
@@ -20,6 +21,7 @@ export class SupabaseAuthService {
   constructor(
     private readonly configService: ConfigService,
     private readonly dataSource: DataSource,
+    private readonly userInitializationService: UserInitializationService,
   ) {
     const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
     const supabaseServiceKey = this.configService.get<string>(
@@ -62,7 +64,7 @@ export class SupabaseAuthService {
       const userDataResult = await this.dataSource.query(
         `SELECT 
            uc.user_id,
-           uc.balance,
+           (uc.playground_credits - uc.playground_credits_used_current_period + uc.api_credits) as balance,
            up.email,
            up.full_name as name,
            CASE WHEN up.id IS NOT NULL THEN true ELSE false END as user_active
@@ -74,9 +76,65 @@ export class SupabaseAuthService {
 
       if (!userDataResult || userDataResult.length === 0) {
         this.logger.warn(
-          `User not found in our database for Supabase user_id: ${supabaseUserId}`,
+          `User not found in our database for Supabase user_id: ${supabaseUserId}. Attempting to initialize user...`,
         );
-        throw new SupabaseUserNotFoundException();
+        
+        try {
+          // Try to initialize the user with free package
+          const fullName = tokenData.user.user_metadata?.full_name || 
+                          tokenData.user.user_metadata?.name ||
+                          null;
+
+          await this.userInitializationService.initializeNewUser(
+            supabaseUserId,
+            userEmail,
+            fullName,
+          );
+
+          this.logger.log(`Successfully initialized user: ${supabaseUserId}`);
+
+          // Retry getting user data after initialization
+          const newUserDataResult = await this.dataSource.query(
+            `SELECT 
+               uc.user_id,
+               (uc.playground_credits - uc.playground_credits_used_current_period + uc.api_credits) as balance,
+               up.email,
+               up.full_name as name,
+               CASE WHEN up.id IS NOT NULL THEN true ELSE false END as user_active
+             FROM user_credits uc
+             LEFT JOIN user_profiles up ON uc.user_id = up.id
+             WHERE uc.user_id = $1`,
+            [supabaseUserId],
+          );
+
+          if (!newUserDataResult || newUserDataResult.length === 0) {
+            throw new SupabaseUserNotFoundException();
+          }
+
+          const userData = newUserDataResult[0];
+          if (!userData.user_active) {
+            this.logger.warn(`Inactive user: ${supabaseUserId}`);
+            throw new InactiveUserException();
+          }
+
+          this.logger.log(
+            `Supabase token validated successfully for newly initialized user: ${supabaseUserId}`,
+          );
+
+          return plainToInstance(AuthUserDto, {
+            user_id: userData.user_id,
+            balance: parseFloat(userData.balance || 0),
+            email: userData.email || userEmail,
+            name: userData.name,
+          });
+
+        } catch (initError) {
+          this.logger.error(
+            `Failed to initialize user ${supabaseUserId}:`,
+            initError,
+          );
+          throw new SupabaseUserNotFoundException();
+        }
       }
 
       const userData = userDataResult[0];
