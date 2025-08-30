@@ -8,24 +8,24 @@ export class AddNewEnumValues1754513300000 implements MigrationInterface {
     const modelEnumValues = await queryRunner.query(`
       SELECT enumlabel FROM pg_enum e 
       JOIN pg_type t ON e.enumtypid = t.oid 
-      WHERE t.typname = 'services_model_enum' AND enumlabel = 'black-forest-labs'
+      WHERE t.typname = 'service_model_enum' AND enumlabel = 'black-forest-labs'
     `);
 
     if (modelEnumValues.length === 0) {
       await queryRunner.query(
-        `ALTER TYPE "services_model_enum" ADD VALUE 'black-forest-labs'`,
+        `ALTER TYPE "service_model_enum" ADD VALUE 'black-forest-labs'`,
       );
     }
 
     const versionEnumValues = await queryRunner.query(`
       SELECT enumlabel FROM pg_enum e 
       JOIN pg_type t ON e.enumtypid = t.oid 
-      WHERE t.typname = 'services_model_version_enum' AND enumlabel = 'flux-kontext-max'
+      WHERE t.typname = 'model_version_enum' AND enumlabel = 'flux-kontext-max'
     `);
 
     if (versionEnumValues.length === 0) {
       await queryRunner.query(
-        `ALTER TYPE "services_model_version_enum" ADD VALUE 'flux-kontext-max'`,
+        `ALTER TYPE "model_version_enum" ADD VALUE 'flux-kontext-max'`,
       );
     }
   }

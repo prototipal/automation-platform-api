@@ -6,17 +6,17 @@ export class UpdateEnumsForNewServices1754513100000
   name = 'UpdateEnumsForNewServices1754513100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Add new model values to services_model_enum
+    // Add new model values to service_model_enum
     await queryRunner.query(
-      `ALTER TYPE "services_model_enum" ADD VALUE 'ideogram-ai'`,
+      `ALTER TYPE "service_model_enum" ADD VALUE 'ideogram-ai'`,
     );
 
-    // Add new model version values to services_model_version_enum
+    // Add new model version values to model_version_enum
     await queryRunner.query(
-      `ALTER TYPE "services_model_version_enum" ADD VALUE 'ideogram-v3-turbo'`,
+      `ALTER TYPE "model_version_enum" ADD VALUE 'ideogram-v3-turbo'`,
     );
     await queryRunner.query(
-      `ALTER TYPE "services_model_version_enum" ADD VALUE 'imagen-4-fast'`,
+      `ALTER TYPE "model_version_enum" ADD VALUE 'imagen-4-fast'`,
     );
   }
 
