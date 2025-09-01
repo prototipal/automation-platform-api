@@ -281,7 +281,7 @@ export class UserCreditsRepository extends Repository<UserCredit> {
    */
   async getLegacyBalance(userId: string): Promise<number> {
     const userCredit = await this.findByUserId(userId);
-    return userCredit?.total_available_credits || 0;
+    return userCredit?.balance || 0;
   }
 
   /**

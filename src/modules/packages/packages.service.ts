@@ -25,6 +25,7 @@ import {
   SubscriptionStatus,
   BillingInterval,
 } from '@/modules/packages/enums';
+import { CreditManagementService } from '@/modules/credits/services';
 
 @Injectable()
 export class PackagesService {
@@ -34,6 +35,7 @@ export class PackagesService {
     private readonly dataSource: DataSource,
     private readonly packagesRepository: PackagesRepository,
     private readonly userPackagesRepository: UserPackagesRepository,
+    private readonly creditManagementService: CreditManagementService,
   ) {}
 
   /**
@@ -436,11 +438,27 @@ export class PackagesService {
       };
     }
 
-    const creditsRemaining = Math.max(
-      0,
-      userPackage.package.monthly_credits -
-        userPackage.credits_used_current_period,
-    );
+    let creditsRemaining: number;
+    
+    // For free plans, prioritize the balance field from user-credit entity
+    if (userPackage.package.type === PackageType.FREE) {
+      try {
+        // Use the legacy balance field for free plans
+        const legacyBalance = await this.creditManagementService.getLegacyBalance(userId);
+        console.log('legacyBalance', legacyBalance);
+        creditsRemaining = legacyBalance || 0;
+      } catch (error) {
+        this.logger.warn(`Error getting legacy balance for user ${userId}:`, error);
+        creditsRemaining = 0;
+      }
+    } else {
+      // For paid plans, use the existing logic
+      creditsRemaining = Math.max(
+        0,
+        userPackage.package.monthly_credits -
+          userPackage.credits_used_current_period,
+      );
+    }
 
     let generationsRemaining = Infinity;
     if (userPackage.package.max_generations_per_month) {

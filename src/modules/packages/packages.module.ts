@@ -11,12 +11,14 @@ import {
 import { Package, UserPackage } from '@/modules/packages/entities';
 import { UserEventsListener } from '@/modules/packages/listeners';
 import { AuthModule } from '@/modules/auth';
+import { CreditsModule } from '@/modules/credits';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Package, UserPackage]),
     EventEmitterModule.forRoot(),
     forwardRef(() => AuthModule),
+    CreditsModule,
   ],
   controllers: [PackagesController],
   providers: [
