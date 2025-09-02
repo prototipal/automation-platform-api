@@ -347,4 +347,30 @@ export class GenerationsRepository {
 
     return await this.findById(generationId, userId, true);
   }
+
+  /**
+   * Update a generation by ID (for webhook processing without user validation)
+   */
+  async updateById(
+    generationId: number,
+    updateData: Partial<Generation>,
+  ): Promise<Generation | null> {
+    await this.generationRepository.update(
+      { id: generationId },
+      updateData,
+    );
+
+    return await this.generationRepository.findOne({
+      where: { id: generationId },
+    });
+  }
+
+  /**
+   * Find a generation by Replicate ID (for webhook processing)
+   */
+  async findByReplicateId(replicateId: string): Promise<Generation | null> {
+    return await this.generationRepository.findOne({
+      where: { replicate_id: replicateId },
+    });
+  }
 }

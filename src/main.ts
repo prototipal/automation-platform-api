@@ -18,20 +18,21 @@ async function bootstrap() {
       bodyParser: false, // Disable default body parser to handle manually
     });
 
-    // Configure raw body middleware for Stripe webhooks FIRST (before any JSON parsing)
+    // Configure raw body middleware for webhooks FIRST (before any JSON parsing)
     app.use('/api/subscriptions/webhooks/stripe', express.raw({ type: 'application/json' }));
+    app.use('/api/webhooks/replicate', express.raw({ type: 'application/json' }));
     
     // Configure JSON body parser with increased limits for base64 images
     // Apply to all routes EXCEPT webhook endpoints
     app.use((req, res, next) => {
-      if (req.path.includes('/webhooks/stripe')) {
+      if (req.path.includes('/webhooks/stripe') || req.path.includes('/webhooks/replicate')) {
         next();
       } else {
         express.json({ limit: '50mb' })(req, res, next);
       }
     });
     app.use((req, res, next) => {
-      if (req.path.includes('/webhooks/stripe')) {
+      if (req.path.includes('/webhooks/stripe') || req.path.includes('/webhooks/replicate')) {
         next();
       } else {
         express.urlencoded({ limit: '50mb', extended: true })(req, res, next);

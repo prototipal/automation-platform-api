@@ -17,4 +17,5 @@ export enum CreditSource {
   API_PURCHASE = 'api_purchase',
   PROMOTION = 'promotion',
   MIGRATION = 'migration',
+  GENERATION_REFUND = 'generation_refund',
 }

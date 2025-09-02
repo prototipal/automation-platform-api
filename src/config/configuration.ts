@@ -26,6 +26,8 @@ export const configModuleOptions: ConfigModuleOptions = {
 
     // Replicate API configuration validation
     REPLICATE_API_TOKEN: Joi.string().required(),
+    REPLICATE_WEBHOOK_SECRET: Joi.string().optional(),
+    WEBHOOK_BASE_URL: Joi.string().uri().optional(),
 
     // Authentication configuration validation
     STATIC_AUTH_TOKEN: Joi.string().required(),

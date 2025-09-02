@@ -1,5 +1,7 @@
 export interface ReplicateRequest {
   input: Record<string, any>;
+  webhook?: string;
+  webhook_events_filter?: string[];
 }
 
 export interface ReplicateResponse {

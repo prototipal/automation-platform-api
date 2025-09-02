@@ -833,8 +833,13 @@ export class GenerationsService {
 
       this.logger.log(`Making request to Replicate API: ${endpoint}`);
 
-      // Check if this is a text-to-image model to add wait header
+      // Check if this is a text-to-image or text-to-video model
       const isTextToImage = this.isTextToImageModel(
+        serviceConfig?.model,
+        serviceConfig?.model_version,
+      );
+      
+      const isTextToVideo = this.isTextToVideoModel(
         serviceConfig?.model,
         serviceConfig?.model_version,
       );
@@ -844,7 +849,20 @@ export class GenerationsService {
         'Content-Type': 'application/json',
       };
 
-      // Add Prefer: wait header for text-to-image models
+      // Add webhook URL for video models
+      if (isTextToVideo) {
+        const webhookUrl = this.configService.get<string>('WEBHOOK_BASE_URL');
+        if (webhookUrl) {
+          const callbackURL = `${webhookUrl}/webhooks/replicate`;
+          requestData.webhook = callbackURL;
+          requestData.webhook_events_filter = ['completed'];
+          this.logger.log(`Added webhook URL for video model: ${callbackURL}`);
+        } else {
+          this.logger.warn('WEBHOOK_BASE_URL not configured, video generation will be synchronous');
+        }
+      }
+
+      // Add Prefer: wait header for text-to-image models only
       if (isTextToImage) {
         headers['Prefer'] = 'wait';
         this.logger.log('Added Prefer: wait header for text-to-image request');
@@ -902,6 +920,16 @@ export class GenerationsService {
       TextToImageModelVersion,
     ) as string[];
     return textToImageVersions.includes(modelVersion);
+  }
+
+  private isTextToVideoModel(
+    _model: ServiceModel,
+    modelVersion: ModelVersion,
+  ): boolean {
+    const textToVideoVersions = Object.values(
+      TextToVideoModelVersion,
+    ) as string[];
+    return textToVideoVersions.includes(modelVersion);
   }
 
   /**
@@ -964,6 +992,17 @@ export class GenerationsService {
         createGenerationDto.input,
       );
 
+      // Determine status based on model type
+      const isVideoModel = this.isTextToVideoModel(
+        createGenerationDto.model,
+        createGenerationDto.model_version,
+      );
+      
+      // For video models with webhook, set status as processing regardless of initial response
+      const generationStatus = isVideoModel && this.configService.get<string>('WEBHOOK_BASE_URL') 
+        ? 'processing' 
+        : this.mapReplicateStatus(replicateResponse.status);
+
       // Create generation record using repository
       const savedGeneration = await this.generationsRepository.create({
         user_id: userId,
@@ -973,7 +1012,7 @@ export class GenerationsService {
         model_version: createGenerationDto.model_version,
         input_parameters: cleanedInputParameters,
         output_data: cleanedOutputData,
-        status: this.mapReplicateStatus(replicateResponse.status),
+        status: generationStatus,
         credits_used: creditsUsed,
         error_message: replicateResponse.error || undefined,
         supabase_urls: supabaseUrls.length > 0 ? supabaseUrls : undefined,
@@ -982,6 +1021,7 @@ export class GenerationsService {
           image_count: createGenerationDto.image_count,
           service_config_id: serviceConfig.id,
           api_response_size: JSON.stringify(replicateResponse).length,
+          uses_webhook: isVideoModel && !!this.configService.get<string>('WEBHOOK_BASE_URL'),
         },
       });
 
