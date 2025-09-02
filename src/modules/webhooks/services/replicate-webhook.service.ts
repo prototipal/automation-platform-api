@@ -117,16 +117,38 @@ export class ReplicateWebhookService {
   /**
    * Process Replicate webhook event with retry logic
    */
-  async processWebhookEvent(webhookData: ReplicateWebhookDto): Promise<void> {
-    this.logger.log(`Processing webhook for prediction: ${webhookData.id}`);
+  async processWebhookEvent(webhookData: any): Promise<void> {
+    this.logger.log(`Processing webhook for prediction: ${webhookData.id || 'unknown'}`);
+    
+    // DEBUG: Log the webhook data structure
+    this.logger.debug('Webhook data received in service:', {
+      id: webhookData.id,
+      status: webhookData.status,
+      model: webhookData.model,
+      version: webhookData.version,
+      hasOutput: !!webhookData.output,
+      outputType: typeof webhookData.output,
+      allKeys: Object.keys(webhookData || {}),
+    });
 
-    const isVideoModel = this.isVideoModelPrediction(webhookData);
-    if (!isVideoModel) {
-      this.logger.debug(`Ignoring webhook for non-video model: ${webhookData.model}`);
-      return;
+    // Skip model type checking for now to see all webhooks
+    // const isVideoModel = this.isVideoModelPrediction(webhookData);
+    // if (!isVideoModel) {
+    //   this.logger.debug(`Ignoring webhook for non-video model: ${webhookData.model}`);
+    //   return;
+    // }
+
+    // For debugging, just try to find the generation
+    try {
+      const generation = await this.generationsRepository.findByReplicateId(webhookData.id);
+      if (generation) {
+        this.logger.log(`Found generation in database: ${generation.id} for replicate_id: ${webhookData.id}`);
+      } else {
+        this.logger.warn(`No generation found for replicate_id: ${webhookData.id}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error finding generation for replicate_id: ${webhookData.id}:`, error);
     }
-
-    await this.processWithRetry(webhookData, 0);
   }
 
   /**

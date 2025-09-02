@@ -6,6 +6,8 @@ export enum ReplicateWebhookStatus {
   SUCCEEDED = 'succeeded',
   FAILED = 'failed',
   CANCELED = 'canceled',
+  PROCESSING = 'processing',
+  STARTING = 'starting',
 }
 
 export class ReplicateWebhookUrlsDto {
@@ -39,29 +41,33 @@ export class ReplicateWebhookDto {
     description: 'Unique identifier for the prediction',
     example: 'abc123def456',
   })
+  @IsOptional()
   @IsString()
-  id: string;
+  id?: string;
 
   @ApiProperty({
     description: 'Model used for the prediction',
     example: 'bytedance/seedance-1-pro',
   })
+  @IsOptional()
   @IsString()
-  model: string;
+  model?: string;
 
   @ApiProperty({
     description: 'Version of the model',
     example: 'latest',
   })
+  @IsOptional()
   @IsString()
-  version: string;
+  version?: string;
 
   @ApiProperty({
     description: 'Input parameters used for the prediction',
     example: { prompt: 'A beautiful sunset', duration: 5 },
   })
+  @IsOptional()
   @IsObject()
-  input: Record<string, any>;
+  input?: Record<string, any>;
 
   @ApiProperty({
     description: 'Output from the prediction (URLs or data)',
@@ -76,8 +82,8 @@ export class ReplicateWebhookDto {
     example: 'array',
     required: false,
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   data_type?: string;
 
   @ApiProperty({
@@ -85,16 +91,17 @@ export class ReplicateWebhookDto {
     enum: ReplicateWebhookStatus,
     example: ReplicateWebhookStatus.SUCCEEDED,
   })
-  @IsEnum(ReplicateWebhookStatus)
-  status: ReplicateWebhookStatus;
+  @IsOptional()
+  @IsString()
+  status?: string;
 
   @ApiProperty({
     description: 'Error message if prediction failed',
     example: null,
     required: false,
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   error?: string;
 
   @ApiProperty({
@@ -102,24 +109,25 @@ export class ReplicateWebhookDto {
     example: 'Starting prediction...\nProcessing complete.',
     required: false,
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   logs?: string;
 
   @ApiProperty({
     description: 'Prediction creation timestamp',
     example: '2025-01-15T10:30:00.000Z',
   })
+  @IsOptional()
   @IsString()
-  created_at: string;
+  created_at?: string;
 
   @ApiProperty({
     description: 'Prediction start timestamp',
     example: '2025-01-15T10:30:05.000Z',
     required: false,
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   started_at?: string;
 
   @ApiProperty({
@@ -127,8 +135,8 @@ export class ReplicateWebhookDto {
     example: '2025-01-15T10:31:30.000Z',
     required: false,
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   completed_at?: string;
 
   @ApiProperty({
@@ -136,8 +144,8 @@ export class ReplicateWebhookDto {
     example: { predict_time: 23.45 },
     required: false,
   })
-  @IsObject()
   @IsOptional()
+  @IsObject()
   metrics?: Record<string, any>;
 
   @ApiProperty({
@@ -145,9 +153,9 @@ export class ReplicateWebhookDto {
     type: ReplicateWebhookUrlsDto,
     required: false,
   })
+  @IsOptional()
   @ValidateNested()
   @Type(() => ReplicateWebhookUrlsDto)
-  @IsOptional()
   urls?: ReplicateWebhookUrlsDto;
 
   @ApiProperty({
@@ -155,7 +163,7 @@ export class ReplicateWebhookDto {
     example: { user_id: 'user123', session_id: '456' },
     required: false,
   })
-  @IsObject()
   @IsOptional()
+  @IsObject()
   metadata?: Record<string, any>;
 }

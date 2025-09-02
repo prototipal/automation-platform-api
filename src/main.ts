@@ -16,6 +16,7 @@ async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule, {
       bodyParser: false, // Disable default body parser to handle manually
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'], // Enable debug logging
     });
 
     // Configure raw body middleware for webhooks FIRST (before any JSON parsing)

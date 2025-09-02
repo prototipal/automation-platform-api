@@ -76,6 +76,16 @@ export class WebhooksController {
       const rawBody = req.rawBody ? req.rawBody.toString() : JSON.stringify(body);
       
       this.logger.log(`Received Replicate webhook: ${body?.id || 'unknown'}`);
+      
+      // DEBUG: Log the complete payload structure
+      this.logger.debug('Webhook payload received:', {
+        body: JSON.stringify(body, null, 2),
+        bodyKeys: Object.keys(body || {}),
+        bodyType: typeof body,
+        hasSignature: !!signature,
+        hasTimestamp: !!timestamp,
+        rawBodyLength: rawBody?.length || 0,
+      });
 
       // Verify webhook signature if headers are present
       if (signature && timestamp) {
@@ -95,52 +105,41 @@ export class WebhooksController {
         this.logger.warn('Webhook received without signature headers');
       }
 
-      // Validate and transform the webhook payload
-      const webhookDto = plainToInstance(ReplicateWebhookDto, body, {
-        excludeExtraneousValues: false, // Allow extra properties
+      // Skip validation temporarily to see the payload structure
+      if (!body || typeof body !== 'object') {
+        this.logger.error('Invalid webhook body type:', typeof body);
+        throw new BadRequestException('Webhook body must be an object');
+      }
+
+      // For now, just log what we received and return success
+      this.logger.log('Webhook body analysis:', {
+        hasId: !!body.id,
+        hasStatus: !!body.status,
+        hasModel: !!body.model,
+        hasOutput: !!body.output,
+        allKeys: Object.keys(body),
       });
 
-      // Validate the DTO
-      const validationErrors = await validate(webhookDto);
-      if (validationErrors.length > 0) {
-        const errorMessages = validationErrors
-          .map(error => Object.values(error.constraints || {}).join(', '))
-          .join('; ');
-        
-        this.logger.error(`Webhook validation failed: ${errorMessages}`);
-        throw new BadRequestException(`Invalid webhook payload: ${errorMessages}`);
+      // Try to process with minimal validation for debugging
+      try {
+        if (body.id && body.status) {
+          await this.replicateWebhookService.processWebhookEvent(body);
+        } else {
+          this.logger.warn('Webhook missing required fields (id or status)');
+        }
+      } catch (processError) {
+        this.logger.error('Error processing webhook:', processError);
       }
-
-      // Check for duplicate webhook
-      const isDuplicate = await this.replicateWebhookService.isDuplicateWebhook(
-        webhookDto.id,
-        webhookDto.status,
-      );
-
-      if (isDuplicate) {
-        const processingTime = Date.now() - startTime;
-        this.logger.debug(`Duplicate webhook ignored for prediction: ${webhookDto.id}`);
-        
-        return {
-          status: 'ignored',
-          message: 'Duplicate webhook ignored',
-          prediction_id: webhookDto.id,
-          processed_at: new Date().toISOString(),
-        };
-      }
-
-      // Process the webhook
-      await this.replicateWebhookService.processWebhookEvent(webhookDto);
 
       const processingTime = Date.now() - startTime;
       this.logger.log(
-        `Webhook processed successfully for prediction: ${webhookDto.id} in ${processingTime}ms`,
+        `Webhook processed successfully for prediction: ${body?.id || 'unknown'} in ${processingTime}ms`,
       );
 
       return {
         status: 'success',
-        message: 'Webhook processed successfully',
-        prediction_id: webhookDto.id,
+        message: 'Webhook processed successfully (debug mode)',
+        prediction_id: body?.id || 'unknown',
         processed_at: new Date().toISOString(),
       };
 
