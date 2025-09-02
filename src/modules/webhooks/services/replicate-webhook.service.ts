@@ -131,24 +131,15 @@ export class ReplicateWebhookService {
       allKeys: Object.keys(webhookData || {}),
     });
 
-    // Skip model type checking for now to see all webhooks
-    // const isVideoModel = this.isVideoModelPrediction(webhookData);
-    // if (!isVideoModel) {
-    //   this.logger.debug(`Ignoring webhook for non-video model: ${webhookData.model}`);
-    //   return;
-    // }
-
-    // For debugging, just try to find the generation
-    try {
-      const generation = await this.generationsRepository.findByReplicateId(webhookData.id);
-      if (generation) {
-        this.logger.log(`Found generation in database: ${generation.id} for replicate_id: ${webhookData.id}`);
-      } else {
-        this.logger.warn(`No generation found for replicate_id: ${webhookData.id}`);
-      }
-    } catch (error) {
-      this.logger.error(`Error finding generation for replicate_id: ${webhookData.id}:`, error);
+    // Check if this is a video model prediction
+    const isVideoModel = this.isVideoModelPrediction(webhookData);
+    if (!isVideoModel) {
+      this.logger.debug(`Ignoring webhook for non-video model: ${webhookData.model}`);
+      return;
     }
+
+    // Process with retry logic
+    await this.processWithRetry(webhookData, 0);
   }
 
   /**

@@ -72,25 +72,45 @@ export class WebhooksController {
     const startTime = Date.now();
     
     try {
-      // Get raw body for signature verification
-      const rawBody = req.rawBody ? req.rawBody.toString() : JSON.stringify(body);
+      // Parse the raw body if it's a Buffer
+      let parsedBody: any;
+      let rawBodyString: string;
+
+      if (req.rawBody && Buffer.isBuffer(req.rawBody)) {
+        // Convert Buffer to string
+        rawBodyString = req.rawBody.toString('utf8');
+        try {
+          parsedBody = JSON.parse(rawBodyString);
+          this.logger.log(`Successfully parsed webhook JSON for prediction: ${parsedBody.id || 'unknown'}`);
+        } catch (parseError) {
+          this.logger.error('Failed to parse webhook JSON:', parseError);
+          throw new BadRequestException('Invalid JSON payload');
+        }
+      } else if (body && typeof body === 'object' && !Array.isArray(body)) {
+        // Use the parsed body from NestJS
+        parsedBody = body;
+        rawBodyString = JSON.stringify(body);
+      } else {
+        this.logger.error('No valid body found in webhook request');
+        throw new BadRequestException('No valid payload found');
+      }
       
-      this.logger.log(`Received Replicate webhook: ${body?.id || 'unknown'}`);
+      this.logger.log(`Received Replicate webhook: ${parsedBody?.id || 'unknown'}`);
       
-      // DEBUG: Log the complete payload structure
-      this.logger.debug('Webhook payload received:', {
-        body: JSON.stringify(body, null, 2),
-        bodyKeys: Object.keys(body || {}),
-        bodyType: typeof body,
-        hasSignature: !!signature,
-        hasTimestamp: !!timestamp,
-        rawBodyLength: rawBody?.length || 0,
+      // DEBUG: Log the parsed payload structure
+      this.logger.debug('Webhook payload parsed:', {
+        id: parsedBody.id,
+        status: parsedBody.status,
+        model: parsedBody.model,
+        hasOutput: !!parsedBody.output,
+        outputType: typeof parsedBody.output,
+        allKeys: Object.keys(parsedBody || {}),
       });
 
       // Verify webhook signature if headers are present
       if (signature && timestamp) {
         const isValid = this.replicateWebhookService.verifyWebhookSignature(
-          rawBody,
+          rawBodyString,
           signature,
           timestamp,
         );
@@ -105,41 +125,24 @@ export class WebhooksController {
         this.logger.warn('Webhook received without signature headers');
       }
 
-      // Skip validation temporarily to see the payload structure
-      if (!body || typeof body !== 'object') {
-        this.logger.error('Invalid webhook body type:', typeof body);
-        throw new BadRequestException('Webhook body must be an object');
+      // Validate required fields
+      if (!parsedBody.id || !parsedBody.status) {
+        this.logger.error('Webhook missing required fields (id or status)');
+        throw new BadRequestException('Webhook payload missing required fields: id, status');
       }
 
-      // For now, just log what we received and return success
-      this.logger.log('Webhook body analysis:', {
-        hasId: !!body.id,
-        hasStatus: !!body.status,
-        hasModel: !!body.model,
-        hasOutput: !!body.output,
-        allKeys: Object.keys(body),
-      });
-
-      // Try to process with minimal validation for debugging
-      try {
-        if (body.id && body.status) {
-          await this.replicateWebhookService.processWebhookEvent(body);
-        } else {
-          this.logger.warn('Webhook missing required fields (id or status)');
-        }
-      } catch (processError) {
-        this.logger.error('Error processing webhook:', processError);
-      }
+      // Process the webhook
+      await this.replicateWebhookService.processWebhookEvent(parsedBody);
 
       const processingTime = Date.now() - startTime;
       this.logger.log(
-        `Webhook processed successfully for prediction: ${body?.id || 'unknown'} in ${processingTime}ms`,
+        `Webhook processed successfully for prediction: ${parsedBody?.id || 'unknown'} in ${processingTime}ms`,
       );
 
       return {
         status: 'success',
-        message: 'Webhook processed successfully (debug mode)',
-        prediction_id: body?.id || 'unknown',
+        message: 'Webhook processed successfully',
+        prediction_id: parsedBody?.id || 'unknown',
         processed_at: new Date().toISOString(),
       };
 
@@ -153,14 +156,14 @@ export class WebhooksController {
 
       // Log the error but don't expose internal details
       this.logger.error(
-        `Webhook processing failed for prediction: ${body?.id || 'unknown'} after ${processingTime}ms:`,
+        `Webhook processing failed for prediction: unknown after ${processingTime}ms:`,
         error,
       );
 
       return {
         status: 'error',
         message: 'Internal error processing webhook',
-        prediction_id: body?.id || 'unknown',
+        prediction_id: 'unknown',
         processed_at: new Date().toISOString(),
       };
     }
