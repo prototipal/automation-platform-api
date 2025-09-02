@@ -19,9 +19,20 @@ async function bootstrap() {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'], // Enable debug logging
     });
 
-    // Configure raw body middleware for webhooks FIRST (before any JSON parsing)
+    // Configure middleware for webhook raw body handling
+    app.use('/api/webhooks/replicate', (req, res, next) => {
+      express.raw({ type: 'application/json' })(req, res, (err) => {
+        if (err) {
+          console.error('Raw body middleware error:', err);
+          return next(err);
+        }
+        req.rawBody = req.body;
+        next();
+      });
+    });
+    
+    // Configure raw body middleware for Stripe webhooks
     app.use('/api/subscriptions/webhooks/stripe', express.raw({ type: 'application/json' }));
-    app.use('/api/webhooks/replicate', express.raw({ type: 'application/json' }));
     
     // Configure JSON body parser with increased limits for base64 images
     // Apply to all routes EXCEPT webhook endpoints

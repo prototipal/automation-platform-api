@@ -851,9 +851,14 @@ export class GenerationsService {
 
       // Add webhook URL for video models
       if (isTextToVideo) {
-        const webhookUrl = this.configService.get<string>('WEBHOOK_BASE_URL');
+        const environment = this.configService.get<string>('NODE_ENV', 'development');
+        const webhookUrl = environment === 'development' 
+          ? this.configService.get<string>('WEBHOOK_DEV_URL') || this.configService.get<string>('WEBHOOK_BASE_URL')
+          : this.configService.get<string>('WEBHOOK_BASE_URL');
         if (webhookUrl) {
-          const callbackURL = `${webhookUrl}/webhooks/replicate`;
+          // Remove trailing slash from webhookUrl if present to avoid double slashes
+          const baseUrl = webhookUrl.endsWith('/') ? webhookUrl.slice(0, -1) : webhookUrl;
+          const callbackURL = `${baseUrl}/webhooks/replicate`;
           requestData.webhook = callbackURL;
           requestData.webhook_events_filter = ['completed'];
           this.logger.log(`Added webhook URL for video model: ${callbackURL}`);

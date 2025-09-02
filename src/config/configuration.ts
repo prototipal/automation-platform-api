@@ -28,6 +28,7 @@ export const configModuleOptions: ConfigModuleOptions = {
     REPLICATE_API_TOKEN: Joi.string().required(),
     REPLICATE_WEBHOOK_SECRET: Joi.string().optional(),
     WEBHOOK_BASE_URL: Joi.string().uri().optional(),
+    WEBHOOK_DEV_URL: Joi.string().uri().optional(), // For development testing with ngrok
 
     // Authentication configuration validation
     STATIC_AUTH_TOKEN: Joi.string().required(),
