@@ -19,7 +19,7 @@ export interface SessionWithStats {
     name?: string;
     image_url?: string;
     created_at: Date;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
+    status: 'pending' | 'starting' | 'processing' | 'completed' | 'failed';
   };
 }
 

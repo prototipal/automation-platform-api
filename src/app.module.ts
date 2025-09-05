@@ -15,6 +15,7 @@ import { PackagesModule } from '@/modules/packages';
 import { SubscriptionsModule } from '@/modules/subscriptions';
 import { CreditsModule } from '@/modules/credits';
 import { WebhooksModule } from '@/modules/webhooks';
+import { NotificationsModule } from '@/modules/notifications';
 import { configModuleOptions } from './config';
 
 @Module({
@@ -33,6 +34,7 @@ import { configModuleOptions } from './config';
     SubscriptionsModule,
     CreditsModule,
     WebhooksModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

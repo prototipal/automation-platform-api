@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { GenerationsModule } from '@/modules/generations';
 import { StorageModule } from '@/modules/storage';
 import { CreditsModule } from '@/modules/credits';
 import { PackagesModule } from '@/modules/packages';
+import { NotificationsModule } from '@/modules/notifications';
 
 import { WebhooksController } from './webhooks.controller';
 import { ReplicateWebhookService } from './services';
@@ -14,10 +16,12 @@ import { ReplicateWebhookService } from './services';
   imports: [
     ConfigModule,
     HttpModule,
+    EventEmitterModule,
     GenerationsModule,
     StorageModule,
     CreditsModule,
     PackagesModule,
+    NotificationsModule,
   ],
   controllers: [WebhooksController],
   providers: [ReplicateWebhookService],

@@ -25,13 +25,13 @@ export class QueryGenerationDto {
 
   @ApiPropertyOptional({
     description: 'Filter by generation status',
-    enum: ['pending', 'processing', 'completed', 'failed'],
+    enum: ['pending', 'starting', 'processing', 'completed', 'failed'],
     example: 'completed',
   })
   @IsOptional()
   @IsString()
-  @IsIn(['pending', 'processing', 'completed', 'failed'])
-  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  @IsIn(['pending', 'starting', 'processing', 'completed', 'failed'])
+  status?: 'pending' | 'starting' | 'processing' | 'completed' | 'failed';
 
   @ApiPropertyOptional({
     description: 'Search in generation prompts',

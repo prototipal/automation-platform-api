@@ -98,10 +98,10 @@ export class GenerationWithServiceResponseDto {
   @ApiProperty({
     description: 'Generation status',
     example: 'completed',
-    enum: ['pending', 'processing', 'completed', 'failed'],
+    enum: ['pending', 'starting', 'processing', 'completed', 'failed'],
   })
   @Expose()
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'starting' | 'processing' | 'completed' | 'failed';
 
   @ApiProperty({
     description: 'Credits used for this generation',

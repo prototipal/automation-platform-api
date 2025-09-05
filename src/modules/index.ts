@@ -8,3 +8,4 @@ export * from './categories';
 export * from './packages';
 export * from './subscriptions';
 export * from './webhooks';
+export * from './notifications';

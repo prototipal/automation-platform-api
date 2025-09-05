@@ -13,7 +13,7 @@ export interface GenerationWithStats {
   model_version: string;
   input_parameters: Record<string, any>;
   output_data?: Record<string, any>;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'starting' | 'processing' | 'completed' | 'failed';
   credits_used: number;
   error_message?: string;
   supabase_urls?: string[];

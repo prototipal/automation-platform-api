@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { firstValueFrom } from 'rxjs';
 
@@ -17,6 +18,12 @@ import { CreditSource } from '@/modules/credits/enums';
 import { PackagesService } from '@/modules/packages';
 import { TextToVideoModelVersion, ServiceModel } from '@/modules/services/enums';
 import { ReplicateWebhookDto, ReplicateWebhookStatus } from '../dto';
+import {
+  VideoGenerationCompletedEvent,
+  VideoGenerationFailedEvent,
+  VideoGenerationProgressEvent,
+  CreditRefundEvent,
+} from '@/modules/notifications';
 
 @Injectable()
 export class ReplicateWebhookService {
@@ -40,6 +47,7 @@ export class ReplicateWebhookService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly generationsRepository: GenerationsRepository,
     private readonly storageService: StorageService,
     private readonly creditManagementService: CreditManagementService,
@@ -197,6 +205,9 @@ export class ReplicateWebhookService {
       await this.handleSuccessfulGeneration(generation, webhookData);
     } else if (isFailed) {
       await this.handleFailedGeneration(generation, webhookData);
+    } else if (webhookData.status === ReplicateWebhookStatus.STARTING || 
+               webhookData.status === ReplicateWebhookStatus.PROCESSING) {
+      await this.handleProgressUpdate(generation, webhookData);
     } else {
       this.logger.warn(`Unknown webhook status: ${webhookData.status} for prediction: ${webhookData.id}`);
     }
@@ -266,8 +277,48 @@ export class ReplicateWebhookService {
 
       this.logger.log(`Generation ${generation.id} marked as completed with ${supabaseUrls.length} videos`);
 
+      // Emit event for real-time notification
+      await this.emitVideoGenerationCompletedEvent(generation, supabaseUrls, processingTime);
+
     } catch (error) {
       this.logger.error(`Failed to handle successful generation ${generation.id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle progress update (starting/processing)
+   */
+  private async handleProgressUpdate(
+    generation: any,
+    webhookData: ReplicateWebhookDto,
+  ): Promise<void> {
+    try {
+      const status = webhookData.status === ReplicateWebhookStatus.STARTING ? 'starting' : 'processing';
+      
+      // Update generation status in database
+      await this.generationsRepository.updateById(generation.id, {
+        status,
+        updated_at: new Date(),
+        metadata: {
+          ...generation.metadata,
+          last_progress_update: new Date().toISOString(),
+          replicate_status: webhookData.status,
+          started_at: webhookData.started_at,
+        },
+      });
+
+      this.logger.log(`Generation ${generation.id} status updated to ${status}`);
+
+      // Emit progress event for real-time notification
+      await this.emitVideoGenerationProgressEvent(
+        generation, 
+        status as 'starting' | 'processing',
+        webhookData.started_at
+      );
+
+    } catch (error) {
+      this.logger.error(`Failed to handle progress update for generation ${generation.id}:`, error);
       throw error;
     }
   }
@@ -297,6 +348,9 @@ export class ReplicateWebhookService {
       await this.refundCredits(generation, webhookData.error || 'Generation failed');
 
       this.logger.log(`Generation ${generation.id} marked as failed and credits refunded`);
+
+      // Emit event for real-time notification
+      await this.emitVideoGenerationFailedEvent(generation, webhookData.error || 'Generation failed');
 
     } catch (error) {
       this.logger.error(`Failed to handle failed generation ${generation.id}:`, error);
@@ -367,6 +421,15 @@ export class ReplicateWebhookService {
       this.logger.log(
         `Refunded ${generation.credits_used} credits to user ${generation.user_id} for failed generation ${generation.id}`,
       );
+
+      // Emit credit refund event for notification
+      const refundEvent = new CreditRefundEvent(
+        generation.user_id,
+        generation.credits_used,
+        reason,
+        generation.id,
+      );
+      this.eventEmitter.emit('credit.refund', refundEvent);
     } catch (error) {
       this.logger.error(
         `Failed to refund credits for generation ${generation.id}:`,
@@ -499,6 +562,98 @@ export class ReplicateWebhookService {
     } catch (error) {
       this.logger.error('Error checking for duplicate webhook:', error);
       return false; // Assume not duplicate on error
+    }
+  }
+
+  /**
+   * Emit video generation completed event
+   */
+  private async emitVideoGenerationCompletedEvent(
+    generation: any,
+    videoUrls: string[],
+    processingTime?: number,
+  ): Promise<void> {
+    try {
+      const event = new VideoGenerationCompletedEvent(
+        generation.id,
+        generation.replicate_id,
+        generation.user_id,
+        generation.model,
+        generation.model_version,
+        generation.session_id,
+        videoUrls,
+        processingTime,
+        generation.credits_used,
+      );
+
+      this.eventEmitter.emit('video.generation.completed', event);
+      this.logger.log(`Emitted video generation completed event for generation ${generation.id}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to emit video generation completed event for generation ${generation.id}:`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Emit video generation progress event
+   */
+  private async emitVideoGenerationProgressEvent(
+    generation: any,
+    status: 'starting' | 'processing',
+    startedAt?: string,
+  ): Promise<void> {
+    try {
+      const event = new VideoGenerationProgressEvent(
+        generation.id,
+        generation.replicate_id,
+        generation.user_id,
+        generation.model,
+        generation.model_version,
+        generation.session_id,
+        status,
+        undefined, // progress percentage - could be calculated based on time elapsed
+        undefined, // estimatedTime - could be calculated based on model averages
+        startedAt,
+      );
+
+      this.eventEmitter.emit('video.generation.progress', event);
+      this.logger.log(`Emitted video generation progress event for generation ${generation.id} - status: ${status}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to emit video generation progress event for generation ${generation.id}:`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Emit video generation failed event
+   */
+  private async emitVideoGenerationFailedEvent(
+    generation: any,
+    error: string,
+  ): Promise<void> {
+    try {
+      const event = new VideoGenerationFailedEvent(
+        generation.id,
+        generation.replicate_id,
+        generation.user_id,
+        generation.model,
+        generation.model_version,
+        generation.session_id,
+        error,
+        generation.credits_used,
+      );
+
+      this.eventEmitter.emit('video.generation.failed', event);
+      this.logger.log(`Emitted video generation failed event for generation ${generation.id}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to emit video generation failed event for generation ${generation.id}:`,
+        error,
+      );
     }
   }
 }

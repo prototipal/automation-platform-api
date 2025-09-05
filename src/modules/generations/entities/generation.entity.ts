@@ -91,14 +91,14 @@ export class Generation {
   @ApiProperty({
     description: 'Generation status',
     example: 'completed',
-    enum: ['pending', 'processing', 'completed', 'failed'],
+    enum: ['pending', 'starting', 'processing', 'completed', 'failed'],
   })
   @Column({
     type: 'enum',
-    enum: ['pending', 'processing', 'completed', 'failed'],
+    enum: ['pending', 'starting', 'processing', 'completed', 'failed'],
     default: 'pending',
   })
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'starting' | 'processing' | 'completed' | 'failed';
 
   @ApiProperty({
     description: 'Credits used for this generation',
