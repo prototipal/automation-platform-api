@@ -1,6 +1,7 @@
 import { Expose, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { LatestGenerationDto } from './latest-generation.dto';
+import { SessionType } from '../enums';
 
 export class SessionResponseDto {
   @ApiProperty({
@@ -38,6 +39,14 @@ export class SessionResponseDto {
   })
   @Expose()
   is_active: boolean;
+
+  @ApiProperty({
+    description: 'Type of the session (photo or video)',
+    enum: SessionType,
+    example: SessionType.PHOTO,
+  })
+  @Expose()
+  session_type: SessionType;
 
   @ApiProperty({
     description: 'Session creation timestamp',

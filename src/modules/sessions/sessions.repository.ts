@@ -10,6 +10,7 @@ export interface SessionWithStats {
   name: string;
   description?: string;
   is_active: boolean;
+  session_type: string;
   created_at: Date;
   updated_at: Date;
   generation_count?: number;
@@ -76,6 +77,7 @@ export class SessionsRepository {
         s.name,
         s.description,
         s.is_active,
+        s.session_type,
         s.created_at,
         s.updated_at,
         COALESCE(g.generation_count, 0) as generation_count,
@@ -170,6 +172,7 @@ export class SessionsRepository {
     const {
       is_active,
       search,
+      session_type,
       page = 1,
       limit = 10,
       sort_by = 'created_at',
@@ -189,6 +192,7 @@ export class SessionsRepository {
           s.name,
           s.description,
           s.is_active,
+          s.session_type,
           s.created_at,
           s.updated_at,
           COALESCE(g.generation_count, 0) as generation_count,
@@ -244,6 +248,7 @@ export class SessionsRepository {
           s.name,
           s.description,
           s.is_active,
+          s.session_type,
           s.created_at,
           s.updated_at,
           lg.id as latest_generation_id,
@@ -301,6 +306,13 @@ export class SessionsRepository {
       query += ` AND s.name ILIKE $${paramIndex}`;
       countQuery += ` AND s.name ILIKE $${paramIndex}`;
       params.push(`%${search}%`);
+    }
+
+    if (session_type) {
+      paramIndex++;
+      query += ` AND s.session_type = $${paramIndex}`;
+      countQuery += ` AND s.session_type = $${paramIndex}`;
+      params.push(session_type);
     }
 
     // Add sorting

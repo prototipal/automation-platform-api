@@ -7,6 +7,7 @@ import {
   Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { SessionType } from '../enums';
 
 @Entity('sessions')
 @Index('idx_session_user_id', ['user_id'])
@@ -62,6 +63,18 @@ export class Session {
   })
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
+
+  @ApiProperty({
+    description: 'Type of the session (photo or video)',
+    example: SessionType.PHOTO,
+    enum: SessionType,
+  })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: SessionType.PHOTO,
+  })
+  session_type: SessionType;
 
   // Virtual properties for API responses
   @ApiProperty({

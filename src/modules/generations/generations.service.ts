@@ -18,11 +18,13 @@ import {
   TextToImageModelVersion,
   TextToVideoModelVersion,
   ModelVersion,
+  ServiceType,
 } from '@/modules/services/enums';
 import { ServiceFields } from '@/modules/services/entities';
 import { AuthService, CreditDeductionDto, AuthUserDto } from '@/modules/auth';
 import { StorageService } from '@/modules/storage';
 import { SessionsService } from '@/modules/sessions';
+import { SessionType } from '@/modules/sessions/enums';
 import { PackagesService } from '@/modules/packages';
 import { Generation } from './entities';
 import { GenerationsRepository } from './generations.repository';
@@ -150,7 +152,7 @@ export class GenerationsService {
       `Creating authenticated generation for user: ${authUser.user_id}, session: ${createGenerationDto.session_id}, model: ${createGenerationDto.model}, version: ${createGenerationDto.model_version}`,
     );
 
-    // Step 1: Validate session ownership
+    // Step 1: Validate session ownership and get session info
     const sessionOwnership =
       await this.sessionsService.validateSessionOwnership(
         createGenerationDto.session_id,
@@ -160,6 +162,37 @@ export class GenerationsService {
     if (!sessionOwnership) {
       throw new BadRequestException(
         `Session ${createGenerationDto.session_id} not found or access denied`,
+      );
+    }
+
+    // Get session to check its type and update if needed
+    const session = await this.sessionsService.getSessionForService(
+      createGenerationDto.session_id,
+    );
+
+    if (!session) {
+      throw new BadRequestException(
+        `Session ${createGenerationDto.session_id} not found`,
+      );
+    }
+
+    // Check if we need to update the session type based on the model being used
+    const isVideoModel = this.isTextToVideoModel(
+      createGenerationDto.model,
+      createGenerationDto.model_version,
+    );
+    const requiredSessionType = isVideoModel ? SessionType.VIDEO : SessionType.PHOTO;
+
+    // If session type doesn't match the model type, update it
+    if (session.session_type !== requiredSessionType) {
+      this.logger.log(
+        `Updating session ${createGenerationDto.session_id} type from ${session.session_type} to ${requiredSessionType} based on model ${createGenerationDto.model}`,
+      );
+      
+      await this.sessionsService.update(
+        createGenerationDto.session_id,
+        { session_type: requiredSessionType },
+        authUser,
       );
     }
 

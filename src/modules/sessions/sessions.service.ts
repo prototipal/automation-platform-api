@@ -19,6 +19,7 @@ import {
   LatestGenerationDto,
 } from './dto';
 import { SessionsRepository, SessionWithStats } from './sessions.repository';
+import { SessionType } from './enums';
 
 export interface PaginatedSessionResponse {
   sessions: SessionResponseDto[];
@@ -64,11 +65,12 @@ export class SessionsService {
       throw new BadRequestException('Session name cannot be empty');
     }
 
-    // Create session with trimmed name
+    // Create session with trimmed name and default session type
     const sessionData = {
       ...createSessionDto,
       name: trimmedName,
       description: createSessionDto.description?.trim() || undefined,
+      session_type: createSessionDto.session_type || SessionType.PHOTO,
     };
 
     try {
@@ -265,7 +267,8 @@ export class SessionsService {
     if (
       !updateSessionDto.name &&
       !updateSessionDto.description &&
-      updateSessionDto.is_active === undefined
+      updateSessionDto.is_active === undefined &&
+      !updateSessionDto.session_type
     ) {
       throw new BadRequestException(
         'At least one field must be provided for update',

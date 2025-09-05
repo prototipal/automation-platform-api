@@ -5,9 +5,11 @@ import {
   IsNumber,
   Min,
   Max,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { SessionType } from '../enums';
 
 export class QuerySessionDto {
   @ApiPropertyOptional({
@@ -77,4 +79,13 @@ export class QuerySessionDto {
   @IsBoolean()
   @Type(() => Boolean)
   include_stats?: boolean = false;
+
+  @ApiPropertyOptional({
+    description: 'Filter by session type (photo or video)',
+    enum: SessionType,
+    example: SessionType.PHOTO,
+  })
+  @IsOptional()
+  @IsEnum(SessionType)
+  session_type?: SessionType;
 }

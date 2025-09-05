@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SessionType } from '../enums';
 
 export class CreateSessionDto {
   @ApiProperty({
@@ -21,4 +22,13 @@ export class CreateSessionDto {
   @IsString()
   @MaxLength(1000)
   description?: string;
+
+  @ApiPropertyOptional({
+    description: 'Type of the session (photo or video). Defaults to photo.',
+    enum: SessionType,
+    example: SessionType.PHOTO,
+  })
+  @IsOptional()
+  @IsEnum(SessionType)
+  session_type?: SessionType;
 }

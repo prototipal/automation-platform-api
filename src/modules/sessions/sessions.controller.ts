@@ -116,6 +116,12 @@ export class SessionsController {
     type: Boolean,
     description: 'Include generation statistics (default: false)',
   })
+  @ApiQuery({
+    name: 'session_type',
+    required: false,
+    enum: ['photo', 'video'],
+    description: 'Filter by session type (photo or video)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Sessions retrieved successfully',
