@@ -147,6 +147,7 @@ export class ServicesSeed {
             },
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/seedance-logo.png',
       },
       {
         from: 'replicate',
@@ -218,6 +219,7 @@ export class ServicesSeed {
             },
           },
         },
+        logo: 'https://rnjphepcnyquyuzhaxpy.supabase.co/storage/v1/object/public/assets/logos/kling-logo.png',
       },
       // Yeni text-to-image servisler
       {
